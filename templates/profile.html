@@ -1,0 +1,247 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ profile_user.username }}'s Profile - GhostPin{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Profile Header -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div class="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
+            <div class="flex-shrink-0">
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" alt="{{ profile_user.username }}" class="w-24 h-24 rounded-full object-cover border-4 border-green-500">
+                {% else %}
+                    <div class="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center text-white text-3xl font-bold">
+                        {{ profile_user.username|first|upper }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="flex-1 text-center md:text-left">
+                <h1 class="text-3xl font-bold text-gray-900">{{ profile_user.username }}</h1>
+                {% if profile.bio %}
+                    <p class="text-gray-600 mt-2">{{ profile.bio }}</p>
+                {% endif %}
+                
+                <!-- User Stats -->
+                <div class="flex flex-wrap justify-center md:justify-start gap-6 mt-4">
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-green-600">{{ profile.points }}</div>
+                        <div class="text-sm text-gray-500">Points</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-blue-600">{{ profile.level }}</div>
+                        <div class="text-sm text-gray-500">Level</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-purple-600">{{ user_places.count }}</div>
+                        <div class="text-sm text-gray-500">Places Added</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="text-2xl font-bold text-orange-600">{{ user_checkins.count }}</div>
+                        <div class="text-sm text-gray-500">Check-ins</div>
+                    </div>
+                </div>
+                
+                <!-- User Badges -->
+                {% if profile.is_trusted %}
+                    <div class="flex flex-wrap gap-2 mt-4">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                            <i class="fas fa-shield-alt mr-1"></i> Trusted User
+                        </span>
+                        {% if profile.is_local_expert %}
+                            <span class="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
+                                <i class="fas fa-star mr-1"></i> Local Expert
+                            </span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            
+            {% if user == profile_user %}
+                <div class="flex-shrink-0">
+                    <button class="btn-primary">
+                        <i class="fas fa-edit mr-2"></i> Edit Profile
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Tabs -->
+    <div class="bg-white rounded-lg shadow-lg mb-8">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex space-x-8 px-6">
+                <button class="tab-button active py-4 px-1 border-b-2 border-green-500 font-medium text-sm text-green-600" data-tab="places">
+                    <i class="fas fa-map-marker-alt mr-2"></i> Places ({{ user_places.count }})
+                </button>
+                <button class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="checkins">
+                    <i class="fas fa-map-pin mr-2"></i> Check-ins ({{ user_checkins.count }})
+                </button>
+                <button class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="badges">
+                    <i class="fas fa-trophy mr-2"></i> Badges ({{ user_badges.count }})
+                </button>
+                <button class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300" data-tab="collections">
+                    <i class="fas fa-layer-group mr-2"></i> Collections ({{ user_collections.count }})
+                </button>
+            </nav>
+        </div>
+        
+        <!-- Tab Content -->
+        <div class="p-6">
+            <!-- Places Tab -->
+            <div id="places-tab" class="tab-content">
+                {% if user_places %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {% for place in user_places %}
+                            <div class="bg-gray-50 rounded-lg overflow-hidden card-hover">
+                                {% if place.image %}
+                                    <img src="{{ place.image.url }}" alt="{{ place.name }}" class="w-full h-48 object-cover">
+                                {% else %}
+                                    <div class="w-full h-48 bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">
+                                        <span class="text-4xl">{{ place.category_icon }}</span>
+                                    </div>
+                                {% endif %}
+                                <div class="p-4">
+                                    <h3 class="font-semibold text-lg mb-2">{{ place.name }}</h3>
+                                    <p class="text-gray-600 text-sm mb-3">{{ place.description|truncatewords:15 }}</p>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-xs bg-{{ place.category }}-100 text-{{ place.category }}-800 px-2 py-1 rounded-full">
+                                            {{ place.get_category_display }}
+                                        </span>
+                                        <a href="{% url 'place_detail' place.pk %}" class="text-green-600 hover:text-green-800 text-sm font-medium">
+                                            View Details →
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <i class="fas fa-map-marker-alt text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-medium text-gray-900 mb-2">No places yet</h3>
+                        <p class="text-gray-500">{{ profile_user.username }} hasn't added any places yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Check-ins Tab -->
+            <div id="checkins-tab" class="tab-content hidden">
+                {% if user_checkins %}
+                    <div class="space-y-4">
+                        {% for checkin in user_checkins %}
+                            <div class="bg-gray-50 rounded-lg p-4 flex items-center space-x-4">
+                                {% if checkin.photo_proof %}
+                                    <img src="{{ checkin.photo_proof.url }}" alt="Check-in photo" class="w-16 h-16 rounded-lg object-cover">
+                                {% else %}
+                                    <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-map-pin text-green-600 text-xl"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="flex-1">
+                                    <h4 class="font-semibold">{{ checkin.place.name }}</h4>
+                                    <p class="text-gray-600 text-sm">{{ checkin.created_at|date:"M d, Y" }}</p>
+                                    {% if checkin.notes %}
+                                        <p class="text-gray-700 text-sm mt-1">{{ checkin.notes }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-green-600 font-semibold">+{{ checkin.points_awarded }} pts</div>
+                                    {% if checkin.location_verified %}
+                                        <div class="text-xs text-green-500">
+                                            <i class="fas fa-check-circle mr-1"></i> Verified
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <i class="fas fa-map-pin text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-medium text-gray-900 mb-2">No check-ins yet</h3>
+                        <p class="text-gray-500">{{ profile_user.username }} hasn't checked in anywhere yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Badges Tab -->
+            <div id="badges-tab" class="tab-content hidden">
+                {% if user_badges %}
+                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        {% for user_badge in user_badges %}
+                            <div class="bg-gray-50 rounded-lg p-4 text-center">
+                                <div class="text-3xl mb-2">{{ user_badge.badge.icon }}</div>
+                                <h4 class="font-semibold text-sm">{{ user_badge.badge.name }}</h4>
+                                <p class="text-xs text-gray-500 mt-1">{{ user_badge.earned_at|date:"M d, Y" }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <i class="fas fa-trophy text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-medium text-gray-900 mb-2">No badges yet</h3>
+                        <p class="text-gray-500">{{ profile_user.username }} hasn't earned any badges yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Collections Tab -->
+            <div id="collections-tab" class="tab-content hidden">
+                {% if user_collections %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {% for collection in user_collections %}
+                            <div class="bg-gray-50 rounded-lg p-6 card-hover">
+                                <h3 class="font-semibold text-lg mb-2">{{ collection.name }}</h3>
+                                <p class="text-gray-600 text-sm mb-4">{{ collection.description|truncatewords:20 }}</p>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                        <span><i class="fas fa-map-marker-alt mr-1"></i> {{ collection.places.count }} places</span>
+                                        <span><i class="fas fa-clock mr-1"></i> {{ collection.difficulty|title }}</span>
+                                    </div>
+                                    <a href="{% url 'collection_detail' collection.pk %}" class="text-green-600 hover:text-green-800 font-medium">
+                                        View →
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-12">
+                        <i class="fas fa-layer-group text-6xl text-gray-300 mb-4"></i>
+                        <h3 class="text-xl font-medium text-gray-900 mb-2">No collections yet</h3>
+                        <p class="text-gray-500">{{ profile_user.username }} hasn't created any collections yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tab functionality
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            const tabName = button.getAttribute('data-tab');
+            
+            // Remove active class from all buttons and contents
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active', 'border-green-500', 'text-green-600');
+                btn.classList.add('border-transparent', 'text-gray-500');
+            });
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Add active class to clicked button and show content
+            button.classList.add('active', 'border-green-500', 'text-green-600');
+            button.classList.remove('border-transparent', 'text-gray-500');
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+        });
+    });
+</script>
+{% endblock %}
+

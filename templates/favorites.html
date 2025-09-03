@@ -1,0 +1,488 @@
+{% extends 'base.html' %}
+
+{% block title %}My Favorites - GhostPin{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                <i class="fas fa-heart text-red-500 mr-2"></i>
+                My Favorite Places
+            </h1>
+            <p class="text-gray-600">
+                {% if favorites %}
+                    You have {{ favorites.count }} favorite places saved
+                {% else %}
+                    Start building your collection of favorite historical places
+                {% endif %}
+            </p>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+            <!-- View Toggle -->
+            <div class="flex bg-gray-100 rounded-lg p-1">
+                <button id="grid-view" class="px-3 py-2 rounded-md bg-white shadow-sm text-gray-700" onclick="toggleView('grid')">
+                    <i class="fas fa-th"></i>
+                </button>
+                <button id="list-view" class="px-3 py-2 rounded-md text-gray-500" onclick="toggleView('list')">
+                    <i class="fas fa-list"></i>
+                </button>
+                <button id="map-view" class="px-3 py-2 rounded-md text-gray-500" onclick="toggleView('map')">
+                    <i class="fas fa-map"></i>
+                </button>
+            </div>
+            
+            <!-- Sort Options -->
+            <select id="sort-favorites" class="border border-gray-300 rounded-md px-3 py-2 text-sm" onchange="sortFavorites()">
+                <option value="recent">Recently Added</option>
+                <option value="name">Name A-Z</option>
+                <option value="category">Category</option>
+                <option value="rating">Highest Rated</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Organization Tools -->
+    {% if favorites %}
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-folder-open text-blue-600 mr-2"></i>
+                        Organize Your Favorites
+                    </h3>
+                    <p class="text-gray-600 text-sm">Create collections, plan routes, or export your favorites</p>
+                </div>
+                
+                <div class="flex flex-wrap gap-3">
+                    <button class="btn-secondary" onclick="createCollection()">
+                        <i class="fas fa-layer-group mr-2"></i> Create Collection
+                    </button>
+                    <button class="btn-secondary" onclick="planRoute()">
+                        <i class="fas fa-route mr-2"></i> Plan Route
+                    </button>
+                    <button class="btn-secondary" onclick="exportFavorites()">
+                        <i class="fas fa-download mr-2"></i> Export
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- Favorites Content -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <!-- Favorites Display -->
+        <div class="lg:col-span-3">
+            {% if favorites %}
+                <!-- Grid View -->
+                <div id="favorites-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {% for favorite in favorites %}
+                        <div class="favorite-item bg-white rounded-lg shadow-lg overflow-hidden card-hover" 
+                             data-category="{{ favorite.place.category }}" 
+                             data-name="{{ favorite.place.name }}" 
+                             data-rating="{{ favorite.place.average_rating|default:0 }}"
+                             data-added="{{ favorite.created_at|date:'c' }}">
+                            
+                            <!-- Place Image -->
+                            <div class="relative">
+                                {% if favorite.place.image %}
+                                    <img src="{{ favorite.place.image.url }}" alt="{{ favorite.place.name }}" 
+                                         class="w-full h-48 object-cover">
+                                {% else %}
+                                    <div class="w-full h-48 bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-4xl text-white">
+                                        {{ favorite.place.category_icon|default:"🏛️" }}
+                                    </div>
+                                {% endif %}
+                                
+                                <!-- Favorite Button -->
+                                <button class="absolute top-3 right-3 w-10 h-10 bg-white bg-opacity-90 rounded-full flex items-center justify-center text-red-500 hover:bg-opacity-100 transition-all"
+                                        onclick="removeFavorite({{ favorite.place.pk }})">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                                
+                                <!-- Category Badge -->
+                                <div class="absolute bottom-3 left-3">
+                                    <span class="bg-white bg-opacity-90 text-gray-800 text-xs font-semibold px-2 py-1 rounded-full">
+                                        {{ favorite.place.get_category_display }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <!-- Place Info -->
+                            <div class="p-6">
+                                <h3 class="text-lg font-bold text-gray-900 mb-2 hover:text-green-600 transition-colors">
+                                    <a href="{% url 'place_detail' favorite.place.pk %}">{{ favorite.place.name }}</a>
+                                </h3>
+                                
+                                <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ favorite.place.description|truncatewords:20 }}</p>
+                                
+                                <!-- Place Stats -->
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="flex items-center space-x-3 text-sm text-gray-500">
+                                        {% if favorite.place.average_rating > 0 %}
+                                            <span class="flex items-center">
+                                                <i class="fas fa-star text-yellow-500 mr-1"></i>
+                                                {{ favorite.place.average_rating|floatformat:1 }}
+                                            </span>
+                                        {% endif %}
+                                        <span class="flex items-center">
+                                            <i class="fas fa-eye mr-1"></i>
+                                            {{ favorite.place.visit_count }}
+                                        </span>
+                                    </div>
+                                    <span class="text-xs text-gray-400">
+                                        Added {{ favorite.created_at|timesince }} ago
+                                    </span>
+                                </div>
+                                
+                                <!-- Actions -->
+                                <div class="flex space-x-2">
+                                    <a href="{% url 'place_detail' favorite.place.pk %}" 
+                                       class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-2 px-3 rounded-lg text-sm font-medium transition-colors">
+                                        <i class="fas fa-eye mr-1"></i> View
+                                    </a>
+                                    <button class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm transition-colors"
+                                            onclick="focusOnMap({{ favorite.place.latitude }}, {{ favorite.place.longitude }})">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- List View (Hidden by default) -->
+                <div id="favorites-list" class="space-y-4 hidden">
+                    {% for favorite in favorites %}
+                        <div class="favorite-item bg-white rounded-lg shadow-lg p-6 flex items-center space-x-4"
+                             data-category="{{ favorite.place.category }}" 
+                             data-name="{{ favorite.place.name }}" 
+                             data-rating="{{ favorite.place.average_rating|default:0 }}"
+                             data-added="{{ favorite.created_at|date:'c' }}">
+                            
+                            <!-- Place Image -->
+                            <div class="flex-shrink-0">
+                                {% if favorite.place.image %}
+                                    <img src="{{ favorite.place.image.url }}" alt="{{ favorite.place.name }}" 
+                                         class="w-20 h-20 rounded-lg object-cover">
+                                {% else %}
+                                    <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-2xl text-white">
+                                        {{ favorite.place.category_icon|default:"🏛️" }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Place Info -->
+                            <div class="flex-1 min-w-0">
+                                <h3 class="text-lg font-bold text-gray-900 mb-1">
+                                    <a href="{% url 'place_detail' favorite.place.pk %}" class="hover:text-green-600 transition-colors">
+                                        {{ favorite.place.name }}
+                                    </a>
+                                </h3>
+                                <p class="text-gray-600 text-sm mb-2">{{ favorite.place.description|truncatewords:30 }}</p>
+                                
+                                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                    <span class="bg-{{ favorite.place.category }}-100 text-{{ favorite.place.category }}-800 px-2 py-1 rounded-full text-xs">
+                                        {{ favorite.place.get_category_display }}
+                                    </span>
+                                    {% if favorite.place.average_rating > 0 %}
+                                        <span class="flex items-center">
+                                            <i class="fas fa-star text-yellow-500 mr-1"></i>
+                                            {{ favorite.place.average_rating|floatformat:1 }}
+                                        </span>
+                                    {% endif %}
+                                    <span>Added {{ favorite.created_at|timesince }} ago</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="flex-shrink-0 flex items-center space-x-2">
+                                <a href="{% url 'place_detail' favorite.place.pk %}" class="btn-primary">
+                                    <i class="fas fa-eye mr-1"></i> View
+                                </a>
+                                <button class="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                        onclick="removeFavorite({{ favorite.place.pk }})">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-16">
+                    <div class="max-w-md mx-auto">
+                        <i class="fas fa-heart text-8xl text-gray-300 mb-6"></i>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4">No Favorites Yet</h3>
+                        <p class="text-gray-600 mb-8">
+                            Start exploring and save places you'd like to visit or remember. 
+                            Click the heart icon on any place to add it to your favorites.
+                        </p>
+                        <div class="space-x-4">
+                            <a href="{% url 'home' %}" class="btn-primary">
+                                <i class="fas fa-search mr-2"></i> Explore Places
+                            </a>
+                            <a href="{% url 'collections' %}" class="btn-secondary">
+                                <i class="fas fa-layer-group mr-2"></i> Browse Collections
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            <!-- Map View -->
+            <div id="favorites-map-container" class="bg-white rounded-lg shadow-lg p-4 mb-6 hidden">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-map text-green-600 mr-2"></i>
+                    Map View
+                </h3>
+                <div id="favorites-map" class="w-full h-64 rounded-lg"></div>
+            </div>
+            
+            <!-- Statistics -->
+            {% if favorites %}
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-chart-pie text-purple-600 mr-2"></i>
+                        Your Stats
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Total Favorites</span>
+                            <span class="font-semibold text-gray-900">{{ favorites.count }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Most Recent</span>
+                            <span class="font-semibold text-gray-900">{{ favorites.first.created_at|date:"M d" }}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Categories</span>
+                            <span class="font-semibold text-gray-900">{{ category_count }}</span>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Quick Actions -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-bolt text-yellow-500 mr-2"></i>
+                    Quick Actions
+                </h3>
+                
+                <div class="space-y-3">
+                    <button class="w-full btn-secondary text-left" onclick="selectAll()">
+                        <i class="fas fa-check-square mr-2"></i> Select All
+                    </button>
+                    <button class="w-full btn-secondary text-left" onclick="clearSelection()">
+                        <i class="fas fa-square mr-2"></i> Clear Selection
+                    </button>
+                    <button class="w-full btn-secondary text-left" onclick="bulkRemove()">
+                        <i class="fas fa-trash mr-2"></i> Remove Selected
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let favoritesMap;
+    let currentView = 'grid';
+    
+    // Toggle view between grid, list, and map
+    function toggleView(view) {
+        const gridView = document.getElementById('grid-view');
+        const listView = document.getElementById('list-view');
+        const mapView = document.getElementById('map-view');
+        const favoritesGrid = document.getElementById('favorites-grid');
+        const favoritesList = document.getElementById('favorites-list');
+        const mapContainer = document.getElementById('favorites-map-container');
+        
+        // Reset button styles
+        [gridView, listView, mapView].forEach(btn => {
+            btn.classList.remove('bg-white', 'shadow-sm', 'text-gray-700');
+            btn.classList.add('text-gray-500');
+        });
+        
+        // Hide all views
+        favoritesGrid.classList.add('hidden');
+        favoritesList.classList.add('hidden');
+        mapContainer.classList.add('hidden');
+        
+        // Show selected view
+        if (view === 'grid') {
+            gridView.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
+            gridView.classList.remove('text-gray-500');
+            favoritesGrid.classList.remove('hidden');
+        } else if (view === 'list') {
+            listView.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
+            listView.classList.remove('text-gray-500');
+            favoritesList.classList.remove('hidden');
+        } else if (view === 'map') {
+            mapView.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
+            mapView.classList.remove('text-gray-500');
+            mapContainer.classList.remove('hidden');
+            
+            // Initialize map if not already done
+            if (!favoritesMap) {
+                initFavoritesMap();
+            }
+        }
+        
+        currentView = view;
+    }
+    
+    // Initialize favorites map
+    function initFavoritesMap() {
+        favoritesMap = L.map('favorites-map').setView([40.7128, -74.0060], 10);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(favoritesMap);
+        
+        // Add markers for favorite places
+        const favorites = [
+            {% for favorite in favorites %}
+                {
+                    lat: {{ favorite.place.latitude }},
+                    lng: {{ favorite.place.longitude }},
+                    name: "{{ favorite.place.name|escapejs }}",
+                    icon: "{{ favorite.place.category_icon|default:'🏛️' }}",
+                    url: "{% url 'place_detail' favorite.place.pk %}"
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        if (favorites.length > 0) {
+            const bounds = L.latLngBounds();
+            
+            favorites.forEach(favorite => {
+                const marker = L.marker([favorite.lat, favorite.lng])
+                    .bindPopup(`
+                        <div class="text-center">
+                            <div class="text-2xl mb-2">${favorite.icon}</div>
+                            <h3 class="font-semibold">${favorite.name}</h3>
+                            <a href="${favorite.url}" class="text-green-600 hover:text-green-800 text-sm">View Details →</a>
+                        </div>
+                    `)
+                    .addTo(favoritesMap);
+                
+                bounds.extend([favorite.lat, favorite.lng]);
+            });
+            
+            favoritesMap.fitBounds(bounds, { padding: [20, 20] });
+        }
+    }
+    
+    // Focus on place in map
+    function focusOnMap(lat, lng) {
+        if (currentView !== 'map') {
+            toggleView('map');
+        }
+        
+        setTimeout(() => {
+            if (favoritesMap) {
+                favoritesMap.setView([lat, lng], 15);
+            }
+        }, 100);
+    }
+    
+    // Sort favorites
+    function sortFavorites() {
+        const sortBy = document.getElementById('sort-favorites').value;
+        const items = Array.from(document.querySelectorAll('.favorite-item'));
+        
+        items.sort((a, b) => {
+            switch (sortBy) {
+                case 'name':
+                    return a.dataset.name.localeCompare(b.dataset.name);
+                case 'category':
+                    return a.dataset.category.localeCompare(b.dataset.category);
+                case 'rating':
+                    return parseFloat(b.dataset.rating) - parseFloat(a.dataset.rating);
+                case 'recent':
+                default:
+                    return new Date(b.dataset.added) - new Date(a.dataset.added);
+            }
+        });
+        
+        // Re-append sorted items
+        const gridContainer = document.getElementById('favorites-grid');
+        const listContainer = document.getElementById('favorites-list');
+        
+        items.forEach(item => {
+            if (item.classList.contains('grid')) {
+                gridContainer.appendChild(item);
+            } else {
+                listContainer.appendChild(item);
+            }
+        });
+    }
+    
+    // Remove favorite
+    function removeFavorite(placeId) {
+        if (confirm('Remove this place from your favorites?')) {
+            // Make AJAX request to remove favorite
+            fetch(`/api/favorites/${placeId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => {
+                if (response.ok) {
+                    // Remove from DOM
+                    document.querySelectorAll(`[data-place-id="${placeId}"]`).forEach(el => el.remove());
+                    location.reload(); // Refresh to update counts
+                }
+            })
+            .catch(error => {
+                console.error('Error removing favorite:', error);
+                alert('Failed to remove favorite. Please try again.');
+            });
+        }
+    }
+    
+    // Organization functions
+    function createCollection() {
+        alert('Create collection feature coming soon!');
+    }
+    
+    function planRoute() {
+        alert('Route planning feature coming soon!');
+    }
+    
+    function exportFavorites() {
+        alert('Export feature coming soon!');
+    }
+    
+    function selectAll() {
+        alert('Bulk selection feature coming soon!');
+    }
+    
+    function clearSelection() {
+        alert('Bulk selection feature coming soon!');
+    }
+    
+    function bulkRemove() {
+        alert('Bulk removal feature coming soon!');
+    }
+    
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set initial view
+        toggleView('grid');
+    });
+</script>
+{% endblock %}
+

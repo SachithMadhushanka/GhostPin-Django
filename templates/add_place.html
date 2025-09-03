@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Place - GhostPin{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
+            📍 Add New Historical Place
+        </h1>
+        <p class="text-gray-600">
+            Share a fascinating historical location with our community. Your submission will be reviewed before being published.
+        </p>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Place Name -->
+            <div>
+                <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Place Name *
+                </label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Description *
+                </label>
+                {{ form.description }}
+                <p class="mt-1 text-sm text-gray-500">
+                    Tell us about the historical significance of this place. What makes it special?
+                </p>
+                {% if form.description.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Location -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="{{ form.latitude.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Latitude *
+                    </label>
+                    {{ form.latitude }}
+                    {% if form.latitude.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.latitude.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label for="{{ form.longitude.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        Longitude *
+                    </label>
+                    {{ form.longitude }}
+                    {% if form.longitude.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.longitude.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Location Helper -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div class="flex items-start">
+                    <div class="flex-shrink-0">
+                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-medium text-blue-800">Need help finding coordinates?</h3>
+                        <div class="mt-2 text-sm text-blue-700">
+                            <p>You can find latitude and longitude coordinates by:</p>
+                            <ul class="list-disc list-inside mt-1 space-y-1">
+                                <li>Right-clicking on Google Maps and selecting the coordinates</li>
+                                <li>Using GPS coordinates from your phone</li>
+                                <li>Searching online for "[Place Name] coordinates"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Upload -->
+            <div>
+                <label for="{{ form.image.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Image (Optional)
+                </label>
+                {{ form.image }}
+                <p class="mt-1 text-sm text-gray-500">
+                    Upload a photo of the historical place. This helps others visualize the location.
+                </p>
+                {% if form.image.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.image.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Preview Map -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    Location Preview
+                </label>
+                <div id="preview-map" class="w-full h-64 rounded-lg border border-gray-300"></div>
+                <p class="mt-1 text-sm text-gray-500">
+                    The map will update automatically when you enter coordinates.
+                </p>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="flex items-center justify-between pt-6">
+                <a href="{% url 'home' %}" class="text-gray-600 hover:text-gray-800 font-medium">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold">
+                    Submit Place for Review
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Guidelines -->
+    <div class="mt-8 bg-gray-50 rounded-lg p-6">
+        <h3 class="text-lg font-medium text-gray-800 mb-4">📋 Submission Guidelines</h3>
+        <ul class="space-y-2 text-sm text-gray-600">
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">✓</span>
+                Ensure the place has genuine historical significance
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">✓</span>
+                Provide accurate coordinates and detailed description
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">✓</span>
+                Use your own photos or images with proper permissions
+            </li>
+            <li class="flex items-start">
+                <span class="text-green-500 mr-2">✓</span>
+                Be respectful and factual in your descriptions
+            </li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize preview map
+    let previewMap;
+    let previewMarker;
+    
+    function initPreviewMap() {
+        previewMap = L.map('preview-map').setView([40.7128, -74.0060], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(previewMap);
+    }
+    
+    function updatePreviewMap() {
+        const lat = parseFloat(document.getElementById('{{ form.latitude.id_for_label }}').value);
+        const lng = parseFloat(document.getElementById('{{ form.longitude.id_for_label }}').value);
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+            previewMap.setView([lat, lng], 15);
+            
+            if (previewMarker) {
+                previewMap.removeLayer(previewMarker);
+            }
+            
+            previewMarker = L.marker([lat, lng]).addTo(previewMap);
+            const placeName = document.getElementById('{{ form.name.id_for_label }}').value;
+            if (placeName) {
+                previewMarker.bindPopup(placeName);
+            }
+        }
+    }
+    
+    // Initialize map when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initPreviewMap();
+        
+        // Update map when coordinates change
+        document.getElementById('{{ form.latitude.id_for_label }}').addEventListener('input', updatePreviewMap);
+        document.getElementById('{{ form.longitude.id_for_label }}').addEventListener('input', updatePreviewMap);
+        document.getElementById('{{ form.name.id_for_label }}').addEventListener('input', updatePreviewMap);
+        
+        // Initial update if coordinates are already filled
+        updatePreviewMap();
+    });
+</script>
+{% endblock %}
+

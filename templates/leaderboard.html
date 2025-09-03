@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaderboard - GhostPin{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="text-center mb-12">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-trophy text-yellow-500 mr-3"></i>
+            Community Leaderboard
+        </h1>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+            Discover the most active explorers in our community. Earn points by adding places, checking in, and contributing to the platform.
+        </p>
+    </div>
+    
+    <!-- Leaderboard Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg p-6 text-white text-center">
+            <i class="fas fa-crown text-3xl mb-3"></i>
+            <h3 class="text-lg font-semibold mb-1">Top Explorer</h3>
+            {% if top_users %}
+                <p class="text-2xl font-bold">{{ top_users.0.user.username }}</p>
+                <p class="text-sm opacity-90">{{ top_users.0.points }} points</p>
+            {% else %}
+                <p class="text-lg">No data yet</p>
+            {% endif %}
+        </div>
+        
+        <div class="bg-gradient-to-r from-green-400 to-green-600 rounded-lg p-6 text-white text-center">
+            <i class="fas fa-users text-3xl mb-3"></i>
+            <h3 class="text-lg font-semibold mb-1">Active Explorers</h3>
+            <p class="text-2xl font-bold">{{ top_users.count }}</p>
+            <p class="text-sm opacity-90">Community members</p>
+        </div>
+        
+        <div class="bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg p-6 text-white text-center">
+            <i class="fas fa-chart-line text-3xl mb-3"></i>
+            <h3 class="text-lg font-semibold mb-1">Total Points</h3>
+            <p class="text-2xl font-bold">
+                {% for user in top_users %}{{ user.points|add:0 }}{% if not forloop.last %}+{% endif %}{% endfor %}
+            </p>
+            <p class="text-sm opacity-90">Points earned</p>
+        </div>
+    </div>
+    
+    <!-- Leaderboard Table -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+            <h2 class="text-xl font-bold text-gray-900">
+                <i class="fas fa-list-ol text-green-600 mr-2"></i>
+                Top 50 Explorers
+            </h2>
+        </div>
+        
+        {% if top_users %}
+            <div class="divide-y divide-gray-200">
+                {% for profile in top_users %}
+                    <div class="px-6 py-4 hover:bg-gray-50 transition-colors
+                        {% if forloop.counter <= 3 %}bg-gradient-to-r 
+                            {% if forloop.counter == 1 %}from-yellow-50 to-yellow-100 border-l-4 border-yellow-400
+                            {% elif forloop.counter == 2 %}from-gray-50 to-gray-100 border-l-4 border-gray-400
+                            {% elif forloop.counter == 3 %}from-orange-50 to-orange-100 border-l-4 border-orange-400
+                            {% endif %}
+                        {% endif %}">
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-4">
+                                <!-- Rank -->
+                                <div class="flex-shrink-0 w-12 text-center">
+                                    {% if forloop.counter <= 3 %}
+                                        <div class="text-2xl">
+                                            {% if forloop.counter == 1 %}🥇
+                                            {% elif forloop.counter == 2 %}🥈
+                                            {% elif forloop.counter == 3 %}🥉
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <span class="text-lg font-bold text-gray-600">#{{ forloop.counter }}</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- User Info -->
+                                <div class="flex items-center space-x-3">
+                                    {% if profile.avatar %}
+                                        <img src="{{ profile.avatar.url }}" alt="{{ profile.user.username }}" 
+                                             class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
+                                    {% else %}
+                                        <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">
+                                            {{ profile.user.username|first|upper }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div>
+                                        <h3 class="font-semibold text-gray-900">
+                                            <a href="{% url 'profile' profile.user.username %}" 
+                                               class="hover:text-green-600 transition-colors">
+                                                {{ profile.user.username }}
+                                            </a>
+                                        </h3>
+                                        <div class="flex items-center space-x-3 text-sm text-gray-500">
+                                            <span>Level {{ profile.level }}</span>
+                                            {% if profile.is_trusted %}
+                                                <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
+                                                    <i class="fas fa-shield-alt mr-1"></i> Trusted
+                                                </span>
+                                            {% endif %}
+                                            {% if profile.is_local_expert %}
+                                                <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs">
+                                                    <i class="fas fa-star mr-1"></i> Expert
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Points and Stats -->
+                            <div class="text-right">
+                                <div class="text-2xl font-bold text-green-600">{{ profile.points }}</div>
+                                <div class="text-sm text-gray-500">points</div>
+                                
+                                <!-- Additional Stats -->
+                                <div class="flex items-center space-x-4 mt-2 text-xs text-gray-400">
+                                    <span title="Places added">
+                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                        {{ profile.user.place_set.filter.status='approved'.count }}
+                                    </span>
+                                    <span title="Check-ins">
+                                        <i class="fas fa-map-pin mr-1"></i>
+                                        {{ profile.user.checkin_set.count }}
+                                    </span>
+                                    <span title="Comments">
+                                        <i class="fas fa-comment mr-1"></i>
+                                        {{ profile.user.comment_set.count }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="px-6 py-12 text-center">
+                <i class="fas fa-trophy text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-medium text-gray-900 mb-2">No rankings yet</h3>
+                <p class="text-gray-500 mb-6">Be the first to earn points and claim the top spot!</p>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'add_place' %}" class="btn-primary">
+                        <i class="fas fa-plus mr-2"></i> Add Your First Place
+                    </a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="btn-primary">
+                        <i class="fas fa-sign-in-alt mr-2"></i> Join the Competition
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- How to Earn Points -->
+    <div class="mt-12 bg-white rounded-lg shadow-lg p-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-question-circle text-blue-600 mr-2"></i>
+            How to Earn Points
+        </h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="text-center p-4 bg-green-50 rounded-lg">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-plus text-green-600 text-2xl"></i>
+                </div>
+                <h3 class="font-semibold text-lg mb-2">Add Places</h3>
+                <p class="text-green-600 font-bold text-xl mb-1">+20 pts</p>
+                <p class="text-gray-600 text-sm">Submit new historical places</p>
+            </div>
+            
+            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-map-pin text-blue-600 text-2xl"></i>
+                </div>
+                <h3 class="font-semibold text-lg mb-2">Check In</h3>
+                <p class="text-blue-600 font-bold text-xl mb-1">+10 pts</p>
+                <p class="text-gray-600 text-sm">Visit and check in at places</p>
+            </div>
+            
+            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-comment text-purple-600 text-2xl"></i>
+                </div>
+                <h3 class="font-semibold text-lg mb-2">Comment</h3>
+                <p class="text-purple-600 font-bold text-xl mb-1">+5 pts</p>
+                <p class="text-gray-600 text-sm">Share your experiences</p>
+            </div>
+            
+            <div class="text-center p-4 bg-orange-50 rounded-lg">
+                <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-check-circle text-orange-600 text-2xl"></i>
+                </div>
+                <h3 class="font-semibold text-lg mb-2">Get Approved</h3>
+                <p class="text-orange-600 font-bold text-xl mb-1">+50 pts</p>
+                <p class="text-gray-600 text-sm">Bonus when places get approved</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Your Ranking -->
+    {% if user.is_authenticated %}
+        <div class="mt-8 bg-gradient-to-r from-green-500 to-blue-600 rounded-lg p-6 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-bold mb-2">Your Current Ranking</h3>
+                    {% if user.userprofile %}
+                        <p class="text-lg">
+                            <span class="font-semibold">{{ user.userprofile.points }} points</span> • 
+                            <span>Level {{ user.userprofile.level }}</span>
+                        </p>
+                    {% else %}
+                        <p class="text-lg">Start exploring to earn your first points!</p>
+                    {% endif %}
+                </div>
+                <div class="text-right">
+                    <div class="text-3xl font-bold">#?</div>
+                    <div class="text-sm opacity-90">Your rank</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Add some interactive animations
+    document.addEventListener('DOMContentLoaded', function() {
+        // Animate leaderboard entries
+        const entries = document.querySelectorAll('.divide-y > div');
+        entries.forEach((entry, index) => {
+            entry.style.opacity = '0';
+            entry.style.transform = 'translateX(-20px)';
+            entry.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            
+            setTimeout(() => {
+                entry.style.opacity = '1';
+                entry.style.transform = 'translateX(0)';
+            }, index * 100);
+        });
+    });
+</script>
+{% endblock %}
+

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GhostPin - Explore Historical Places{% endblock %}</title>
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#4CAF50">
+    <meta name="description" content="Discover and explore historical places around the world">
+    <link rel="manifest" href="{% url 'manifest' %}">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Custom CSS -->
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="gradient-bg shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'home' %}" class="text-white text-xl font-bold">
+                        👻 GhostPin
+                    </a>
+                </div>
+                
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="{% url 'home' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            Home
+                        </a>
+                        {% if user.is_authenticated %}
+                            <a href="{% url 'add_place' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                Add Place
+                            </a>
+                            {% if user.is_staff %}
+                                <a href="{% url 'review_places' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    Review Places
+                                </a>
+                            {% endif %}
+                            <a href="{% url 'logout' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                Logout ({{ user.username }})
+                            </a>
+                        {% else %}
+                            <a href="{% url 'login' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                Login
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Mobile menu button -->
+                <div class="md:hidden">
+                    <button id="mobile-menu-button" class="text-white hover:bg-green-600 p-2 rounded-md">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile menu -->
+        <div id="mobile-menu" class="md:hidden hidden">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-green-600">
+                <a href="{% url 'home' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Home</a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'add_place' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Add Place</a>
+                    {% if user.is_staff %}
+                        <a href="{% url 'review_places' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Review Places</a>
+                    {% endif %}
+                    <a href="{% url 'logout' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Logout ({{ user.username }})</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Login</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} bg-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-100 border border-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-400 text-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-700 px-4 py-3 rounded mb-4">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white mt-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="text-center">
+                <p>&copy; 2024 GhostPin. Explore historical places around the world.</p>
+                <p class="mt-2 text-gray-400">Built with Django & Tailwind CSS</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Mobile menu toggle -->
+    <script>
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        });
+    </script>
+
+    <!-- PWA Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('{% url "service_worker" %}')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful');
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed');
+                    });
+            });
+        }
+    </script>
+
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>
+

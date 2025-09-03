@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ collection.name }} - Collections - GhostPin{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Collection Header -->
+    <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-4 lg:space-y-0">
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">{{ collection.name }}</h1>
+                <p class="text-gray-600 mb-4">{{ collection.description }}</p>
+                
+                <!-- Collection Meta -->
+                <div class="flex flex-wrap items-center gap-6 text-sm text-gray-500">
+                    <span class="flex items-center">
+                        <i class="fas fa-user mr-2 text-blue-500"></i>
+                        Created by <a href="{% url 'profile' collection.created_by.username %}" class="text-blue-600 hover:text-blue-800 ml-1">{{ collection.created_by.username }}</a>
+                    </span>
+                    <span class="flex items-center">
+                        <i class="fas fa-map-marker-alt mr-2 text-green-500"></i>
+                        {{ collection_places.count }} places
+                    </span>
+                    <span class="flex items-center">
+                        <i class="fas fa-clock mr-2 text-purple-500"></i>
+                        {% if collection.estimated_duration %}
+                            {{ collection.estimated_duration }}
+                        {% else %}
+                            Duration varies
+                        {% endif %}
+                    </span>
+                    <span class="flex items-center">
+                        <i class="fas fa-signal mr-2 
+                            {% if collection.difficulty == 'easy' %}text-green-500
+                            {% elif collection.difficulty == 'moderate' %}text-yellow-500
+                            {% else %}text-red-500{% endif %}"></i>
+                        {{ collection.get_difficulty_display }}
+                    </span>
+                    <span class="flex items-center">
+                        <i class="fas fa-calendar mr-2 text-gray-400"></i>
+                        {{ collection.created_at|date:"M d, Y" }}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="flex space-x-3">
+                {% if user.is_authenticated %}
+                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-heart mr-2"></i> Save Collection
+                    </button>
+                {% endif %}
+                {% if user == collection.created_by or user.is_staff %}
+                    <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-edit mr-2"></i> Edit
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Route Map -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">
+            <i class="fas fa-route text-green-600 mr-2"></i>
+            Collection Route
+        </h2>
+        <div id="collection-map" class="w-full h-96 rounded-lg"></div>
+    </div>
+    
+    <!-- Places List -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">
+            <i class="fas fa-list text-blue-600 mr-2"></i>
+            Places in This Collection
+        </h2>
+        
+        {% if collection_places %}
+            <div class="space-y-6">
+                {% for collection_place in collection_places %}
+                    <div class="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        <!-- Order Number -->
+                        <div class="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
+                            {{ collection_place.order }}
+                        </div>
+                        
+                        <!-- Place Image -->
+                        <div class="flex-shrink-0">
+                            {% if collection_place.place.image %}
+                                <img src="{{ collection_place.place.image.url }}" alt="{{ collection_place.place.name }}" 
+                                     class="w-20 h-20 rounded-lg object-cover">
+                            {% else %}
+                                <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-2xl">
+                                    {{ collection_place.place.category_icon }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Place Info -->
+                        <div class="flex-1 min-w-0">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                                <a href="{% url 'place_detail' collection_place.place.pk %}" 
+                                   class="hover:text-green-600 transition-colors">
+                                    {{ collection_place.place.name }}
+                                </a>
+                            </h3>
+                            <p class="text-gray-600 text-sm mb-2">{{ collection_place.place.description|truncatewords:25 }}</p>
+                            
+                            <!-- Place Meta -->
+                            <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500 mb-2">
+                                <span class="bg-{{ collection_place.place.category }}-100 text-{{ collection_place.place.category }}-800 px-2 py-1 rounded-full">
+                                    {{ collection_place.place.get_category_display }}
+                                </span>
+                                <span class="flex items-center">
+                                    <i class="fas fa-signal mr-1"></i>
+                                    {{ collection_place.place.get_difficulty_display }}
+                                </span>
+                                {% if collection_place.place.average_rating > 0 %}
+                                    <span class="flex items-center">
+                                        <i class="fas fa-star text-yellow-500 mr-1"></i>
+                                        {{ collection_place.place.average_rating|floatformat:1 }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Collection Notes -->
+                            {% if collection_place.notes %}
+                                <div class="bg-blue-50 border-l-4 border-blue-400 p-3 mt-3">
+                                    <p class="text-blue-800 text-sm">
+                                        <i class="fas fa-info-circle mr-1"></i>
+                                        <strong>Collection Note:</strong> {{ collection_place.notes }}
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Actions -->
+                        <div class="flex-shrink-0 flex flex-col space-y-2">
+                            <a href="{% url 'place_detail' collection_place.place.pk %}" 
+                               class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                <i class="fas fa-eye mr-1"></i> View
+                            </a>
+                            {% if user.is_authenticated %}
+                                <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                                        onclick="focusOnPlace({{ collection_place.place.latitude }}, {{ collection_place.place.longitude }})">
+                                    <i class="fas fa-crosshairs mr-1"></i> Map
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Collection Actions -->
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+                    <div class="text-sm text-gray-600">
+                        <i class="fas fa-info-circle mr-1"></i>
+                        Follow this route in order for the best experience
+                    </div>
+                    
+                    {% if user.is_authenticated %}
+                        <div class="flex space-x-3">
+                            <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-play mr-2"></i> Start Collection
+                            </button>
+                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-download mr-2"></i> Export Route
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-map-marker-alt text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-xl font-medium text-gray-900 mb-2">No places in this collection</h3>
+                <p class="text-gray-500">This collection is empty or still being created.</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize map
+    let map;
+    let markers = [];
+    
+    function initMap() {
+        // Create map
+        map = L.map('collection-map').setView([40.7128, -74.0060], 10);
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Add places to map
+        const places = [
+            {% for collection_place in collection_places %}
+                {
+                    lat: {{ collection_place.place.latitude }},
+                    lng: {{ collection_place.place.longitude }},
+                    name: "{{ collection_place.place.name|escapejs }}",
+                    order: {{ collection_place.order }},
+                    icon: "{{ collection_place.place.category_icon }}",
+                    url: "{% url 'place_detail' collection_place.place.pk %}"
+                }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        if (places.length > 0) {
+            const bounds = L.latLngBounds();
+            
+            // Add markers and connect with lines
+            places.forEach((place, index) => {
+                // Create custom marker
+                const marker = L.marker([place.lat, place.lng])
+                    .bindPopup(`
+                        <div class="text-center">
+                            <div class="text-2xl mb-2">${place.icon}</div>
+                            <h3 class="font-semibold">${place.order}. ${place.name}</h3>
+                            <a href="${place.url}" class="text-green-600 hover:text-green-800 text-sm">View Details →</a>
+                        </div>
+                    `)
+                    .addTo(map);
+                
+                markers.push(marker);
+                bounds.extend([place.lat, place.lng]);
+                
+                // Connect places with lines
+                if (index > 0) {
+                    const prevPlace = places[index - 1];
+                    L.polyline([
+                        [prevPlace.lat, prevPlace.lng],
+                        [place.lat, place.lng]
+                    ], {
+                        color: '#4CAF50',
+                        weight: 3,
+                        opacity: 0.7
+                    }).addTo(map);
+                }
+            });
+            
+            // Fit map to show all places
+            map.fitBounds(bounds, { padding: [20, 20] });
+        }
+    }
+    
+    function focusOnPlace(lat, lng) {
+        map.setView([lat, lng], 15);
+        // Find and open the marker popup
+        markers.forEach(marker => {
+            const markerLatLng = marker.getLatLng();
+            if (Math.abs(markerLatLng.lat - lat) < 0.0001 && Math.abs(markerLatLng.lng - lng) < 0.0001) {
+                marker.openPopup();
+            }
+        });
+    }
+    
+    // Initialize map when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initMap();
+    });
+</script>
+{% endblock %}
+
