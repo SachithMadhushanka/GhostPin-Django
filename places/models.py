@@ -50,6 +50,14 @@ class Place(models.Model):
         ('challenging', 'Challenging'),
     ]
     
+    SAFETY_CHOICES = [
+        (1, '⭐ Very Unsafe'),
+        (2, '⭐⭐ Unsafe'),
+        (3, '⭐⭐⭐ Neutral'),
+        (4, '⭐⭐⭐⭐ Safe'),
+        (5, '⭐⭐⭐⭐⭐ Very Safe'),
+    ]
+    
     name = models.CharField(max_length=200)
     description = models.TextField()
     legends_stories = models.TextField(blank=True)
@@ -61,7 +69,7 @@ class Place(models.Model):
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='easy')
     accessibility_info = models.TextField(blank=True)
     best_time_to_visit = models.CharField(max_length=100, blank=True)
-    safety_rating = models.FloatField(default=0.0)
+    safety_rating = models.IntegerField(choices=SAFETY_CHOICES, default=3)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     approval_votes = models.IntegerField(default=0)

@@ -5,14 +5,32 @@
 {% block content %}
 <div class="max-w-4xl mx-auto">
     <!-- Back Button -->
-    <div class="mb-6">
-        <a href="{% url 'home' %}" class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
-            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+    <div class="mb-6 flex items-center justify-between">
+    <!-- Left side: Back button -->
+    <a href="{% url 'home' %}" class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
+        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+        </svg>
+        Back to Places
+    </a>
+
+    <!-- Right side: Edit button (only for owner or staff) -->
+    {% if user == place.created_by or user.is_staff %}
+        <a href="{% url 'edit_place' place.pk %}" 
+           class="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white font-medium shadow transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" 
+                 class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                      d="M11 5h2m-1 0v12m9 4H4a2 2 0 01-2-2V5a2 2 0 
+                         012-2h16a2 2 0 012 2v14a2 2 0 
+                         01-2 2z" />
             </svg>
-            Back to Places
+            Edit Place
         </a>
-    </div>
+    {% endif %}
+</div>
+
 
     <!-- Place Header -->
     <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
@@ -29,13 +47,56 @@
                 <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-0">
                     {{ place.name }}
                 </h1>
-                {% if place.status != 'approved' %}
-                    <span class="inline-block px-3 py-1 rounded-full text-sm font-medium
-                        {% if place.status == 'pending' %}bg-yellow-100 text-yellow-800{% elif place.status == 'rejected' %}bg-red-100 text-red-800{% endif %}">
-                        {{ place.get_status_display }}
-                    </span>
-                {% endif %}
+                <div class="flex items-center space-x-3">
+                    {% if user.is_authenticated %}
+                        <form method="post" action="{% url 'toggle_favorite' place.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="focus:outline-none">
+                                {% if is_favorited %}
+                                    <!-- Filled heart -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" 
+                                        class="h-8 w-8 text-red-500 hover:text-red-600 transition-colors" 
+                                        fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 
+                                                4 0 115.656 5.656L10 17.657l-6.828-6.829a4 
+                                                4 0 010-5.656z"/>
+                                    </svg>
+                                {% else %}
+                                    <!-- Outline heart -->
+                                    <svg xmlns="http://www.w3.org/2000/svg" 
+                                        class="h-8 w-8 text-gray-400 hover:text-red-500 transition-colors" 
+                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 
+                                                20.364l7.682-7.682a4.5 4.5 0 
+                                                00-6.364-6.364L12 7.636l-1.318-1.318a4.5 
+                                                4.5 0 00-6.364 0z"/>
+                                    </svg>
+                                {% endif %}
+                            </button>
+                        </form>
+                        <!-- Check-in Button -->
+                            <a href="{% url 'check_in' place.pk %}" 
+                            class="btn-primary flex items-center space-x-2 px-4 py-2 rounded-lg text-white font-medium shadow hover:bg-green-600 transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" 
+                                    class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
+                                <span>Check In</span>
+                            </a>
+                    {% endif %}
+
+                    {% if place.status != 'approved' %}
+                        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium
+                            {% if place.status == 'pending' %}bg-yellow-100 text-yellow-800
+                            {% elif place.status == 'rejected' %}bg-red-100 text-red-800{% endif %}">
+                            {{ place.get_status_display }}
+                        </span>
+                    {% endif %}
+                </div>
             </div>
+
             
             <div class="flex items-center text-gray-600 mb-4">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
@@ -49,6 +110,71 @@
             <p class="text-gray-700 text-lg leading-relaxed">
                 {{ place.description|linebreaks }}
             </p>
+
+            <!-- Enhanced Additional Details -->
+            <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                {% if place.category %}
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Category</h3>
+                    <div class="text-lg font-medium text-gray-800 flex items-center">
+                        <span class="text-xl mr-2">🏷️</span>{{ place.category }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if place.difficulty %}
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Difficulty</h3>
+                    <div class="text-lg font-medium text-gray-800 flex items-center">
+                        <span class="text-xl mr-2">🧭</span>{{ place.difficulty }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if place.safety_rating %}
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Safety Rating</h3>
+                    <div class="text-lg font-medium text-gray-800 flex items-center">
+                        <span class="text-xl mr-2">🛡️</span>{{ place.safety_rating }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if place.best_time_to_visit %}
+                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Best Time to Visit</h3>
+                    <div class="text-lg font-medium text-gray-800 flex items-center">
+                        <span class="text-xl mr-2">📅</span>{{ place.best_time_to_visit }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if place.accessibility_info %}
+                <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
+                        ♿ Accessibility Information
+                    </h3>
+                    <p class="text-gray-700 leading-relaxed text-base">
+                        {{ place.accessibility_info|linebreaks }}
+                    </p>
+                </div>
+                {% endif %}
+
+                {% if place.legends_stories %}
+                <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
+                        📖 Legends & Stories
+                    </h3>
+                    <p class="text-gray-700 leading-relaxed text-base whitespace-pre-line">
+                        {{ place.legends_stories|linebreaks }}
+                    </p>
+                </div>
+                {% endif %}
+
+            </div>
+
+
         </div>
     </div>
 
@@ -66,8 +192,24 @@
         {% if user.is_authenticated %}
             <form method="post" class="mb-8">
                 {% csrf_token %}
+                {% if comment_form.errors %}
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                        <h3 class="text-sm font-medium text-red-800 mb-2">Please correct the following errors:</h3>
+                        <ul class="text-sm text-red-700 list-disc list-inside space-y-1">
+                            {% for field, errors in comment_form.errors.items %}
+                                {% for error in errors %}
+                                    <li><strong>{{ field|title }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in comment_form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
                 <div class="mb-4">
                     {{ comment_form.text }}
+                    <input type="hidden" name="comment_submit" value="1">
                 </div>
                 <button type="submit" class="btn-primary text-white px-6 py-2 rounded-lg font-medium">
                     Add Comment

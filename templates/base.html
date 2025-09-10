@@ -52,27 +52,106 @@
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
                         <a href="{% url 'home' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                            Home
+                            🏠 Home
                         </a>
                         {% if user.is_authenticated %}
                             <a href="{% url 'add_place' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                Add Place
+                                ➕ Add Place
                             </a>
                             {% if user.is_staff %}
-                                <a href="{% url 'review_places' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                    Review Places
+                                <!-- Dropdown menu for Collections/Favorites/Check-ins -->
+                                <div class="relative group">
+                                    <button class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
+                                        🌍 Explore 
+                                    </button>
+                                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-200 z-50">
+                                        <a href="{% url 'collections' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            📁 Collections
+                                        </a>
+                                        <a href="{% url 'favorites' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            ❤️ Favorites
+                                        </a>
+                                        <a href="{% url 'check_ins' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            🗺️ Check-ins
+                                        </a>
+                                        <a href="{% url 'review_places' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            🗺️ Reviewed Places
+                                        </a>
+                                    </div>
+                                </div>
+                                <!-- Dropdown menu for Challenges/Badges/Leaderboard -->
+                                <div class="relative group">
+                                    <button class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
+                                        🏆 Achievements
+                                    </button>
+                                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                        <a href="{% url 'challenges' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                           🧩 Challenges
+                                        </a>
+                                        <a href="{% url 'badges' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            🏅 Badges
+                                        </a>
+                                        <a href="{% url 'leaderboard' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            🏆 Leaderboard
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <!-- Dropdown menu for Search -->
+                                <div class="relative group">
+                                    <button class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
+                                        🔍 Search
+                                    </button>
+                                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                                        <a href="{% url 'search_results' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            🔍 Search Results
+                                        </a>
+                                        <a href="{% url 'nearby_places' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            🗺️ Nearby Places
+                                        </a>
+                                    </div>
+                                </div>
+                                
+
+                                <a href="{% url 'notifications' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                     🔔 Notifications
                                 </a>
-                            {% endif %}
-                            <a href="{% url 'logout' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                Logout ({{ user.username }})
-                            </a>
+
+                                <!-- Dropdown menu for profile/logout -->
+                                <div class="relative group">
+                                    <button class="flex items-center space-x-2 text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
+                                        {% if user.profile.avatar %}
+                                            <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="w-8 h-8 rounded-full object-cover border-2 border-white" title="{{ user.username }}">
+                                        {% else %}
+                                            <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
+                                                {{ user.username|first|upper }}
+                                            </div>
+                                        {% endif %}
+                                        <span class="hidden sm:inline">{{ user.username }}</span>
+                                    </button>
+
+                                    <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                                        <a href="{% url 'profile' user.username %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            👤 Profile
+                                        </a>
+                                        <form method="POST" action="{% url 'logout' %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                🔒 Logout
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                                {% endif %}
                         {% else %}
                             <a href="{% url 'login' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                Login
+                                🔑 Login
                             </a>
                         {% endif %}
+                        
                     </div>
                 </div>
+
                 
                 <!-- Mobile menu button -->
                 <div class="md:hidden">
@@ -94,7 +173,13 @@
                     {% if user.is_staff %}
                         <a href="{% url 'review_places' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Review Places</a>
                     {% endif %}
-                    <a href="{% url 'logout' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Logout ({{ user.username }})</a>
+                    <form method="post" action="accounts/logout/">
+                    {% csrf_token %}
+                        <button type="submit" class="text-white block px-3 py-2 rounded-md text-base font-medium">
+                            Logout ({{ user.username }})
+                        </button>
+                    </form>
+
                 {% else %}
                     <a href="{% url 'login' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Login</a>
                 {% endif %}

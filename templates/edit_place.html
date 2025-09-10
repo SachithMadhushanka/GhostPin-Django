@@ -21,14 +21,39 @@
     </div>
 
     <!-- Edit Form -->
-    <div class="bg-white rounded-lg shadow-lg p-8">
-        <form method="post" enctype="multipart/form-data" class="space-y-6">
-            {% csrf_token %}
-            
-            <!-- Basic Information -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+<div class="bg-white rounded-lg shadow-lg p-8">
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Global form errors -->
+        {% if form.non_field_errors %}
+            <div class="mb-6 p-4 rounded-lg bg-red-100 border border-red-300 text-red-700">
+                <ul class="list-disc pl-6">
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <!-- Django messages (success/error/info) -->
+        {% if messages %}
+            <div class="mb-6">
+                {% for message in messages %}
+                    <div class="p-4 rounded-lg mb-4 
+                                {% if message.tags == 'error' %}bg-red-100 text-red-700 border border-red-300
+                                {% elif message.tags == 'success' %}bg-green-100 text-green-700 border border-green-300
+                                {% else %}bg-blue-100 text-blue-700 border border-blue-300{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <!-- Basic Information -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
                         <i class="fas fa-map-marker-alt text-green-600 mr-1"></i>
                         Place Name
                     </label>
@@ -121,7 +146,22 @@
                         <p class="mt-1 text-sm text-red-600">{{ form.safety_rating.errors.0 }}</p>
                     {% endif %}
                 </div>
+
+
             </div>
+
+            <div>
+                <label for="{{ form.category_icon.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-icons text-gray-600 mr-1"></i>
+                    Category Icon
+                </label>
+                {{ form.category_icon }}
+                {% if form.category_icon.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.category_icon.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-2 text-sm text-gray-500">Add an emoji icon for this place (optional).</p>
+            </div>
+
 
             <!-- Best Time to Visit -->
             <div>
@@ -227,56 +267,85 @@
 
 {% block extra_js %}
 <script>
+    // ----------------------------
     // Initialize map for location editing
+    // ----------------------------
     let editMap;
     let editMarker;
-    
+
     function initEditMap() {
         const lat = {{ place.latitude|default:"40.7128" }};
         const lng = {{ place.longitude|default:"-74.0060" }};
         
         editMap = L.map('edit-map').setView([lat, lng], 13);
-        
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(editMap);
-        
+
         // Add current location marker
-        editMarker = L.marker([lat, lng], {draggable: true}).addTo(editMap);
-        
+        editMarker = L.marker([lat, lng], { draggable: true }).addTo(editMap);
+
         // Update coordinates when marker is dragged
-        editMarker.on('dragend', function(e) {
+        editMarker.on('dragend', function (e) {
             const position = e.target.getLatLng();
             document.getElementById('{{ form.latitude.id_for_label }}').value = position.lat.toFixed(6);
             document.getElementById('{{ form.longitude.id_for_label }}').value = position.lng.toFixed(6);
         });
-        
-        // Update marker position when clicking on map
-        editMap.on('click', function(e) {
+
+        // Update marker when clicking map
+        editMap.on('click', function (e) {
             editMarker.setLatLng(e.latlng);
             document.getElementById('{{ form.latitude.id_for_label }}').value = e.latlng.lat.toFixed(6);
             document.getElementById('{{ form.longitude.id_for_label }}').value = e.latlng.lng.toFixed(6);
         });
     }
-    
-    // Initialize map when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        initEditMap();
-        
-        // Update map when coordinates are manually entered
-        document.getElementById('{{ form.latitude.id_for_label }}').addEventListener('change', updateMapFromCoordinates);
-        document.getElementById('{{ form.longitude.id_for_label }}').addEventListener('change', updateMapFromCoordinates);
-    });
-    
+
     function updateMapFromCoordinates() {
         const lat = parseFloat(document.getElementById('{{ form.latitude.id_for_label }}').value);
         const lng = parseFloat(document.getElementById('{{ form.longitude.id_for_label }}').value);
-        
+
         if (!isNaN(lat) && !isNaN(lng)) {
             editMarker.setLatLng([lat, lng]);
             editMap.setView([lat, lng], 13);
         }
     }
+
+    // ----------------------------
+    // Star rating widget
+    // ----------------------------
+    function initStarRating() {
+        const stars = document.querySelectorAll("label[for^=star]");
+        stars.forEach(star => {
+            star.addEventListener("click", () => {
+                const val = parseInt(star.getAttribute("for").replace("star", ""));
+                stars.forEach(s => {
+                    if (parseInt(s.getAttribute("for").replace("star", "")) <= val) {
+                        s.classList.add("text-yellow-400");
+                        s.classList.remove("text-gray-300");
+                    } else {
+                        s.classList.add("text-gray-300");
+                        s.classList.remove("text-yellow-400");
+                    }
+                });
+            });
+        });
+    }
+
+    // ----------------------------
+    // Init everything on DOM load
+    // ----------------------------
+    document.addEventListener("DOMContentLoaded", function () {
+        initEditMap();
+        initStarRating();
+
+        // Hook up coordinate inputs
+        document.getElementById('{{ form.latitude.id_for_label }}')
+            .addEventListener('change', updateMapFromCoordinates);
+        document.getElementById('{{ form.longitude.id_for_label }}')
+            .addEventListener('change', updateMapFromCoordinates);
+    });
 </script>
+
 {% endblock %}
 

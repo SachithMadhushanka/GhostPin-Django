@@ -18,7 +18,22 @@
     <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
         <form method="post" enctype="multipart/form-data" class="space-y-6">
             {% csrf_token %}
-            
+            {% if form.errors %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <h3 class="text-sm font-medium text-red-800 mb-2">Please correct the following errors:</h3>
+                <ul class="text-sm text-red-700 list-disc list-inside space-y-1">
+                    {% for field, errors in form.errors.items %}
+                        {% for error in errors %}
+                            <li><strong>{{ field|title }}:</strong> {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
             <!-- Place Name -->
             <div>
                 <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
@@ -42,6 +57,85 @@
                 {% if form.description.errors %}
                     <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
                 {% endif %}
+            </div>
+            <!-- Category -->
+            <div>
+                <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Category *
+                </label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.category.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Category Icon -->
+            <div>
+                <label for="{{ form.category_icon.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Category Icon *
+                </label>
+                {{ form.category_icon }}
+                {% if form.category_icon.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.category_icon.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Difficulty -->
+            <div>
+                <label for="{{ form.difficulty.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Difficulty *
+                </label>
+                {{ form.difficulty }}
+                {% if form.difficulty.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.difficulty.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Safety Rating -->
+            <div>
+                <label for="{{ form.safety_rating.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Safety Rating *
+                </label>
+                {{ form.safety_rating }}
+                {% if form.safety_rating.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.safety_rating.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Best Time to Visit -->
+            <div>
+                <label for="{{ form.best_time_to_visit.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Best Time to Visit
+                </label>
+                {{ form.best_time_to_visit }}
+                {% if form.best_time_to_visit.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.best_time_to_visit.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-2 text-sm text-gray-500">When is the best time to visit this place?</p>
+            </div>
+
+            <!-- Accessibility Information -->
+            <div>
+                <label for="{{ form.accessibility_info.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Accessibility Information
+                </label>
+                {{ form.accessibility_info }}
+                {% if form.accessibility_info.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.accessibility_info.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-2 text-sm text-gray-500">Information about accessibility for visitors with disabilities</p>
+            </div>
+
+            <!-- Legends and Stories -->
+            <div>
+                <label for="{{ form.legends_stories.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    Legends & Stories
+                </label>
+                {{ form.legends_stories }}
+                {% if form.legends_stories.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.legends_stories.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-2 text-sm text-gray-500">Share any legends, stories, or folklore associated with this place</p>
             </div>
 
             <!-- Location -->
@@ -88,6 +182,16 @@
                 </div>
             </div>
 
+            <!-- Map for Selecting Location -->
+            <div class="bg-gray-50 rounded-lg p-4 mt-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-3">
+                    <i class="fas fa-map text-green-600 mr-2"></i>
+                    Select Location on Map
+                </h3>
+                <div id="add-map" class="w-full h-64 rounded-lg"></div>
+                <p class="mt-2 text-sm text-gray-600">Click on the map to set the location coordinates</p>
+            </div>
+
             <!-- Image Upload -->
             <div>
                 <label for="{{ form.image.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
@@ -100,17 +204,6 @@
                 {% if form.image.errors %}
                     <p class="mt-1 text-sm text-red-600">{{ form.image.errors.0 }}</p>
                 {% endif %}
-            </div>
-
-            <!-- Preview Map -->
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                    Location Preview
-                </label>
-                <div id="preview-map" class="w-full h-64 rounded-lg border border-gray-300"></div>
-                <p class="mt-1 text-sm text-gray-500">
-                    The map will update automatically when you enter coordinates.
-                </p>
             </div>
 
             <!-- Submit Button -->
@@ -152,47 +245,66 @@
 
 {% block extra_js %}
 <script>
-    // Initialize preview map
-    let previewMap;
-    let previewMarker;
-    
-    function initPreviewMap() {
-        previewMap = L.map('preview-map').setView([40.7128, -74.0060], 2);
+    let addMap;
+    let addMarker;
+
+    function initAddMap() {
+        // Default center (can be changed to your region)
+        const defaultLat = 6.865349;  // Example: Sri Lanka
+        const defaultLng = 80.024414;
+
+        addMap = L.map('add-map').setView([defaultLat, defaultLng], 5);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
-        }).addTo(previewMap);
+        }).addTo(addMap);
+
+        // Add marker when user clicks on map
+        addMap.on('click', function (e) {
+            const lat = e.latlng.lat.toFixed(6);
+            const lng = e.latlng.lng.toFixed(6);
+
+            if (addMarker) {
+                addMarker.setLatLng(e.latlng);
+            } else {
+                addMarker = L.marker(e.latlng, { draggable: true }).addTo(addMap);
+                addMarker.on('dragend', updateCoordsFromMarker);
+            }
+
+            document.getElementById('{{ form.latitude.id_for_label }}').value = lat;
+            document.getElementById('{{ form.longitude.id_for_label }}').value = lng;
+        });
+
+        // Update map when coords are manually typed
+        document.getElementById('{{ form.latitude.id_for_label }}').addEventListener('change', updateMapFromInputs);
+        document.getElementById('{{ form.longitude.id_for_label }}').addEventListener('change', updateMapFromInputs);
     }
-    
-    function updatePreviewMap() {
+
+    function updateCoordsFromMarker(e) {
+        const position = e.target.getLatLng();
+        document.getElementById('{{ form.latitude.id_for_label }}').value = position.lat.toFixed(6);
+        document.getElementById('{{ form.longitude.id_for_label }}').value = position.lng.toFixed(6);
+    }
+
+    function updateMapFromInputs() {
         const lat = parseFloat(document.getElementById('{{ form.latitude.id_for_label }}').value);
         const lng = parseFloat(document.getElementById('{{ form.longitude.id_for_label }}').value);
-        
+
         if (!isNaN(lat) && !isNaN(lng)) {
-            previewMap.setView([lat, lng], 15);
-            
-            if (previewMarker) {
-                previewMap.removeLayer(previewMarker);
-            }
-            
-            previewMarker = L.marker([lat, lng]).addTo(previewMap);
-            const placeName = document.getElementById('{{ form.name.id_for_label }}').value;
-            if (placeName) {
-                previewMarker.bindPopup(placeName);
+            const newLatLng = [lat, lng];
+            addMap.setView(newLatLng, 13);
+
+            if (addMarker) {
+                addMarker.setLatLng(newLatLng);
+            } else {
+                addMarker = L.marker(newLatLng, { draggable: true }).addTo(addMap);
+                addMarker.on('dragend', updateCoordsFromMarker);
             }
         }
     }
-    
-    // Initialize map when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        initPreviewMap();
-        
-        // Update map when coordinates change
-        document.getElementById('{{ form.latitude.id_for_label }}').addEventListener('input', updatePreviewMap);
-        document.getElementById('{{ form.longitude.id_for_label }}').addEventListener('input', updatePreviewMap);
-        document.getElementById('{{ form.name.id_for_label }}').addEventListener('input', updatePreviewMap);
-        
-        // Initial update if coordinates are already filled
-        updatePreviewMap();
+
+    document.addEventListener("DOMContentLoaded", function () {
+        initAddMap();
     });
 </script>
 {% endblock %}

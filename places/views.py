@@ -1,8 +1,9 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.template.loader import render_to_string
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import JsonResponse, Http404
+from django.http import HttpResponse, JsonResponse, Http404
 from django.views.decorators.http import require_POST
 from django.db.models import Q, Count, Avg
 from django.core.paginator import Paginator
@@ -151,21 +152,25 @@ def add_place(request):
 def edit_place(request, pk):
     """Edit place (owner or admin only)"""
     place = get_object_or_404(Place, pk=pk)
-    
+
     if place.created_by != request.user and not request.user.is_staff:
         messages.error(request, 'You can only edit your own places.')
         return redirect('place_detail', pk=place.pk)
-    
+
     if request.method == 'POST':
         form = PlaceForm(request.POST, request.FILES, instance=place)
         if form.is_valid():
             form.save()
             messages.success(request, 'Place updated successfully!')
             return redirect('place_detail', pk=place.pk)
+        else:
+            print(form.errors)
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = PlaceForm(instance=place)
-    
+
     return render(request, 'edit_place.html', {'form': form, 'place': place})
+
 
 
 # User Views
@@ -312,8 +317,22 @@ def create_collection(request):
 # Gamification
 def leaderboard(request):
     """User leaderboard"""
-    top_users = UserProfile.objects.select_related('user').order_by('-points')[:50]
-    return render(request, 'leaderboard.html', {'top_users': top_users})
+    top_users = (
+        UserProfile.objects.select_related('user')
+        .annotate(approved_places=Count('user__place', filter=Q(user__place__status='approved')))
+        .order_by('-points')[:50]
+    )
+
+    user_rank = None
+    if request.user.is_authenticated and hasattr(request.user, 'userprofile'):
+        # Count how many users have more points than the current user
+        higher_ranked = UserProfile.objects.filter(points__gt=request.user.userprofile.points).count()
+        user_rank = higher_ranked + 1  # Rank is 1 + number of users above
+
+    return render(request, 'leaderboard.html', {
+        'top_users': top_users,
+        'user_rank': user_rank,
+    })
 
 
 def challenges(request):
@@ -357,12 +376,19 @@ def toggle_favorite(request, pk):
     
     if not created:
         favorite.delete()
-        is_favorited = False
-    else:
-        is_favorited = True
-    
-    return JsonResponse({'is_favorited': is_favorited})
 
+    is_favorited = Favorite.objects.filter(user=request.user, place=place).exists()
+
+    # HTMX request → return only updated button HTML
+    if request.headers.get("HX-Request"):
+        html = render_to_string("partials/favorite_button.html", {
+            "place": place,
+            "is_favorited": is_favorited,
+        }, request=request)
+        return HttpResponse(html)
+
+    # Normal request → redirect
+    return redirect("place_detail", pk=pk)
 
 @login_required
 @require_POST
@@ -537,4 +563,38 @@ def service_worker(request):
     except FileNotFoundError:
         from django.http import Http404
         raise Http404("Service worker not found")
+
+@login_required
+def nearby_places_view(request):
+    return render(request, 'nearby_places.html')
+
+@login_required
+def search_results(request):
+    query = request.GET.get('q', '')
+    category = request.GET.get('category', '')
+    difficulty = request.GET.get('difficulty', '')
+    sort = request.GET.get('sort', 'name')  # default sort
+
+    places = Place.objects.all()
+
+    if query:
+        places = places.filter(name__icontains=query)
+
+    if category:
+        places = places.filter(category=category)
+
+    if difficulty:
+        places = places.filter(difficulty=difficulty)
+
+    if sort in ['name', 'created_at', 'visit_count', 'average_rating']:
+        places = places.order_by(sort)
+
+    paginator = Paginator(places, 6)  # 6 per page
+    page_number = request.GET.get('page')
+    places_page = paginator.get_page(page_number)
+
+    return render(request, 'search_results.html', {
+        'places': places_page,
+        'query': query
+    })
 

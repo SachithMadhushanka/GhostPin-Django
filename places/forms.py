@@ -11,7 +11,7 @@ class PlaceForm(forms.ModelForm):
         model = Place
         fields = [
             'name', 'description', 'legends_stories', 'latitude', 'longitude', 
-            'image', 'category', 'category_icon', 'difficulty', 
+            'image', 'category', 'category_icon', 'difficulty','safety_rating', 
             'accessibility_info', 'best_time_to_visit'
         ]
         widgets = {
@@ -51,6 +51,9 @@ class PlaceForm(forms.ModelForm):
                 'placeholder': '📍 (emoji icon for this place)'
             }),
             'difficulty': forms.Select(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
+            }),
+            'safety_rating': forms.Select(attrs={ 
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
             }),
             'accessibility_info': forms.Textarea(attrs={

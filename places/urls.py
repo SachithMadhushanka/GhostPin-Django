@@ -14,7 +14,11 @@ urlpatterns = [
     path('favorites/', views.favorites, name='favorites'),
     path('notifications/', views.notifications, name='notifications'),
     path('check-ins/', views.check_ins, name='check_ins'),
-    
+
+    # URLs
+    path('nearby/', views.nearby_places_view, name='nearby_places'),
+    path('search/', views.search_results, name='search_results'),
+
     # Collections URLs
     path('collections/', views.collections, name='collections'),
     path('collection/<int:pk>/', views.collection_detail, name='collection_detail'),
@@ -30,9 +34,9 @@ urlpatterns = [
     path('place/<int:pk>/vote/', views.vote_place, name='vote_place'),
     
     # Admin URLs
-    path('admin/review/', views.review_places, name='review_places'),
-    path('admin/place/<int:pk>/update-status/', views.update_place_status, name='update_place_status'),
-    path('admin/analytics/', views.analytics, name='analytics'),
+    path('review/', views.review_places, name='review_places'),
+    path('place/<int:pk>/update-status/', views.update_place_status, name='update_place_status'),
+    path('analytics/', views.analytics, name='analytics'),
     
     # PWA URLs
     path('manifest.json', views.manifest, name='manifest'),
