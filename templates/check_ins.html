@@ -124,7 +124,7 @@
                                     <div class="flex items-start justify-between mb-3">
                                         <div>
                                             <h3 class="text-xl font-bold text-gray-900 mb-1">
-                                                <a href="{% url 'place_detail' checkin.place.pk %}" 
+                                                <a href="{% url 'places:place_detail' checkin.place.pk %}" 
                                                    class="hover:text-green-600 transition-colors">
                                                     {{ checkin.place.name }}
                                                 </a>
@@ -197,7 +197,7 @@
                                     <!-- Actions -->
                                     <div class="flex items-center justify-between">
                                         <div class="flex space-x-3">
-                                            <a href="{% url 'place_detail' checkin.place.pk %}" 
+                                            <a href="{% url 'places:place_detail' checkin.place.pk %}" 
                                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                                 <i class="fas fa-eye mr-1"></i> View Place
                                             </a>
@@ -236,10 +236,10 @@
                             track your visits, and build your exploration history.
                         </p>
                         <div class="space-x-4">
-                            <a href="{% url 'home' %}" class="btn-primary">
+                            <a href="{% url 'places:home' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                 <i class="fas fa-search mr-2"></i> Explore Places
                             </a>
-                            <a href="{% url 'nearby_places' %}" class="btn-secondary">
+                            <a href="{% url 'places:nearby_places' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                 <i class="fas fa-location-arrow mr-2"></i> Find Nearby
                             </a>
                         </div>
@@ -375,7 +375,7 @@
                     {% endfor %}
                 </div>
                 
-                <a href="{% url 'badges' %}" class="block mt-4 text-center text-green-600 hover:text-green-700 text-sm font-medium">
+                <a href="{% url 'places:badges' %}" class="block mt-4 text-center text-green-600 hover:text-green-700 text-sm font-medium">
                     View All Badges →
                 </a>
             </div>

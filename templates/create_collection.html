@@ -1,0 +1,438 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Collection - GhostPin{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-layer-group text-purple-600 mr-2"></i>
+                    Create New Collection
+                </h1>
+                <p class="text-gray-600">Create a curated trail connecting multiple historical places</p>
+            </div>
+            <a href="{% url 'places:collections' %}" class="btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Collections
+            </a>
+        </div>
+    </div>
+
+    <!-- Collection Form -->
+    <div class="bg-white rounded-lg shadow-lg p-8">
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Basic Information -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="{{ form.name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-tag text-blue-600 mr-1"></i>
+                        Collection Name
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">Give your collection a memorable name</p>
+                </div>
+                
+                <div>
+                    <label for="{{ form.difficulty.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-signal text-orange-600 mr-1"></i>
+                        Difficulty Level
+                    </label>
+                    {{ form.difficulty }}
+                    {% if form.difficulty.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.difficulty.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">How challenging is this route?</p>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-align-left text-green-600 mr-1"></i>
+                    Description
+                </label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-2 text-sm text-gray-500">Describe what makes this collection special and what visitors can expect</p>
+            </div>
+
+            <!-- Collection Details -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label for="{{ form.estimated_duration.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-clock text-blue-600 mr-1"></i>
+                        Estimated Duration
+                    </label>
+                    {{ form.estimated_duration }}
+                    {% if form.estimated_duration.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.estimated_duration.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">How long to complete this route?</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.distance.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-route text-purple-600 mr-1"></i>
+                        Total Distance (km)
+                    </label>
+                    {{ form.distance }}
+                    {% if form.distance.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.distance.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">Approximate total distance</p>
+                </div>
+
+                <div>
+                    <label for="{{ form.category.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-tags text-indigo-600 mr-1"></i>
+                        Category
+                    </label>
+                    {{ form.category }}
+                    {% if form.category.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.category.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">What type of collection is this?</p>
+                </div>
+            </div>
+
+            <!-- Cover Image -->
+            <div>
+                <label for="{{ form.cover_image.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                    <i class="fas fa-image text-pink-600 mr-1"></i>
+                    Cover Image
+                </label>
+                {{ form.cover_image }}
+                {% if form.cover_image.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.cover_image.errors.0 }}</p>
+                {% endif %}
+                <p class="mt-2 text-sm text-gray-500">Upload an attractive cover image for your collection</p>
+            </div>
+
+            <!-- Place Selection -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-map-marker-alt text-red-600 mr-2"></i>
+                    Select Places for Your Collection
+                </h3>
+                
+                <!-- Search Places -->
+                <div class="mb-4">
+                    <div class="relative">
+                        <input type="text" id="place-search" placeholder="Search places to add..." 
+                               class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+
+                <!-- Available Places -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" id="available-places">
+                    {% for place in available_places %}
+                        <div class="place-item bg-white rounded-lg p-4 border border-gray-200 hover:border-purple-300 transition-colors cursor-pointer"
+                             data-place-id="{{ place.pk }}" onclick="togglePlace({{ place.pk }})">
+                            <div class="flex items-center space-x-3">
+                                {% if place.image %}
+                                    <img src="{{ place.image.url }}" alt="{{ place.name }}" 
+                                         class="w-12 h-12 rounded-lg object-cover">
+                                {% else %}
+                                    <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-white text-lg">
+                                        {{ place.category_icon|default:"🏛️" }}
+                                    </div>
+                                {% endif %}
+                                
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-gray-900">{{ place.name }}</h4>
+                                    <p class="text-sm text-gray-600">{{ place.get_category_display }}</p>
+                                </div>
+                                
+                                <div class="place-checkbox">
+                                    <i class="fas fa-plus text-gray-400"></i>
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Selected Places -->
+                <div id="selected-places-container" class="hidden">
+                    <h4 class="font-semibold text-gray-900 mb-3">
+                        <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                        Selected Places (<span id="selected-count">0</span>)
+                    </h4>
+                    <div id="selected-places" class="space-y-2 mb-4">
+                        <!-- Selected places will be added here dynamically -->
+                    </div>
+                    
+                    <!-- Route Preview -->
+                    <div class="bg-white rounded-lg p-4 border border-gray-200">
+                        <h5 class="font-medium text-gray-900 mb-3">
+                            <i class="fas fa-route text-blue-600 mr-2"></i>
+                            Route Preview
+                        </h5>
+                        <div id="route-map" class="w-full h-64 rounded-lg"></div>
+                    </div>
+                </div>
+
+                <!-- Hidden input for selected places -->
+                <input type="hidden" name="selected_places" id="selected-places-input">
+            </div>
+
+            <!-- Additional Options -->
+            <div class="bg-blue-50 rounded-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-cog text-blue-600 mr-2"></i>
+                    Additional Options
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="is_public" name="is_public" checked 
+                               class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                        <label for="is_public" class="ml-2 block text-sm text-gray-900">
+                            Make this collection public
+                        </label>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="allow_comments" name="allow_comments" checked 
+                               class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                        <label for="allow_comments" class="ml-2 block text-sm text-gray-900">
+                            Allow comments on this collection
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+                <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                    <i class="fas fa-save mr-2"></i>
+                    Create Collection
+                </button>
+                <button type="button" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"
+                        onclick="saveDraft()">
+                    <i class="fas fa-file-alt mr-2"></i>
+                    Save as Draft
+                </button>
+                <a href="{% url 'places:collections' %}" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors text-center">
+                    <i class="fas fa-times mr-2"></i>
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Tips -->
+    <div class="mt-8 bg-yellow-50 rounded-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-lightbulb text-yellow-600 mr-2"></i>
+            Tips for Creating Great Collections
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+                <h4 class="font-medium text-gray-900 mb-2">📍 Route Planning</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Select 3-8 places for optimal experience</li>
+                    <li>• Consider geographical proximity</li>
+                    <li>• Think about logical visiting order</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="font-medium text-gray-900 mb-2">✍️ Description Tips</h4>
+                <ul class="text-sm text-gray-600 space-y-1">
+                    <li>• Highlight unique themes or connections</li>
+                    <li>• Mention best times to visit</li>
+                    <li>• Include difficulty and accessibility info</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let selectedPlaces = [];
+    let routeMap;
+    
+    // Initialize route map
+    function initRouteMap() {
+        routeMap = L.map('route-map').setView([40.7128, -74.0060], 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(routeMap);
+    }
+    
+    // Toggle place selection
+    function togglePlace(placeId) {
+        const placeItem = document.querySelector(`[data-place-id="${placeId}"]`);
+        const checkbox = placeItem.querySelector('.place-checkbox i');
+        
+        if (selectedPlaces.includes(placeId)) {
+            // Remove from selection
+            selectedPlaces = selectedPlaces.filter(id => id !== placeId);
+            checkbox.className = 'fas fa-plus text-gray-400';
+            placeItem.classList.remove('border-purple-500', 'bg-purple-50');
+        } else {
+            // Add to selection
+            selectedPlaces.push(placeId);
+            checkbox.className = 'fas fa-check text-purple-600';
+            placeItem.classList.add('border-purple-500', 'bg-purple-50');
+        }
+        
+        updateSelectedPlaces();
+        updateRouteMap();
+    }
+    
+    // Update selected places display
+    function updateSelectedPlaces() {
+        const container = document.getElementById('selected-places-container');
+        const selectedPlacesDiv = document.getElementById('selected-places');
+        const countSpan = document.getElementById('selected-count');
+        const hiddenInput = document.getElementById('selected-places-input');
+        
+        countSpan.textContent = selectedPlaces.length;
+        hiddenInput.value = selectedPlaces.join(',');
+        
+        if (selectedPlaces.length > 0) {
+            container.classList.remove('hidden');
+            
+            // Build selected places list
+            let html = '';
+            selectedPlaces.forEach((placeId, index) => {
+                const placeItem = document.querySelector(`[data-place-id="${placeId}"]`);
+                const placeName = placeItem.querySelector('h4').textContent;
+                const placeCategory = placeItem.querySelector('p').textContent;
+                
+                html += `
+                    <div class="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                        <div class="flex items-center space-x-3">
+                            <span class="w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">
+                                ${index + 1}
+                            </span>
+                            <div>
+                                <div class="font-medium text-gray-900">${placeName}</div>
+                                <div class="text-sm text-gray-600">${placeCategory}</div>
+                            </div>
+                        </div>
+                        <button type="button" class="text-red-500 hover:text-red-700" onclick="togglePlace(${placeId})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            
+            selectedPlacesDiv.innerHTML = html;
+            
+            // Initialize map if not already done
+            if (!routeMap) {
+                setTimeout(initRouteMap, 100);
+            }
+        } else {
+            container.classList.add('hidden');
+        }
+    }
+    
+    // Update route map with selected places
+    function updateRouteMap() {
+        if (!routeMap || selectedPlaces.length === 0) return;
+        
+        // Clear existing markers and routes
+        routeMap.eachLayer(layer => {
+            if (layer instanceof L.Marker || layer instanceof L.Polyline) {
+                routeMap.removeLayer(layer);
+            }
+        });
+        
+        // Add markers for selected places
+        const bounds = L.latLngBounds();
+        const coordinates = [];
+        
+        selectedPlaces.forEach((placeId, index) => {
+            // In a real implementation, you'd get coordinates from the place data
+            // For now, using mock coordinates
+            const lat = 40.7128 + (Math.random() - 0.5) * 0.1;
+            const lng = -74.0060 + (Math.random() - 0.5) * 0.1;
+            
+            const marker = L.marker([lat, lng])
+                .bindPopup(`Stop ${index + 1}`)
+                .addTo(routeMap);
+            
+            bounds.extend([lat, lng]);
+            coordinates.push([lat, lng]);
+        });
+        
+        // Draw route line
+        if (coordinates.length > 1) {
+            L.polyline(coordinates, {
+                color: 'purple',
+                weight: 3,
+                opacity: 0.7
+            }).addTo(routeMap);
+        }
+        
+        // Fit map to show all places
+        if (coordinates.length > 0) {
+            routeMap.fitBounds(bounds, { padding: [20, 20] });
+        }
+    }
+    
+    // Search places
+    document.getElementById('place-search').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const placeItems = document.querySelectorAll('.place-item');
+        
+        placeItems.forEach(item => {
+            const placeName = item.querySelector('h4').textContent.toLowerCase();
+            const placeCategory = item.querySelector('p').textContent.toLowerCase();
+            
+            if (placeName.includes(searchTerm) || placeCategory.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    // Save as draft
+    function saveDraft() {
+        // Add a hidden input to indicate this is a draft
+        const form = document.querySelector('form');
+        const draftInput = document.createElement('input');
+        draftInput.type = 'hidden';
+        draftInput.name = 'save_as_draft';
+        draftInput.value = 'true';
+        form.appendChild(draftInput);
+        
+        form.submit();
+    }
+    
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        if (selectedPlaces.length < 2) {
+            e.preventDefault();
+            alert('Please select at least 2 places for your collection.');
+            return false;
+        }
+        
+        const name = document.querySelector('input[name="name"]').value.trim();
+        if (!name) {
+            e.preventDefault();
+            alert('Please enter a name for your collection.');
+            return false;
+        }
+    });
+</script>
+{% endblock %}
+

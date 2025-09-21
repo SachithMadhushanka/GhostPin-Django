@@ -1,0 +1,456 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics Dashboard - GhostPin{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-chart-line text-blue-600 mr-2"></i>
+                    Analytics Dashboard
+                </h1>
+                <p class="text-gray-600">Community insights and platform statistics</p>
+            </div>
+            
+            <!-- Time Range Selector -->
+            <div class="flex items-center space-x-3">
+                <select id="time-range" class="border border-gray-300 rounded-md px-3 py-2 text-sm" onchange="updateAnalytics()">
+                    <option value="7">Last 7 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="90">Last 90 days</option>
+                    <option value="365">Last year</option>
+                </select>
+                <button class="btn-secondary" onclick="exportData()">
+                    <i class="fas fa-download mr-2"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Total Users -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Users</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_users|default:0 }}</p>
+                    <p class="text-sm text-green-600 mt-1">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        +{{ new_users_this_month|default:0 }} this month
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Places -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Places</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_places|default:0 }}</p>
+                    <p class="text-sm text-green-600 mt-1">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        +{{ new_places_this_month|default:0 }} this month
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-map-marker-alt text-green-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Check-ins -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Total Check-ins</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ total_checkins|default:0 }}</p>
+                    <p class="text-sm text-green-600 mt-1">
+                        <i class="fas fa-arrow-up mr-1"></i>
+                        +{{ new_checkins_this_month|default:0 }} this month
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-map-pin text-purple-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Users -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-600">Active Users (30d)</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ active_users|default:0 }}</p>
+                    <p class="text-sm text-blue-600 mt-1">
+                        <i class="fas fa-chart-line mr-1"></i>
+                        {{ user_engagement_rate|default:0 }}% engagement
+                    </p>
+                </div>
+                <div class="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                    <i class="fas fa-user-check text-yellow-600 text-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- User Growth Chart -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-chart-area text-blue-600 mr-2"></i>
+                User Growth
+            </h3>
+            <canvas id="user-growth-chart" width="400" height="200"></canvas>
+        </div>
+
+        <!-- Place Categories -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-chart-pie text-green-600 mr-2"></i>
+                Places by Category
+            </h3>
+            <canvas id="category-chart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Activity Overview -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <!-- Recent Places -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-plus-circle text-green-600 mr-2"></i>
+                Recent Places
+            </h3>
+            
+            {% if recent_places %}
+                <div class="space-y-4">
+                    {% for place in recent_places %}
+                        <div class="flex items-center space-x-3">
+                            {% if place.image %}
+                                <img src="{{ place.image.url }}" alt="{{ place.name }}" 
+                                     class="w-12 h-12 rounded-lg object-cover">
+                            {% else %}
+                                <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-white text-lg">
+                                    {{ place.category_icon|default:"🏛️" }}
+                                </div>
+                            {% endif %}
+                            
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-medium text-gray-900 truncate">{{ place.name }}</h4>
+                                <p class="text-sm text-gray-600">
+                                    by {{ place.created_by.username }} • {{ place.created_at|timesince }} ago
+                                </p>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="bg-{{ place.category }}-100 text-{{ place.category }}-800 text-xs px-2 py-1 rounded-full">
+                                        {{ place.get_category_display }}
+                                    </span>
+                                    {% if place.status == 'approved' %}
+                                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                            <i class="fas fa-check mr-1"></i>Approved
+                                        </span>
+                                    {% elif place.status == 'pending' %}
+                                        <span class="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+                                            <i class="fas fa-clock mr-1"></i>Pending
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <a href="{% url 'places:review_places' %}" class="block mt-4 text-center text-green-600 hover:text-green-700 text-sm font-medium">
+                    View All Places →
+                </a>
+            {% else %}
+                <div class="text-center py-8">
+                    <i class="fas fa-map-marker-alt text-4xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-600">No recent places</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Check-ins -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-map-pin text-purple-600 mr-2"></i>
+                Recent Check-ins
+            </h3>
+            
+            {% if recent_checkins %}
+                <div class="space-y-4">
+                    {% for checkin in recent_checkins %}
+                        <div class="flex items-center space-x-3">
+                            {% if checkin.photo %}
+                                <img src="{{ checkin.photo.url }}" alt="Check-in photo" 
+                                     class="w-12 h-12 rounded-lg object-cover">
+                            {% else %}
+                                <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <i class="fas fa-map-pin text-gray-500"></i>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-medium text-gray-900 truncate">{{ checkin.place.name }}</h4>
+                                <p class="text-sm text-gray-600">
+                                    by {{ checkin.user.username }} • {{ checkin.created_at|timesince }} ago
+                                </p>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    <span class="text-xs text-green-600 font-medium">
+                                        +{{ checkin.points_earned }} points
+                                    </span>
+                                    {% if checkin.is_verified %}
+                                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                            <i class="fas fa-check-circle mr-1"></i>Verified
+                                        </span>
+                                    {% endif %}
+                                    {% if checkin.photo %}
+                                        <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                                            <i class="fas fa-camera mr-1"></i>Photo
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <a href="#" class="block mt-4 text-center text-purple-600 hover:text-purple-700 text-sm font-medium">
+                    View All Check-ins →
+                </a>
+            {% else %}
+                <div class="text-center py-8">
+                    <i class="fas fa-map-pin text-4xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-600">No recent check-ins</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Top Contributors -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-trophy text-yellow-600 mr-2"></i>
+                Top Contributors
+            </h3>
+            
+            {% if top_contributors %}
+                <div class="space-y-4">
+                    {% for contributor in top_contributors %}
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center text-white font-bold">
+                                {{ forloop.counter }}
+                            </div>
+                            
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-medium text-gray-900">{{ contributor.username }}</h4>
+                                <p class="text-sm text-gray-600">
+                                    {{ contributor.places_count }} places • {{ contributor.total_points }} points
+                                </p>
+                                <div class="flex items-center space-x-2 mt-1">
+                                    {% if contributor.is_trusted %}
+                                        <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                            <i class="fas fa-shield-alt mr-1"></i>Trusted
+                                        </span>
+                                    {% endif %}
+                                    {% if contributor.is_expert %}
+                                        <span class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+                                            <i class="fas fa-star mr-1"></i>Expert
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <a href="{% url 'places:leaderboard' %}" class="block mt-4 text-center text-yellow-600 hover:text-yellow-700 text-sm font-medium">
+                    View Leaderboard →
+                </a>
+            {% else %}
+                <div class="text-center py-8">
+                    <i class="fas fa-trophy text-4xl text-gray-300 mb-3"></i>
+                    <p class="text-gray-600">No contributors yet</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Detailed Statistics -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <!-- Geographic Distribution -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-globe text-blue-600 mr-2"></i>
+                Geographic Distribution
+            </h3>
+            
+            <div class="space-y-4">
+                {% for region in geographic_stats %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-4 h-4 bg-blue-500 rounded-full"></div>
+                            <span class="font-medium text-gray-900">{{ region.name }}</span>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-semibold text-gray-900">{{ region.places_count }}</div>
+                            <div class="text-sm text-gray-600">{{ region.percentage }}%</div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Engagement Metrics -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-chart-bar text-green-600 mr-2"></i>
+                Engagement Metrics
+            </h3>
+            
+            <div class="space-y-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Average Session Duration</span>
+                    <span class="font-semibold text-gray-900">{{ avg_session_duration|default:"--" }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Places per User</span>
+                    <span class="font-semibold text-gray-900">{{ places_per_user|floatformat:1|default:"--" }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Check-ins per User</span>
+                    <span class="font-semibold text-gray-900">{{ checkins_per_user|floatformat:1|default:"--" }}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Return User Rate</span>
+                    <span class="font-semibold text-gray-900">{{ return_user_rate|default:"--" }}%</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-gray-600">Photo Upload Rate</span>
+                    <span class="font-semibold text-gray-900">{{ photo_upload_rate|default:"--" }}%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+            <i class="fas fa-heartbeat text-red-600 mr-2"></i>
+            System Health
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-600">{{ system_uptime|default:"99.9" }}%</div>
+                <div class="text-sm text-gray-600">Uptime</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-blue-600">{{ avg_response_time|default:"120" }}ms</div>
+                <div class="text-sm text-gray-600">Avg Response Time</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-purple-600">{{ storage_used|default:"2.4" }}GB</div>
+                <div class="text-sm text-gray-600">Storage Used</div>
+            </div>
+            <div class="text-center">
+                <div class="text-2xl font-bold text-yellow-600">{{ error_rate|default:"0.1" }}%</div>
+                <div class="text-sm text-gray-600">Error Rate</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // User Growth Chart
+    function initUserGrowthChart() {
+        const ctx = document.getElementById('user-growth-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                datasets: [{
+                    label: 'New Users',
+                    data: [12, 19, 25, 32, 45, 52],
+                    borderColor: 'rgb(59, 130, 246)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    }
+    
+    // Category Chart
+    function initCategoryChart() {
+        const ctx = document.getElementById('category-chart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Monuments', 'Temples', 'Museums', 'Palaces', 'Forts'],
+                datasets: [{
+                    data: [30, 25, 20, 15, 10],
+                    backgroundColor: [
+                        'rgb(34, 197, 94)',
+                        'rgb(59, 130, 246)',
+                        'rgb(168, 85, 247)',
+                        'rgb(245, 158, 11)',
+                        'rgb(239, 68, 68)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+    
+    // Update analytics based on time range
+    function updateAnalytics() {
+        const timeRange = document.getElementById('time-range').value;
+        // In a real implementation, this would make an AJAX call to update the data
+        console.log('Updating analytics for time range:', timeRange);
+    }
+    
+    // Export data
+    function exportData() {
+        // In a real implementation, this would generate and download a CSV/Excel file
+        alert('Export functionality would be implemented here');
+    }
+    
+    // Initialize charts when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initUserGrowthChart();
+        initCategoryChart();
+    });
+</script>
+{% endblock %}
+

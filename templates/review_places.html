@@ -61,15 +61,15 @@
                             
                             <!-- Action Buttons -->
                             <div class="flex flex-col sm:flex-row gap-3">
-                                <button onclick="updatePlaceStatus({{ place.pk }}, 'approved')" 
+                                <button onclick="updatePlaceStatus('{{ place.pk }}', 'approved')"
                                         class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
                                     ✅ Approve
                                 </button>
-                                <button onclick="updatePlaceStatus({{ place.pk }}, 'rejected')" 
+                                <button onclick="updatePlaceStatus('{{ place.pk }}', 'rejected')" 
                                         class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
                                     ❌ Reject
                                 </button>
-                                <a href="{% url 'place_detail' place.pk %}" 
+                                <a href="{% url 'places:place_detail' place.pk %}" 
                                    class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center">
                                     👁️ View Details
                                 </a>
@@ -79,7 +79,7 @@
                     
                     <!-- Map Preview -->
                     <div class="border-t border-gray-200 p-4">
-                        <div class="map-container h-32" id="map-{{ place.pk }}"></div>
+                        <div id="map-{{ place.pk }}" style="height: 200px;"></div>
                     </div>
                 </div>
             {% endfor %}
@@ -89,7 +89,7 @@
             <div class="text-6xl mb-4">✅</div>
             <h2 class="text-2xl font-bold text-gray-800 mb-4">All Caught Up!</h2>
             <p class="text-gray-600 mb-8">There are no places pending review at the moment.</p>
-            <a href="{% url 'home' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
+            <a href="{% url 'places:home' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
                 Back to Home
             </a>
         </div>
@@ -117,7 +117,7 @@
     function updatePlaceStatus(placeId, status) {
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
-        fetch(`/admin/place/${placeId}/update-status/`, {
+        fetch(`/place/${placeId}/update-status/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',

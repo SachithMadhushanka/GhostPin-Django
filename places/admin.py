@@ -59,7 +59,7 @@ class PlaceAdmin(admin.ModelAdmin):
             'fields': ('latitude', 'longitude')
         }),
         ('Categorization', {
-            'fields': ('category', 'category_icon', 'difficulty')
+            'fields': ('category', 'difficulty')
         }),
         ('Additional Info', {
             'fields': ('accessibility_info', 'best_time_to_visit', 'safety_rating')

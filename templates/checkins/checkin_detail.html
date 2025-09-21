@@ -1,199 +1,204 @@
 {% extends 'base.html' %}
 
-{% block title %}{{ place.name }} - GhostPin{% endblock %}
+{% block title %}Check-In Details - {{ place.name }} - GhostPin{% endblock %}
 
 {% block content %}
+<!-- CSRF Token for AJAX requests -->
+{% csrf_token %}
+
 <div class="max-w-4xl mx-auto">
-    <!-- Back Button -->
-    <div class="mb-6 flex items-center justify-between">
-    <!-- Left side: Back button -->
-    <a href="{% url 'places:home' %}" class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-        </svg>
-        Back to Places
-    </a>
-    <!-- View Check-ins button -->
-        <a href="{% url 'places:place_checkins' place.pk %}" 
-        class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" 
-                class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            View Check-ins
-        </a>
-
-
-    <!-- Right side: Edit button (only for owner or staff) -->
-    {% if user == place.created_by or user.is_staff %}
-        <a href="{% url 'places:edit_place' place.pk %}" 
-           class="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white font-medium shadow transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" 
-                 class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M11 5h2m-1 0v12m9 4H4a2 2 0 01-2-2V5a2 2 0 
-                         012-2h16a2 2 0 012 2v14a2 2 0 
-                         01-2 2z" />
-            </svg>
-            Edit Place
-        </a>
-    {% endif %}
-</div>
-
-
-    <!-- Place Header -->
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-        {% if place.image %}
-            <img src="{{ place.image.url }}" alt="{{ place.name }}" class="w-full h-64 md:h-96 object-cover">
-        {% else %}
-            <div class="w-full h-64 md:h-96 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                <span class="text-white text-8xl">🏛️</span>
-            </div>
-        {% endif %}
-        
-        <div class="p-6 md:p-8">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-0">
-                    {{ place.name }}
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-map-pin text-green-600 mr-2"></i>
+                    Check-In at {{ place.name }}
                 </h1>
-                <div class="flex items-center space-x-3">
-                    {% if user.is_authenticated %}
-                        <form method="post" action="{% url 'places:toggle_favorite' place.pk %}">
-                            {% csrf_token %}
-                            <button type="submit" class="focus:outline-none">
-                                {% if is_favorited %}
-                                    <!-- Filled heart -->
-                                    <svg xmlns="http://www.w3.org/2000/svg" 
-                                        class="h-8 w-8 text-red-500 hover:text-red-600 transition-colors" 
-                                        fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 
-                                                4 0 115.656 5.656L10 17.657l-6.828-6.829a4 
-                                                4 0 010-5.656z"/>
-                                    </svg>
-                                {% else %}
-                                    <!-- Outline heart -->
-                                    <svg xmlns="http://www.w3.org/2000/svg" 
-                                        class="h-8 w-8 text-gray-400 hover:text-red-500 transition-colors" 
-                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 
-                                                20.364l7.682-7.682a4.5 4.5 0 
-                                                00-6.364-6.364L12 7.636l-1.318-1.318a4.5 
-                                                4.5 0 00-6.364 0z"/>
-                                    </svg>
-                                {% endif %}
-                            </button>
-                        </form>
-                        <!-- Check-in Button -->
-                            <a href="{% url 'places:check_in' place.pk %}" 
-                            class="btn-primary flex items-center space-x-2 px-4 py-2 rounded-lg text-white font-medium shadow hover:bg-green-600 transition-colors">
-                                <svg xmlns="http://www.w3.org/2000/svg" 
-                                    class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                        d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Check In</span>
-                            </a>
-                    {% endif %}
-
-                    {% if place.status != 'approved' %}
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium
-                            {% if place.status == 'pending' %}bg-yellow-100 text-yellow-800
-                            {% elif place.status == 'rejected' %}bg-red-100 text-red-800{% endif %}">
-                            {{ place.get_status_display }}
-                        </span>
-                    {% endif %}
-                </div>
-            </div>
-
-            
-            <div class="flex items-center text-gray-600 mb-4">
-                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                </svg>
-                <span>{{ place.latitude|floatformat:6 }}, {{ place.longitude|floatformat:6 }}</span>
-                <span class="mx-2">•</span>
-                <span>Added {{ place.created_at|date:"M d, Y" }} by {{ place.created_by.username }}</span>
+                <p class="text-gray-600">Details and verification for this check-in</p>
             </div>
             
-            <p class="text-gray-700 text-lg leading-relaxed">
-                {{ place.description|linebreaks }}
-            </p>
-
-            <!-- Enhanced Additional Details -->
-            <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {% if place.category %}
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Category</h3>
-                    <div class="text-lg font-medium text-gray-800 flex items-center">
-                        <span class="text-xl mr-2">🏷️</span>{{ place.category }}
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if place.difficulty %}
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Difficulty</h3>
-                    <div class="text-lg font-medium text-gray-800 flex items-center">
-                        <span class="text-xl mr-2">🧭</span>{{ place.difficulty }}
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if place.safety_rating %}
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Safety Rating</h3>
-                    <div class="text-lg font-medium text-gray-800 flex items-center">
-                        <span class="text-xl mr-2">🛡️</span>{{ place.safety_rating }}
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if place.best_time_to_visit %}
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Best Time to Visit</h3>
-                    <div class="text-lg font-medium text-gray-800 flex items-center">
-                        <span class="text-xl mr-2">📅</span>{{ place.best_time_to_visit }}
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if place.accessibility_info %}
-                <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
-                        ♿ Accessibility Information
-                    </h3>
-                    <p class="text-gray-700 leading-relaxed text-base">
-                        {{ place.accessibility_info|linebreaks }}
-                    </p>
-                </div>
-                {% endif %}
-
-                {% if place.legends_stories %}
-                <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
-                        📖 Legends & Stories
-                    </h3>
-                    <p class="text-gray-700 leading-relaxed text-base whitespace-pre-line">
-                        {{ place.legends_stories|linebreaks }}
-                    </p>
-                </div>
-                {% endif %}
-
+            <div class="flex space-x-3">
+                <a href="{% url 'places:place_detail' place.pk %}" class="btn-secondary">
+                    <i class="fas fa-eye mr-2"></i> View Place
+                </a>
+                <a href="{% url 'places:check_ins' %}" class="btn-secondary">
+                    <i class="fas fa-arrow-left mr-2"></i> All Check-ins
+                </a>
             </div>
-
-
         </div>
     </div>
 
-    <!-- Map -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">📍 Location</h2>
-        <div id="map" class="w-full h-64 md:h-96 rounded-lg"></div>
+    <!-- Place Card -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8 card-hover">
+        <div class="flex flex-col md:flex-row">
+            <!-- Place Image -->
+            <div class="md:w-1/3 h-64 md:h-auto">
+                {% if checkin.place.image %}
+                    <img src="{{ checkin.place.image.url }}" alt="{{ checkin.place.name }}" 
+                         class="w-full h-full object-cover">
+                {% else %}
+                    <div class="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-4xl">
+                        {{ place.category_icon|default:"🏛️" }}
+                    </div>
+                {% endif %}
+            </div>
+            
+            <!-- Place Details -->
+            <div class="md:w-2/3 p-6">
+                <h2 class="text-2xl font-bold text-gray-900 mb-3">{{ place.name }}</h2>
+                <p class="text-gray-600 mb-4">{{ place.description|truncatewords:20 }}</p>
+                
+                <!-- Tags -->
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <span class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">
+                        <i class="fas fa-tag mr-1"></i>
+                        {{ place.get_category_display }}
+                    </span>
+                    <span class="bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded-full">
+                        <i class="fas fa-signal mr-1"></i>
+                        {{ place.get_difficulty_display }}
+                    </span>
+                    {% if place.average_rating %}
+                        <span class="bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">
+                            <i class="fas fa-star mr-1"></i>
+                            {{ place.average_rating|floatformat:1 }} ⭐
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div class="flex items-center">
+                        <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>
+                        {{ place.location }}
+                    </div>
+                    <div class="flex items-center">
+                        <i class="fas fa-users text-blue-500 mr-2"></i>
+                        {{ place.checkins_count|default:0 }} check-ins
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Check-In Summary Card -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <h3 class="text-xl font-semibold text-gray-900 mb-6">
+            <i class="fas fa-clipboard-check text-green-600 mr-2"></i>
+            Check-In Summary
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Left Column -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-600 font-medium">Checked in by</span>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                            {{ checkin.user.username|first|upper }}
+                        </div>
+                        <span class="font-semibold text-gray-900">{{ checkin.user.username }}</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-600 font-medium">Date</span>
+                    <span class="font-semibold text-gray-900">
+                        <i class="fas fa-calendar text-blue-500 mr-1"></i>
+                        {{ checkin.created_at|date:"F j, Y, g:i a" }}
+                    </span>
+                </div>
+                
+                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-600 font-medium">Points Earned</span>
+                    <span class="font-bold text-green-600 text-lg">
+                        <i class="fas fa-coins mr-1"></i>
+                        +{{ checkin.points_earned|default:checkin.points_awarded|default:10 }}
+                    </span>
+                </div>
+            </div>
+            
+            <!-- Right Column -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-600 font-medium">Location Verified</span>
+                    {% if checkin.is_verified|default:checkin.location_verified %}
+                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
+                            <i class="fas fa-check-circle mr-1"></i>
+                            Yes
+                        </span>
+                    {% else %}
+                        <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
+                            <i class="fas fa-times-circle mr-1"></i>
+                            No
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-600 font-medium">Photo Proof</span>
+                    {% if checkin.photo|default:checkin.photo_proof %}
+                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
+                            <i class="fas fa-camera mr-1"></i>
+                            Provided
+                        </span>
+                    {% else %}
+                        <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
+                            <i class="fas fa-camera-slash mr-1"></i>
+                            No photo
+                        </span>
+                    {% endif %}
+                </div>
+                
+                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-600 font-medium">Weather</span>
+                    <span class="font-semibold text-gray-900">
+                        {% if checkin.weather %}
+                            <i class="fas fa-cloud-sun text-yellow-500 mr-1"></i>
+                            {{ checkin.weather }}
+                        {% else %}
+                            <span class="text-gray-500">Not recorded</span>
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notes Section -->
+        {% if checkin.notes %}
+            <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                <h4 class="font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-sticky-note text-yellow-600 mr-2"></i>
+                    Notes
+                </h4>
+                <p class="text-gray-700 italic">"{{ checkin.notes }}"</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Photo Preview -->
+    {% if checkin.photo|default:checkin.photo_proof %}
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h3 class="text-xl font-semibold text-gray-900 mb-4">
+                <i class="fas fa-image text-purple-600 mr-2"></i>
+                Photo Proof
+            </h3>
+            
+            <div class="relative">
+                <img src="{{ checkin.photo.url|default:checkin.photo_proof.url }}" 
+                     alt="Photo proof at {{ place.name }}" 
+                     class="w-full max-w-2xl mx-auto rounded-lg shadow-lg cursor-pointer"
+                     onclick="openPhotoModal(this.src)">
+                
+                <!-- Photo Info Overlay -->
+                <div class="absolute bottom-4 left-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Click to view full size
+                </div>
+            </div>
+        </div>
+    {% endif %}
 
     <!-- Comments Section -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
@@ -353,26 +358,46 @@
                 </div>
             </form>
         </div>
-        {% endif %}
+    {% else %}
+        <!-- Login Prompt -->
+        <div class="bg-gray-50 rounded-lg p-6 text-center">
+            <i class="fas fa-sign-in-alt text-4xl text-gray-400 mb-4"></i>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Want to leave a comment?</h3>
+            <p class="text-gray-600 mb-4">Log in to share your thoughts about this check-in.</p>
+            <a href="{% url 'login' %}?next={{ request.path }}" class="btn-primary">
+                <i class="fas fa-sign-in-alt mr-2"></i>
+                Log In
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Photo Modal -->
+<div id="photo-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+    <div class="max-w-4xl max-h-full p-4 relative">
+        <img id="modal-photo" src="" alt="Full size photo" class="max-w-full max-h-full rounded-lg">
+        <button class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300" onclick="closePhotoModal()">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Initialize map
-    const map = L.map('map').setView(['{{ place.latitude }}, {{ place.longitude }}'], 15);
+    // Photo modal functionality
+    function openPhotoModal(src) {
+        const modal = document.getElementById('photo-modal');
+        const modalPhoto = document.getElementById('modal-photo');
+        modalPhoto.src = src;
+        modal.classList.remove('hidden');
+    }
     
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
+    function closePhotoModal() {
+        const modal = document.getElementById('photo-modal');
+        modal.classList.add('hidden');
+    }
     
-    // Add marker
-    const marker = L.marker(['{{ place.latitude }}', '{{ place.longitude }}']).addTo(map);
-    marker.bindPopup('<b>{{ place.name|escapejs }}</b><br>{{ place.description|truncatewords:10|escapejs }}');
-    
-    // Open popup by default
-    marker.openPopup();
-
     // Rating system
     function setRating(rating) {
         const stars = document.querySelectorAll('#rating-stars i');

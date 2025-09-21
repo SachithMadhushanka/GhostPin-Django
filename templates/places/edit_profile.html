@@ -1,0 +1,421 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Profile - GhostPin{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-user-edit text-blue-600 mr-2"></i>
+                    Edit Profile
+                </h1>
+                <p class="text-gray-600">Update your profile information and preferences</p>
+            </div>
+            <a href="{% url 'places:profile' request.user.username %}" class="btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i> Back to Profile
+            </a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Profile Form -->
+        <div class="lg:col-span-2">
+            <div class="bg-white rounded-lg shadow-lg p-8">
+                <form method="post" enctype="multipart/form-data" class="space-y-6">
+                    {% csrf_token %}
+                    
+                    <!-- Avatar Section -->
+                    <div class="text-center pb-6 border-b border-gray-200">
+                        <div class="relative inline-block">
+                            {% if user.userprofile.avatar %}
+                                <img src="{{ user.userprofile.avatar.url }}" alt="Profile Avatar" 
+                                     class="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg">
+                            {% else %}
+                                <div class="w-32 h-32 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-4xl text-white font-bold shadow-lg">
+                                    {{ user.username|first|upper }}
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Upload Button -->
+                            <label for="{{ form.avatar.id_for_label }}" 
+                                   class="absolute bottom-0 right-0 w-10 h-10 bg-blue-600 hover:bg-blue-700 rounded-full flex items-center justify-center text-white cursor-pointer transition-colors">
+                                <i class="fas fa-camera"></i>
+                            </label>
+                            {{ form.avatar }}
+                        </div>
+                        
+                        {% if form.avatar.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.avatar.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-3 text-sm text-gray-500">Click the camera icon to upload a new avatar</p>
+                    </div>
+
+                    <!-- Basic Information -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="id_first_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-user text-blue-600 mr-1"></i>
+                                First Name
+                            </label>
+                            <input type="text" name="first_name" id="id_first_name" 
+                                   value="{{ user.first_name }}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        
+                        <div>
+                            <label for="id_last_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                <i class="fas fa-user text-blue-600 mr-1"></i>
+                                Last Name
+                            </label>
+                            <input type="text" name="last_name" id="id_last_name" 
+                                   value="{{ user.last_name }}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="id_email" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-envelope text-green-600 mr-1"></i>
+                            Email Address
+                        </label>
+                        <input type="email" name="email" id="id_email" 
+                               value="{{ user.email }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    </div>
+
+                    <!-- Bio -->
+                    <div>
+                        <label for="{{ form.bio.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-align-left text-purple-600 mr-1"></i>
+                            Bio
+                        </label>
+                        {{ form.bio }}
+                        {% if form.bio.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.bio.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">Tell others about yourself and your interest in historical places</p>
+                    </div>
+
+                    <!-- Location -->
+                    <div>
+                        <label for="{{ form.location.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-map-marker-alt text-red-600 mr-1"></i>
+                            Location
+                        </label>
+                        {{ form.location }}
+                        {% if form.location.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.location.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">Your city or region (optional)</p>
+                    </div>
+
+                    <!-- Website -->
+                    <div>
+                        <label for="{{ form.website.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-globe text-indigo-600 mr-1"></i>
+                            Website
+                        </label>
+                        {{ form.website }}
+                        {% if form.website.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.website.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">Your personal website or blog (optional)</p>
+                    </div>
+
+                    <!-- Expert Areas -->
+                    <div>
+                        <label for="{{ form.expert_areas.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-star text-yellow-600 mr-1"></i>
+                            Areas of Expertise
+                        </label>
+                        {{ form.expert_areas }}
+                        {% if form.expert_areas.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.expert_areas.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-2 text-sm text-gray-500">Select regions or topics you're knowledgeable about</p>
+                    </div>
+
+                    <!-- Privacy Settings -->
+                    <div class="bg-gray-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-shield-alt text-green-600 mr-2"></i>
+                            Privacy Settings
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label for="{{ form.show_email.id_for_label }}" class="font-medium text-gray-900">
+                                        Show Email Publicly
+                                    </label>
+                                    <p class="text-sm text-gray-600">Allow other users to see your email address</p>
+                                </div>
+                                {{ form.show_email }}
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label for="{{ form.show_location.id_for_label }}" class="font-medium text-gray-900">
+                                        Show Location
+                                    </label>
+                                    <p class="text-sm text-gray-600">Display your location on your profile</p>
+                                </div>
+                                {{ form.show_location }}
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label for="{{ form.allow_messages.id_for_label }}" class="font-medium text-gray-900">
+                                        Allow Direct Messages
+                                    </label>
+                                    <p class="text-sm text-gray-600">Let other users send you private messages</p>
+                                </div>
+                                {{ form.allow_messages }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Preferences -->
+                    <div class="bg-blue-50 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                            <i class="fas fa-bell text-blue-600 mr-2"></i>
+                            Notification Preferences
+                        </h3>
+                        
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label for="{{ form.email_notifications.id_for_label }}" class="font-medium text-gray-900">
+                                        Email Notifications
+                                    </label>
+                                    <p class="text-sm text-gray-600">Receive notifications via email</p>
+                                </div>
+                                {{ form.email_notifications }}
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label for="{{ form.push_notifications.id_for_label }}" class="font-medium text-gray-900">
+                                        Push Notifications
+                                    </label>
+                                    <p class="text-sm text-gray-600">Receive push notifications in your browser</p>
+                                </div>
+                                {{ form.push_notifications }}
+                            </div>
+                            
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <label for="{{ form.weekly_digest.id_for_label }}" class="font-medium text-gray-900">
+                                        Weekly Digest
+                                    </label>
+                                    <p class="text-sm text-gray-600">Get a weekly summary of activity</p>
+                                </div>
+                                {{ form.weekly_digest }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+                        <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                            <i class="fas fa-save mr-2"></i>
+                            Save Changes
+                        </button>
+                        <a href="{% url 'places:profile' request.user.username %}" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors text-center">
+                            <i class="fas fa-times mr-2"></i>
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="lg:col-span-1">
+            <!-- Profile Stats -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-chart-bar text-green-600 mr-2"></i>
+                    Your Stats
+                </h3>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Level</span>
+                        <span class="font-semibold text-blue-600">{{ user.userprofile.level|default:1 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Total Points</span>
+                        <span class="font-semibold text-green-600">{{ user.userprofile.points|default:0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Places Added</span>
+                        <span class="font-semibold text-purple-600">{{ user_places.count |default:0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Check-ins</span>
+                        <span class="font-semibold text-yellow-600">{{ user_checkins.count|default:0 }}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Badges Earned</span>
+                        <span class="font-semibold text-red-600">{{  user_badges.count|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Account Actions -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-cog text-gray-600 mr-2"></i>
+                    Account Actions
+                </h3>
+                
+                <div class="space-y-3">
+                    <a href="{% url 'password_change' %}" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-key mr-2"></i> Change Password
+                    </a>
+                    <a href="{% url 'places:notifications' %}" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-bell mr-2"></i> Notification Settings
+                    </a>
+                    <a href="#" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-download mr-2"></i> Export Data
+                    </a>
+                    <button onclick="confirmDeleteAccount()" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                        <i class="fas fa-trash mr-2"></i> Delete Account
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Badges -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-medal text-yellow-600 mr-2"></i>
+                    Recent Badges
+                </h3>
+                
+                {% if user.recent_badges %}
+                    <div class="space-y-3">
+                        {% for badge in user.recent_badges %}
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <span class="text-lg">{{ badge.icon }}</span>
+                                </div>
+                                <div>
+                                    <div class="font-medium text-gray-900">{{ badge.name }}</div>
+                                    <div class="text-sm text-gray-600">{{ badge.earned_at|timesince }} ago</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-medal text-4xl text-gray-300 mb-2"></i>
+                        <p class="text-gray-600 text-sm">No badges earned yet</p>
+                    </div>
+                {% endif %}
+
+                <a href="{% url 'places:badges' %}" class="block mt-4 text-center text-yellow-600 hover:text-yellow-700 text-sm font-medium">
+                    View All Badges →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    /* Hide the default file input */
+    input[type="file"] {
+        position: absolute;
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    
+    /* Style checkboxes */
+    input[type="checkbox"] {
+        @apply h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded;
+    }
+</style>
+
+<script>
+    // Preview avatar upload
+    document.getElementById('{{ form.avatar.id_for_label }}').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const avatarImg = document.querySelector('img[alt="Profile Avatar"]');
+                if (avatarImg) {
+                    avatarImg.src = e.target.result;
+                } else {
+                    // Replace the default avatar div with an image
+                    const avatarDiv = document.querySelector('.w-32.h-32.bg-gradient-to-br');
+                    if (avatarDiv) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.alt = 'Profile Avatar';
+                        img.className = 'w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg';
+                        avatarDiv.parentNode.replaceChild(img, avatarDiv);
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Form validation
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const email = document.getElementById('id_email').value;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (email && !emailRegex.test(email)) {
+            e.preventDefault();
+            alert('Please enter a valid email address.');
+            return false;
+        }
+        
+        const website = document.querySelector('input[name="website"]').value;
+        if (website && !website.startsWith('http://') && !website.startsWith('https://')) {
+            document.querySelector('input[name="website"]').value = 'https://' + website;
+        }
+    });
+    
+    // Confirm account deletion
+    function confirmDeleteAccount() {
+        if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+            if (confirm('This will permanently delete all your data, including places, check-ins, and comments. Are you absolutely sure?')) {
+                // In a real implementation, this would redirect to a deletion confirmation page
+                alert('Account deletion would be processed here.');
+            }
+        }
+    }
+    
+    // Auto-save draft functionality
+    let saveTimeout;
+    const formInputs = document.querySelectorAll('input, textarea, select');
+    
+    formInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(saveDraft, 2000); // Save draft after 2 seconds of inactivity
+        });
+    });
+    
+    function saveDraft() {
+        // In a real implementation, this would save form data to localStorage or server
+        console.log('Auto-saving draft...');
+    }
+    
+    // Load draft on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        // In a real implementation, this would load saved draft data
+        console.log('Loading any saved draft...');
+    });
+</script>
+{% endblock %}
+

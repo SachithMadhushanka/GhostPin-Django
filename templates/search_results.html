@@ -30,7 +30,7 @@
                                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
                         <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                     </div>
-                    <button type="submit" class="btn-primary">
+                    <button type="submit" class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-600 bg-green-100 text-green-700 font-medium shadow-sm transition-all duration-300 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-400">
                         <i class="fas fa-search mr-1"></i> Search
                     </button>
                 </form>
@@ -84,11 +84,22 @@
             
             <!-- View Toggle -->
             <div class="ml-auto flex items-center space-x-2">
-                <button id="list-view" class="p-2 rounded-md bg-green-100 text-green-600" onclick="toggleView('list')">
-                    <i class="fas fa-list"></i>
+                <!-- List View Button -->
+                <button id="list-view"
+                        aria-label="List View"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-600 bg-green-100 text-green-700 font-medium shadow-sm transition-all duration-300 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-400"
+                        onclick="toggleView('list')">
+                    <i class="fas fa-list text-lg"></i>
+                    <span>List</span>
                 </button>
-                <button id="map-view" class="p-2 rounded-md text-gray-400 hover:bg-gray-100" onclick="toggleView('map')">
-                    <i class="fas fa-map"></i>
+
+                <!-- Map View Button -->
+                <button id="map-view"
+                        aria-label="Map View"
+                        class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-600 bg-green-100 text-green-700 font-medium shadow-sm transition-all duration-300 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-400"
+                        onclick="toggleView('map')">
+                    <i class="fas fa-map-marked-alt text-lg"></i>
+                    <span>Map</span>
                 </button>
             </div>
         </div>
@@ -119,7 +130,7 @@
                                 <div class="flex-1 p-6">
                                     <div class="flex items-start justify-between mb-3">
                                         <h3 class="text-xl font-bold text-gray-900 hover:text-green-600 transition-colors">
-                                            <a href="{% url 'place_detail' place.pk %}">{{ place.name }}</a>
+                                            <a href="{% url 'places:place_detail' place.pk %}">{{ place.name }}</a>
                                         </h3>
                                         <div class="flex items-center space-x-2 text-sm">
                                             {% if place.average_rating > 0 %}
@@ -161,7 +172,7 @@
                                     
                                     <!-- Actions -->
                                     <div class="flex items-center justify-between">
-                                        <a href="{% url 'place_detail' place.pk %}" 
+                                        <a href="{% url 'places:place_detail' place.pk %}" 
                                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                             <i class="fas fa-eye mr-1"></i> View Details
                                         </a>
@@ -169,7 +180,7 @@
                                         <div class="flex items-center space-x-2">
                                             {% if user.is_authenticated %}
                                                 <button class="p-2 text-gray-400 hover:text-red-500 transition-colors" 
-                                                        onclick="toggleFavorite({{ place.pk }})">
+                                                        onclick="toggleFavorite('{{ place.pk }}')">
                                                     <i class="fas fa-heart"></i>
                                                 </button>
                                                 <button class="p-2 text-gray-400 hover:text-blue-500 transition-colors"
@@ -225,11 +236,11 @@
                         </p>
                     {% endif %}
                     <div class="space-x-4">
-                        <a href="{% url 'home' %}" class="btn-primary">
+                        <a href="{% url 'places:home' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                             <i class="fas fa-home mr-2"></i> Browse All Places
                         </a>
                         {% if user.is_authenticated %}
-                            <a href="{% url 'add_place' %}" class="btn-secondary">
+                            <a href="{% url 'places:add_place' %}" class="btn-secondary">
                                 <i class="fas fa-plus mr-2"></i> Add New Place
                             </a>
                         {% endif %}
@@ -237,9 +248,18 @@
                 </div>
             {% endif %}
         </div>
+
+        <style>
+            .custom-div-icon {
+                background: transparent;
+                border: none;
+                text-align: center;
+                line-height: 1;
+            }
+        </style>
         
         <!-- Map View -->
-        <div class="lg:col-span-1">
+        <div id="map-column" class="lg:col-span-1">
             <div class="sticky top-24">
                 <div class="bg-white rounded-lg shadow-lg p-4">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">
@@ -276,7 +296,7 @@
                     name: "{{ place.name|escapejs }}",
                     category: "{{ place.category }}",
                     icon: "{{ place.category_icon|default:'🏛️' }}",
-                    url: "{% url 'place_detail' place.pk %}"
+                    url: "{% url 'places:place_detail' place.pk %}"
                 }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ];
@@ -285,7 +305,15 @@
             const bounds = L.latLngBounds();
             
             places.forEach(place => {
-                const marker = L.marker([place.lat, place.lng])
+                const customIcon = L.divIcon({
+                    html: `<div class="text-2xl">${place.icon}</div>`,
+                    className: 'custom-div-icon',
+                    iconSize: [30, 42],
+                    iconAnchor: [15, 42],
+                    popupAnchor: [0, -40]
+                });
+
+                const marker = L.marker([place.lat, place.lng], { icon: customIcon })
                     .bindPopup(`
                         <div class="text-center">
                             <div class="text-2xl mb-2">${place.icon}</div>
@@ -294,10 +322,11 @@
                         </div>
                     `)
                     .addTo(searchMap);
-                
+
                 markers.push(marker);
                 bounds.extend([place.lat, place.lng]);
             });
+
             
             searchMap.fitBounds(bounds, { padding: [20, 20] });
         }
@@ -319,30 +348,38 @@
         const listView = document.getElementById('list-view');
         const mapView = document.getElementById('map-view');
         const resultsList = document.getElementById('results-list');
-        
+        const mapColumn = document.getElementById('map-column');
+
         if (view === 'map') {
             listView.classList.remove('bg-green-100', 'text-green-600');
             listView.classList.add('text-gray-400', 'hover:bg-gray-100');
             mapView.classList.add('bg-green-100', 'text-green-600');
             mapView.classList.remove('text-gray-400', 'hover:bg-gray-100');
-            
-            resultsList.classList.add('lg:col-span-1');
-            resultsList.classList.remove('lg:col-span-2');
+
+            // 👇 Hide the results list
+            resultsList.classList.add('hidden');
+            // 👇 Make the map full width
+            mapColumn.classList.remove('lg:col-span-1');
+            mapColumn.classList.add('lg:col-span-3');
         } else {
             mapView.classList.remove('bg-green-100', 'text-green-600');
             mapView.classList.add('text-gray-400', 'hover:bg-gray-100');
             listView.classList.add('bg-green-100', 'text-green-600');
             listView.classList.remove('text-gray-400', 'hover:bg-gray-100');
-            
-            resultsList.classList.add('lg:col-span-2');
-            resultsList.classList.remove('lg:col-span-1');
+
+            // 👇 Show the results list
+            resultsList.classList.remove('hidden');
+            // 👇 Restore map width to original
+            mapColumn.classList.remove('lg:col-span-3');
+            mapColumn.classList.add('lg:col-span-1');
         }
-        
+
         // Refresh map size
         setTimeout(() => {
             searchMap.invalidateSize();
         }, 100);
     }
+
     
     // Apply filters
     function applyFilters() {

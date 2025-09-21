@@ -12,7 +12,7 @@
     </p>
     
     {% if user.is_authenticated %}
-        <a href="{% url 'add_place' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
+        <a href="{% url 'places:add_place' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
             📍 Add New Place
         </a>
     {% else %}
@@ -53,7 +53,7 @@
                     </div>
                     
                     <div class="mt-4">
-                        <a href="{% url 'place_detail' place.pk %}" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors inline-block text-center">
+                        <a href="{% url 'places:place_detail' place.pk %}" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors inline-block text-center">
                             View Details
                         </a>
                     </div>
@@ -67,7 +67,7 @@
         <h2 class="text-2xl font-bold text-gray-800 mb-4">No Places Yet</h2>
         <p class="text-gray-600 mb-8">Be the first to add a historical place to our collection!</p>
         {% if user.is_authenticated %}
-            <a href="{% url 'add_place' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
+            <a href="{% url 'places:add_place' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
                 Add the First Place
             </a>
         {% else %}

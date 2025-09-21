@@ -23,7 +23,7 @@
         </div>
         
         {% if user.is_authenticated %}
-            <a href="{% url 'create_collection' %}" class="btn-primary">
+            <a href="{% url 'places:create_collection' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                 <i class="fas fa-plus mr-2"></i> Create Collection
             </a>
         {% endif %}
@@ -92,7 +92,7 @@
                         </div>
                         
                         <!-- Action Button -->
-                        <a href="{% url 'collection_detail' collection.pk %}" 
+                        <a href="{% url 'places:collection_detail' collection.pk %}" 
                            class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center block">
                             <i class="fas fa-route mr-2"></i>
                             Explore Collection
@@ -112,11 +112,11 @@
                     Group related locations together to help others discover amazing routes.
                 </p>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'create_collection' %}" class="btn-primary">
+                    <a href="{% url 'places:create_collection' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                         <i class="fas fa-plus mr-2"></i> Create First Collection
                     </a>
                 {% else %}
-                    <a href="{% url 'login' %}" class="btn-primary">
+                    <a href="{% url 'login' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                         <i class="fas fa-sign-in-alt mr-2"></i> Login to Create Collections
                     </a>
                 {% endif %}

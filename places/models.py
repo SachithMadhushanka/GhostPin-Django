@@ -3,21 +3,59 @@ from django.contrib.auth.models import User
 from django.urls import reverse
 from django.core.validators import MinValueValidator, MaxValueValidator
 import json
+import os
+from django.utils.text import slugify
+import uuid
 
+
+def place_image_upload_to(instance, filename):
+    place_name = slugify(instance.name) if instance.name else 'unknown'
+    ext = filename.split('.')[-1]
+    unique_suffix = uuid.uuid4().hex[:8]
+    filename = f"{place_name}_{unique_suffix}.{ext}"
+    return os.path.join('places', place_name, filename)
+
+def user_avatar_upload_to(instance, filename):
+    username = slugify(instance.user.username) if instance.user else 'anonymous'
+    ext = filename.split('.')[-1]
+    unique_suffix = uuid.uuid4().hex[:8]
+    filename = f"avatar_{unique_suffix}.{ext}"
+    return os.path.join('avatars', username, filename)
+
+def checkin_photo_upload_to(instance, filename):
+    username = slugify(instance.user.username) if instance.user else 'anonymous'
+    place_name = slugify(instance.place.name) if instance.place else 'unknown-place'
+    ext = filename.split('.')[-1]
+    unique_suffix = uuid.uuid4().hex[:8]
+    filename = f"checkin_{unique_suffix}.{ext}"
+    return os.path.join('checkins', username, place_name, filename)
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    avatar = models.ImageField(upload_to=user_avatar_upload_to, null=True, blank=True)
     bio = models.TextField(blank=True)
+    
+    # New fields to match the template
+    location = models.CharField(max_length=100, blank=True)
+    website = models.URLField(blank=True)
+    show_email = models.BooleanField(default=False)
+    show_location = models.BooleanField(default=False)
+    allow_messages = models.BooleanField(default=True)
+    email_notifications = models.BooleanField(default=True)
+    push_notifications = models.BooleanField(default=True)
+    weekly_digest = models.BooleanField(default=True)
+
+    # Existing fields
     is_trusted = models.BooleanField(default=False)
     is_local_expert = models.BooleanField(default=False)
     expert_areas = models.ManyToManyField('ExpertArea', blank=True)
     points = models.IntegerField(default=0)
     level = models.IntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return f"{self.user.username}'s Profile"
+
 
 
 class ExpertArea(models.Model):
@@ -36,14 +74,6 @@ class Place(models.Model):
         ('rejected', 'Rejected'),
     ]
     
-    CATEGORY_CHOICES = [
-        ('historical', 'Historical'),
-        ('natural', 'Natural'),
-        ('urban', 'Urban'),
-        ('mysterious', 'Mysterious'),
-        ('other', 'Other'),
-    ]
-    
     DIFFICULTY_CHOICES = [
         ('easy', 'Easy'),
         ('moderate', 'Moderate'),
@@ -57,15 +87,24 @@ class Place(models.Model):
         (4, '⭐⭐⭐⭐ Safe'),
         (5, '⭐⭐⭐⭐⭐ Very Safe'),
     ]
-    
+
+    CATEGORY_CHOICES = [
+        ('buddhist_temple', 'Buddhist Temple'),
+        ('hindu_temple', 'Hindu Temple'),
+        ('mosque', 'Islam Mosque'),
+        ('church', 'Christian Church'),
+        ('gurdwara', 'Sikh Gurdwara'),
+        ('synagogue', 'Jewish Synagogue'),
+        ('other', 'Other'),
+    ]
+
     name = models.CharField(max_length=200)
     description = models.TextField()
     legends_stories = models.TextField(blank=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
-    image = models.ImageField(upload_to='places/', null=True, blank=True)
+    image = models.ImageField(upload_to=place_image_upload_to, null=True, blank=True)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
-    category_icon = models.CharField(max_length=50, default='📍')
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='easy')
     accessibility_info = models.TextField(blank=True)
     best_time_to_visit = models.CharField(max_length=100, blank=True)
@@ -77,7 +116,7 @@ class Place(models.Model):
     visit_count = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         ordering = ['-created_at']
     
@@ -97,11 +136,22 @@ class Place(models.Model):
         if ratings.exists():
             return ratings.aggregate(models.Avg('rating'))['rating__avg']
         return 0
+    
+    def get_icon_url(self):
+        icon_map = {
+            'buddhist_temple': 'static/icons/buddhist_temple.png',
+            'hindu_temple': 'static/icons/hindu_temple.png',
+            'mosque': 'static/icons/mosque.png',
+            'church': 'static/icons/church.png',
+            'gurdwara': 'static/icons/gurdwara.png',
+            'synagogue': 'static/icons/synagogue.png',
+        }
+        return icon_map.get(self.category, 'static/icons/other.png')
 
 
 class PlaceImage(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='places/gallery/')
+    image = models.ImageField(upload_to=place_image_upload_to)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
     is_challenge_photo = models.BooleanField(default=False)
     challenge_description = models.CharField(max_length=200, blank=True)
@@ -114,7 +164,7 @@ class PlaceImage(models.Model):
 class CheckIn(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     place = models.ForeignKey(Place, on_delete=models.CASCADE)
-    photo_proof = models.ImageField(upload_to='checkins/', null=True, blank=True)
+    photo_proof = models.ImageField(upload_to=checkin_photo_upload_to, null=True, blank=True)
     location_verified = models.BooleanField(default=False)
     points_awarded = models.IntegerField(default=10)
     notes = models.TextField(blank=True)
@@ -169,6 +219,7 @@ class CollectionPlace(models.Model):
 class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='comments')
+    checkin = models.ForeignKey('CheckIn', on_delete=models.CASCADE, null=True, blank=True, related_name='comments')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
     text = models.TextField()
     votes = models.IntegerField(default=0)
@@ -183,6 +234,7 @@ class Comment(models.Model):
     
     def __str__(self):
         return f'Comment by {self.user.username} on {self.place.name}'
+
 
 
 class Vote(models.Model):
@@ -283,12 +335,14 @@ class Challenge(models.Model):
 
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
+        ('place_added', 'Place Added'),
         ('place_approved', 'Place Approved'),
         ('place_rejected', 'Place Rejected'),
         ('comment_reply', 'Comment Reply'),
         ('nearby_place', 'Nearby Place'),
         ('challenge', 'Challenge'),
         ('badge_earned', 'Badge Earned'),
+        ('welcome', 'Welcome'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE)

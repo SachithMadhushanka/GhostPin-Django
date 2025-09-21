@@ -12,6 +12,10 @@ from datetime import timedelta
 import json
 import os
 from django.conf import settings
+from django.contrib.auth.forms import UserCreationForm
+from django.db.models import Sum 
+from geopy.distance import geodesic
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import (
     Place, Comment, PlaceImage, CheckIn, PlaceCollection, CollectionPlace,
@@ -75,7 +79,7 @@ def place_detail(request, pk):
     if place.status != 'approved' and place.created_by != request.user:
         if not request.user.is_staff:
             messages.error(request, 'This place is not available.')
-            return redirect('home')
+            return redirect('places:home')
     
     # Increment visit count
     place.visit_count += 1
@@ -110,7 +114,7 @@ def place_detail(request, pk):
                 profile.save()
                 
                 messages.success(request, 'Comment added successfully!')
-                return redirect('place_detail', pk=place.pk)
+                return redirect('places:place_detail', pk=place.pk)
     
     context = {
         'place': place,
@@ -134,14 +138,22 @@ def add_place(request):
             place.created_by = request.user
             place.status = 'pending'
             place.save()
-            
+
+            Notification.objects.create(
+                user=request.user,
+                title='Place Submitted',
+                message=f'You added a new place: "{place.name}" and it is pending approval.',
+                notification_type='place_added',
+                related_place=place  # assuming your model has this FK
+            )
+
             # Award points for adding a place
             profile, created = UserProfile.objects.get_or_create(user=request.user)
             profile.points += 20
             profile.save()
             
             messages.success(request, 'Place submitted successfully! It will be reviewed by our team.')
-            return redirect('home')
+            return redirect('places:home')
     else:
         form = PlaceForm()
     
@@ -155,14 +167,14 @@ def edit_place(request, pk):
 
     if place.created_by != request.user and not request.user.is_staff:
         messages.error(request, 'You can only edit your own places.')
-        return redirect('place_detail', pk=place.pk)
+        return redirect('places:place_detail', pk=place.pk)
 
     if request.method == 'POST':
         form = PlaceForm(request.POST, request.FILES, instance=place)
         if form.is_valid():
             form.save()
             messages.success(request, 'Place updated successfully!')
-            return redirect('place_detail', pk=place.pk)
+            return redirect('places:place_detail', pk=place.pk)
         else:
             print(form.errors)
             messages.error(request, 'Please correct the errors below.')
@@ -220,15 +232,73 @@ def favorites(request):
 @login_required
 def notifications(request):
     """User notifications"""
-    notifications = Notification.objects.filter(user=request.user)
+    notification_list = Notification.objects.filter(user=request.user).order_by('-created_at')
     
-    # Mark all as read
-    if request.method == 'POST':
-        notifications.update(is_read=True)
-        return redirect('notifications')
-    
-    return render(request, 'notifications.html', {'notifications': notifications})
+    paginator = Paginator(notification_list, 10)
+    page_number = request.GET.get('page')
+    notifications_page = paginator.get_page(page_number)
 
+    unread_count = notification_list.filter(is_read=False).count()
+
+    return render(request, 'notifications.html', {
+        'notifications': notifications_page,
+        'unread_count': unread_count
+    })
+
+# Notification API Views
+@login_required
+@require_POST
+def mark_notification_read(request, pk):
+    """Mark a single notification as read"""
+    try:
+        notification = Notification.objects.get(pk=pk, user=request.user)
+        notification.is_read = True
+        notification.save()
+        return JsonResponse({'success': True})
+    except Notification.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Notification not found'})
+
+
+@login_required
+@require_POST
+def mark_all_notifications_read(request):
+    """Mark all notifications as read"""
+    updated_count = Notification.objects.filter(user=request.user, is_read=False).update(is_read=True)
+    return JsonResponse({'success': True, 'updated_count': updated_count})
+
+
+@login_required
+def delete_notification(request, pk):
+    """Delete a single notification"""
+    if request.method == 'DELETE':
+        try:
+            notification = Notification.objects.get(pk=pk, user=request.user)
+            notification.delete()
+            return JsonResponse({'success': True})
+        except Notification.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Notification not found'})
+    return JsonResponse({'success': False, 'error': 'Invalid method'})
+
+
+@login_required
+def clear_all_notifications(request):
+    """Delete all notifications for the current user"""
+    if request.method == 'DELETE':
+        deleted_count = Notification.objects.filter(user=request.user).count()
+        Notification.objects.filter(user=request.user).delete()
+        return JsonResponse({'success': True, 'deleted_count': deleted_count})
+    return JsonResponse({'success': False, 'error': 'Invalid method'})
+
+
+@login_required
+def check_new_notifications(request):
+    """Check for new unread notifications"""
+    unread_count = Notification.objects.filter(user=request.user, is_read=False).count()
+    has_new = unread_count > 0
+    return JsonResponse({
+        'has_new': has_new,
+        'unread_count': unread_count
+    })
 
 @login_required
 def check_ins(request):
@@ -247,7 +317,7 @@ def check_in(request, pk):
     existing_checkin = CheckIn.objects.filter(user=request.user, place=place).first()
     if existing_checkin:
         messages.info(request, 'You have already checked in at this place.')
-        return redirect('place_detail', pk=place.pk)
+        return redirect('places:place_detail', pk=place.pk)
     
     if request.method == 'POST':
         form = CheckInForm(request.POST, request.FILES)
@@ -263,7 +333,7 @@ def check_in(request, pk):
             profile.save()
             
             messages.success(request, f'Checked in successfully! You earned {checkin.points_awarded} points.')
-            return redirect('place_detail', pk=place.pk)
+            return redirect('places:place_detail', pk=place.pk)
     else:
         form = CheckInForm()
     
@@ -307,7 +377,7 @@ def create_collection(request):
             collection.save()
             
             messages.success(request, 'Collection created successfully!')
-            return redirect('collection_detail', pk=collection.pk)
+            return redirect('places:collection_detail', pk=collection.pk)
     else:
         form = PlaceCollectionForm()
     
@@ -322,6 +392,7 @@ def leaderboard(request):
         .annotate(approved_places=Count('user__place', filter=Q(user__place__status='approved')))
         .order_by('-points')[:50]
     )
+    total_points = top_users.aggregate(Sum('points'))['points__sum'] or 0
 
     user_rank = None
     if request.user.is_authenticated and hasattr(request.user, 'userprofile'):
@@ -332,6 +403,7 @@ def leaderboard(request):
     return render(request, 'leaderboard.html', {
         'top_users': top_users,
         'user_rank': user_rank,
+        'total_points': total_points,
     })
 
 
@@ -388,7 +460,7 @@ def toggle_favorite(request, pk):
         return HttpResponse(html)
 
     # Normal request → redirect
-    return redirect("place_detail", pk=pk)
+    return redirect("places:place_detail", pk=pk)
 
 @login_required
 @require_POST
@@ -456,7 +528,10 @@ def update_place_status(request, pk):
         Notification.objects.create(
             user=place.created_by,
             title=f'Place {status.title()}',
-            message=f'Your place "{place.name}" has been {status}.',
+            message=(
+                f'Your place "{place.name}" was {status} '
+                f'by {request.user.get_full_name() or request.user.username}.'
+            ),
             notification_type=f'place_{status}',
             related_place=place
         )
@@ -568,6 +643,55 @@ def service_worker(request):
 def nearby_places_view(request):
     return render(request, 'nearby_places.html')
 
+def get_nearby_places(request):
+    try:
+        lat = float(request.GET.get('lat'))
+        lng = float(request.GET.get('lng'))
+        distance_km = float(request.GET.get('distance', 10))
+
+        user_location = (lat, lng)
+        places = []
+
+        for place in Place.objects.all():
+            place_location = (place.latitude, place.longitude)
+            distance = geodesic(user_location, place_location).km
+            if distance <= distance_km:
+                places.append({
+                    'id': place.id,
+                    'name': place.name,
+                    'description': place.description,
+                    'category': place.category,
+                    'category_icon': getattr(place, 'category_icon', '🏛️'),
+                    'latitude': place.latitude,
+                    'longitude': place.longitude,
+                    'distance': round(distance, 2),
+                    'rating': place.average_rating,
+                    'visit_count': place.visit_count
+                })
+        
+        if request.user.is_authenticated and len(places) > 0:
+            nearby_count = len(places)
+
+            # Optional: avoid duplicate notifications within the last hour
+            recent = Notification.objects.filter(
+                user=request.user,
+                notification_type='nearby_place',
+                created_at__gte=timezone.now() - timedelta(hours=1)
+            ).exists()
+
+            if not recent:
+                Notification.objects.create(
+                    user=request.user,
+                    title="Nearby Places Alert",
+                    message=f"There are {nearby_count} historical places near you. Check them out!",
+                    notification_type="nearby_place"
+                )
+
+        return JsonResponse({'places': places})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=400)
+
+
 @login_required
 def search_results(request):
     query = request.GET.get('q', '')
@@ -597,4 +721,177 @@ def search_results(request):
         'places': places_page,
         'query': query
     })
+
+@login_required
+def edit_profile(request):
+    user = request.user
+    profile = user.userprofile  # Adjust if you're using OneToOneField or similar
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, request.FILES, instance=profile)
+
+        if form.is_valid():
+            form.save()
+            # Update base User model fields too
+            user.first_name = request.POST.get('first_name', '')
+            user.last_name = request.POST.get('last_name', '')
+            user.email = request.POST.get('email', '')
+            user.save()
+
+            return redirect('places:profile', username=user.username)
+    else:
+        form = UserProfileForm(instance=profile)
+
+    return render(request, 'places/edit_profile.html', {
+        'form': form,
+        'user': user,
+    })
+
+@require_POST
+def update_place_status(request, pk):
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
+
+    place = get_object_or_404(Place, pk=pk)
+    status = request.POST.get('status')
+
+    if status in ['approved', 'rejected']:
+        place.status = status
+        place.save()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Invalid status'}, status=400)
+
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            form.save()
+
+            # ✅ Create welcome notification after signup
+            Notification.objects.create(
+                user=user,
+                title="Welcome to GhostPin!",
+                message="Thanks for signing up! Start exploring and adding historical places.",
+                notification_type="welcome",
+            )
+
+            messages.success(request, 'Account created successfully. Please log in.')
+            return redirect('login')
+    else:
+        form = UserCreationForm()
+    return render(request, 'registration/register.html', {'form': form})
+
+
+@login_required
+def checkin_detail(request, pk):
+    checkin = get_object_or_404(CheckIn, pk=pk)
+    place = checkin.place
+    all_checkins = CheckIn.objects.filter(place=place).select_related('user')
+    comments = Comment.objects.filter(checkin=checkin, parent=None).select_related('user').prefetch_related('replies')
+
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.user = request.user
+            comment.place = checkin.place
+            comment.checkin = checkin
+            comment.save()
+            return redirect(request.path_info) 
+    else:
+        form = CommentForm()
+
+    context = {
+        'checkin': checkin,
+        'place': place,
+        'checkins': all_checkins,
+        'comments': comments,
+        'form': form,
+    }
+    return render(request, 'checkins/checkin_detail.html', context)
+
+@csrf_exempt
+@require_POST
+def vote_comment(request, comment_id):
+    import json
+    data = json.loads(request.body)
+
+    vote_type = data.get('vote_type')
+    user = request.user
+    comment = get_object_or_404(Comment, id=comment_id)
+
+    if not user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+
+    vote, created = Vote.objects.get_or_create(user=user, comment=comment)
+
+    if not created:
+        # User already voted, update
+        vote.vote_type = vote_type
+        vote.save()
+    else:
+        vote.vote_type = vote_type
+        vote.save()
+
+    # Calculate new vote counts
+    upvotes = Vote.objects.filter(comment=comment, vote_type='up').count()
+    downvotes = Vote.objects.filter(comment=comment, vote_type='down').count()
+
+    return JsonResponse({
+        'success': True,
+        'upvotes': upvotes,
+        'downvotes': downvotes
+    })
+
+@csrf_exempt
+@require_POST
+def reply_comment(request):
+    parent_id = request.POST.get('parent_id')
+    text = request.POST.get('reply_text')
+    user = request.user
+
+    if not user.is_authenticated:
+        return JsonResponse({'success': False, 'error': 'Login required'}, status=401)
+
+    parent = get_object_or_404(Comment, id=parent_id)
+
+    reply = Comment.objects.create(
+        user=user,
+        place=parent.place,
+        parent=parent,
+        text=text
+    )
+
+    return JsonResponse({'success': True})
+
+def place_checkins(request, pk):
+    """Display all check-ins for a specific place with full details"""
+    place = get_object_or_404(Place, pk=pk, status='approved')
+    
+    # Get all check-ins for this place
+    checkins_list = CheckIn.objects.filter(place=place).select_related('user').order_by('-created_at')
+    
+    # Calculate statistics
+    unique_visitors = checkins_list.values('user').distinct().count()
+    verified_checkins = checkins_list.filter(location_verified=True).count() 
+    photo_checkins = checkins_list.exclude(photo_proof__isnull=True).exclude(photo_proof='').count()  # ✅ ensure correct field
+    
+    # Pagination
+    paginator = Paginator(checkins_list, 10)  # Show 10 check-ins per page
+    page_number = request.GET.get('page')
+    checkins = paginator.get_page(page_number)
+    
+    # Check if there are more pages
+    has_more = checkins.has_next()
+    
+    context = {
+        'place': place,
+        'checkins': checkins,
+        'unique_visitors': unique_visitors,
+        'verified_checkins': verified_checkins,
+        'photo_checkins': photo_checkins,
+        'has_more': has_more,
+    }
+    return render(request, 'place_checkins.html', context)
+
 

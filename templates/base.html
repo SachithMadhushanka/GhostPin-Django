@@ -8,10 +8,12 @@
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#4CAF50">
     <meta name="description" content="Discover and explore historical places around the world">
-    <link rel="manifest" href="{% url 'manifest' %}">
+    <link rel="manifest" href="{% url 'places:manifest' %}">
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -44,54 +46,56 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center">
-                    <a href="{% url 'home' %}" class="text-white text-xl font-bold">
+                    <a href="{% url 'places:home' %}" class="text-white text-xl font-bold">
                         👻 GhostPin
                     </a>
                 </div>
                 
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
-                        <a href="{% url 'home' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <a href="{% url 'places:home' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                             🏠 Home
                         </a>
                         {% if user.is_authenticated %}
-                            <a href="{% url 'add_place' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <a href="{% url 'places:add_place' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                 ➕ Add Place
                             </a>
-                            {% if user.is_staff %}
+                            
                                 <!-- Dropdown menu for Collections/Favorites/Check-ins -->
                                 <div class="relative group">
                                     <button class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
                                         🌍 Explore 
                                     </button>
                                     <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-200 z-50">
-                                        <a href="{% url 'collections' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        
+                                        <a href="{% url 'places:collections' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             📁 Collections
                                         </a>
-                                        <a href="{% url 'favorites' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        <a href="{% url 'places:favorites' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             ❤️ Favorites
                                         </a>
-                                        <a href="{% url 'check_ins' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        <a href="{% url 'places:check_ins' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             🗺️ Check-ins
                                         </a>
-                                        <a href="{% url 'review_places' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        <a href="{% url 'places:review_places' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             🗺️ Reviewed Places
                                         </a>
                                     </div>
                                 </div>
+                                
                                 <!-- Dropdown menu for Challenges/Badges/Leaderboard -->
                                 <div class="relative group">
                                     <button class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
                                         🏆 Achievements
                                     </button>
                                     <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                        <a href="{% url 'challenges' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        <a href="{% url 'places:challenges' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                            🧩 Challenges
                                         </a>
-                                        <a href="{% url 'badges' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        <a href="{% url 'places:badges' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             🏅 Badges
                                         </a>
-                                        <a href="{% url 'leaderboard' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        <a href="{% url 'places:leaderboard' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             🏆 Leaderboard
                                         </a>
                                     </div>
@@ -103,17 +107,16 @@
                                         🔍 Search
                                     </button>
                                     <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                        <a href="{% url 'search_results' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        <a href="{% url 'places:search_results' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             🔍 Search Results
                                         </a>
-                                        <a href="{% url 'nearby_places' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                        <a href="{% url 'places:nearby_places' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
                                             🗺️ Nearby Places
                                         </a>
                                     </div>
                                 </div>
-                                
 
-                                <a href="{% url 'notifications' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                <a href="{% url 'places:notifications' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                      🔔 Notifications
                                 </a>
 
@@ -131,7 +134,7 @@
                                     </button>
 
                                     <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                                        <a href="{% url 'profile' user.username %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <a href="{% url 'places:profile' user.username %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                             👤 Profile
                                         </a>
                                         <form method="POST" action="{% url 'logout' %}">
@@ -142,7 +145,8 @@
                                         </form>
                                     </div>
                                 </div>
-                                {% endif %}
+                                <!-- {% if user.is_staff %}
+                                {% endif %} -->
                         {% else %}
                             <a href="{% url 'login' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                 🔑 Login
@@ -167,11 +171,11 @@
         <!-- Mobile menu -->
         <div id="mobile-menu" class="md:hidden hidden">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-green-600">
-                <a href="{% url 'home' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Home</a>
+                <a href="{% url 'places:home' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Home</a>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'add_place' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Add Place</a>
+                    <a href="{% url 'places:add_place' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Add Place</a>
                     {% if user.is_staff %}
-                        <a href="{% url 'review_places' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Review Places</a>
+                        <a href="{% url 'places:review_places' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Review Places</a>
                     {% endif %}
                     <form method="post" action="accounts/logout/">
                     {% csrf_token %}
@@ -182,7 +186,7 @@
 
                 {% else %}
                     <a href="{% url 'login' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">Login</a>
-                {% endif %}
+                {% endif %} 
             </div>
         </div>
     </nav>
@@ -208,7 +212,7 @@
     <footer class="bg-gray-800 text-white mt-16">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div class="text-center">
-                <p>&copy; 2024 GhostPin. Explore historical places around the world.</p>
+                <p>&copy; 2025 GhostPin. Explore historical places around the world.</p>
                 <p class="mt-2 text-gray-400">Built with Django & Tailwind CSS</p>
             </div>
         </div>
@@ -229,7 +233,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('{% url "service_worker" %}')
+                navigator.serviceWorker.register('{% url "places:service_worker" %}')
                     .then(function(registration) {
                         console.log('ServiceWorker registration successful');
                     })

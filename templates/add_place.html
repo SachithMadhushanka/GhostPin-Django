@@ -70,7 +70,7 @@
             </div>
 
             <!-- Category Icon -->
-            <div>
+            <!-- <div>
                 <label for="{{ form.category_icon.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
                     Category Icon *
                 </label>
@@ -78,7 +78,7 @@
                 {% if form.category_icon.errors %}
                     <p class="mt-1 text-sm text-red-600">{{ form.category_icon.errors.0 }}</p>
                 {% endif %}
-            </div>
+            </div> -->
 
             <!-- Difficulty -->
             <div>
@@ -208,7 +208,7 @@
 
             <!-- Submit Button -->
             <div class="flex items-center justify-between pt-6">
-                <a href="{% url 'home' %}" class="text-gray-600 hover:text-gray-800 font-medium">
+                <a href="{% url 'places:home' %}" class="text-gray-600 hover:text-gray-800 font-medium">
                     Cancel
                 </a>
                 <button type="submit" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold">

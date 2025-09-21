@@ -68,17 +68,19 @@
     <div class="mt-6 text-center">
         <p class="text-gray-600">
             Don't have an account? 
-            <span class="text-green-600 font-medium">Contact admin to create one</span>
+            <span class="text-green-600 font-medium"><a href="{% url 'register' %}" class="text-green-600 hover:text-green-700 font-medium">
+                 Sign Up
+            </a></span>
         </p>
         <div class="mt-4">
-            <a href="{% url 'home' %}" class="text-green-600 hover:text-green-700 font-medium">
+            <a href="{% url 'places:home' %}" class="text-green-600 hover:text-green-700 font-medium">
                 ← Back to Home
             </a>
         </div>
     </div>
 
     <!-- Demo Credentials -->
-    <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+    <!-- <div class="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div class="flex items-start">
             <div class="flex-shrink-0">
                 <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
@@ -93,7 +95,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> -->
 </div>
 {% endblock %}
 
