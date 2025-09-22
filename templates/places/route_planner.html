@@ -1,0 +1,987 @@
+{% extends 'base.html' %}
+
+{% block title %}Route Planner - GhostPin{% endblock %}
+
+{% block content %}
+<!-- CSRF Token for AJAX requests -->
+{% csrf_token %}
+
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-route text-blue-600 mr-2"></i>
+                    Route Planner & Waypoint Discovery
+                </h1>
+                <p class="text-gray-600">
+                    Plan your route and discover interesting historical places along the way
+                </p>
+            </div>
+            
+            <div class="flex space-x-3">
+                <a href="{% url 'places:home' %}" class="btn-secondary">
+                    <i class="fas fa-home mr-2"></i> Back to Home
+                </a>
+                <button id="reset-route-btn" class="btn-secondary" onclick="resetRoute()">
+                    <i class="fas fa-undo mr-2"></i> Reset Route
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Sidebar Controls -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Destination Selection -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-map-marker-alt text-red-600 mr-2"></i>
+                    Destination
+                </h3>
+                
+                {% if destination %}
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-medium text-green-900">{{ destination.name }}</h4>
+                                <p class="text-sm text-green-700">{{ destination.get_category_display }}</p>
+                            </div>
+                            <button onclick="clearDestination()" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Search for a destination:</label>
+                        <div class="relative">
+                            <input type="text" id="destination-search" 
+                                   placeholder="Search places..." 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   onkeyup="searchDestinations(this.value)">
+                            <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                        </div>
+                        <div id="destination-results" class="mt-2 max-h-48 overflow-y-auto hidden"></div>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Starting Point -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-play text-green-600 mr-2"></i>
+                    Starting Point
+                </h3>
+                
+                <div class="space-y-3">
+                    <button id="use-location-btn" onclick="useCurrentLocation()" 
+                            class="w-full btn-primary text-white py-2 px-4 rounded-md">
+                        <i class="fas fa-location-arrow mr-2"></i>
+                        Use My Location
+                    </button>
+                    
+                    <div class="text-center text-gray-500 text-sm">or</div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Enter address:</label>
+                        <input type="text" id="start-address" 
+                               placeholder="Enter starting address..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               onkeypress="handleAddressKeypress(event)">
+                        <button onclick="geocodeStartAddress()" 
+                                class="w-full mt-2 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md transition-colors">
+                            <i class="fas fa-search mr-2"></i>
+                            Find Address
+                        </button>
+                    </div>
+                    
+                    <div class="text-center text-gray-500 text-sm">or</div>
+                    
+                    <button onclick="enableMapClick()" 
+                            class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-md transition-colors">
+                        <i class="fas fa-mouse-pointer mr-2"></i>
+                        Click on Map
+                    </button>
+                </div>
+                
+                <div id="start-point-info" class="mt-4 hidden">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="font-medium text-blue-900" id="start-point-name">Starting Point Set</div>
+                                <div class="text-sm text-blue-700" id="start-point-coords"></div>
+                            </div>
+                            <button onclick="clearStartPoint()" class="text-red-600 hover:text-red-800">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Route Options -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-cog text-gray-600 mr-2"></i>
+                    Route Options
+                </h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Route Type:</label>
+                        <select id="route-type" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="fastest">Fastest Route</option>
+                            <option value="shortest">Shortest Route</option>
+                            <option value="scenic">Scenic Route</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                            Waypoint Discovery Radius: <span id="radius-value">5</span> km
+                        </label>
+                        <input type="range" id="discovery-radius" min="1" max="20" value="5" 
+                               class="w-full" onchange="updateRadiusValue(this.value)">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Filter by Category:</label>
+                        <select id="category-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="">All Categories</option>
+                            <option value="historical">Historical Sites</option>
+                            <option value="religious">Religious Sites</option>
+                            <option value="cultural">Cultural Sites</option>
+                            <option value="natural">Natural Sites</option>
+                            <option value="archaeological">Archaeological Sites</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="flex items-center">
+                            <input type="checkbox" id="min-rating" class="mr-2">
+                            <span class="text-sm text-gray-700">Only show places with rating ≥ 3.0</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <button id="calculate-route-btn" onclick="calculateRoute()" 
+                        class="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md font-semibold transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled>
+                    <i class="fas fa-route mr-2"></i>
+                    Calculate Route
+                </button>
+            </div>
+
+            <!-- Route Summary -->
+            <div id="route-summary" class="bg-white rounded-lg shadow-lg p-6 hidden">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                    Route Summary
+                </h3>
+                
+                <div class="space-y-3">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Distance:</span>
+                        <span id="route-distance" class="font-semibold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Estimated Time:</span>
+                        <span id="route-time" class="font-semibold">-</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Waypoints Found:</span>
+                        <span id="waypoints-count" class="font-semibold text-green-600">-</span>
+                    </div>
+                </div>
+                
+                <div class="mt-4 space-y-2">
+                    <button onclick="startNavigation()" 
+                            class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors">
+                        <i class="fas fa-navigation mr-2"></i>
+                        Start Navigation
+                    </button>
+                    <button onclick="exportRoute()" 
+                            class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-md transition-colors">
+                        <i class="fas fa-download mr-2"></i>
+                        Export Route
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="lg:col-span-3">
+            <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+                <div class="p-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-map text-green-600 mr-2"></i>
+                            Interactive Route Map
+                        </h3>
+                        <div class="flex space-x-2">
+                            <button onclick="toggleFullscreen()" 
+                                    class="text-gray-600 hover:text-gray-800 p-2 rounded-md hover:bg-gray-100">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button onclick="centerMap()" 
+                                    class="text-gray-600 hover:text-gray-800 p-2 rounded-md hover:bg-gray-100">
+                                <i class="fas fa-crosshairs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="route-map" class="w-full h-96 lg:h-[600px]"></div>
+                
+                <!-- Map Status -->
+                <div id="map-status" class="p-3 bg-gray-50 border-t border-gray-200 text-sm text-gray-600 hidden">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <span id="status-text">Click on the map to set your starting point</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Waypoints List -->
+    <div id="waypoints-section" class="mt-8 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h3 class="text-xl font-semibold text-gray-900">
+                    <i class="fas fa-map-pin text-purple-600 mr-2"></i>
+                    Discovered Waypoints
+                </h3>
+                <div class="flex space-x-2">
+                    <button onclick="selectAllWaypoints()" class="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                        Select All
+                    </button>
+                    <button onclick="clearAllWaypoints()" class="text-red-600 hover:text-red-800 text-sm font-medium">
+                        Clear All
+                    </button>
+                </div>
+            </div>
+            
+            <div id="waypoints-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Waypoints will be populated here -->
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="addSelectedWaypoints()" 
+                        class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-6 rounded-md font-semibold transition-colors">
+                    <i class="fas fa-plus mr-2"></i>
+                    Add Selected to Route
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div id="loading-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-lg p-8 max-w-sm mx-4">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Calculating Route</h3>
+            <p class="text-gray-600">Finding the best path and discovering waypoints...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+    .waypoint-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    .waypoint-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    .waypoint-card.selected {
+        border-color: #7C3AED;
+        background-color: #F3F4F6;
+    }
+    .leaflet-routing-container {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    .leaflet-routing-alt {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .leaflet-routing-alt:hover {
+        background-color: #f8f9fa;
+    }
+    #route-map.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 1000;
+    }
+</style>
+
+<script>
+    // Global variables
+    let map;
+    let routeControl;
+    let startMarker;
+    let destinationMarker;
+    let waypointMarkers = [];
+    let discoveredWaypoints = [];
+    let selectedWaypoints = [];
+    let isMapClickEnabled = false;
+    let currentRoute = null;
+    
+    // All places data from Django
+    const allPlaces = {{ all_places|safe }};
+    
+    // Destination from URL parameter
+    {% if destination %}
+        const presetDestination = {
+            id: {{ destination.id }},
+            name: "{{ destination.name|escapejs }}",
+            lat: {{ destination.latitude }},
+            lng: {{ destination.longitude }},
+            category: "{{ destination.get_category_display|escapejs }}"
+        };
+    {% else %}
+        const presetDestination = null;
+    {% endif %}
+    
+    // Initialize map
+    function initializeMap() {
+        // Create map centered on a default location
+        map = L.map('route-map').setView([7.8731, 80.7718], 8); // Sri Lanka center
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(map);
+        
+        // Add click handler for setting start point
+        map.on('click', function(e) {
+            if (isMapClickEnabled) {
+                setStartPoint(e.latlng.lat, e.latlng.lng, 'Map Click');
+                disableMapClick();
+            }
+        });
+        
+        // Set destination if provided
+        if (presetDestination) {
+            setDestination(presetDestination);
+        }
+        
+        // Add scale control
+        L.control.scale().addTo(map);
+    }
+    
+    // Search destinations
+    function searchDestinations(query) {
+        const resultsDiv = document.getElementById('destination-results');
+        
+        if (query.length < 2) {
+            resultsDiv.classList.add('hidden');
+            return;
+        }
+        
+        const filtered = allPlaces.filter(place => 
+            place.name.toLowerCase().includes(query.toLowerCase()) ||
+            place.category.toLowerCase().includes(query.toLowerCase())
+        ).slice(0, 5);
+        
+        if (filtered.length > 0) {
+            resultsDiv.innerHTML = filtered.map(place => `
+                <div class="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200 last:border-b-0" 
+                     onclick="selectDestination(${place.id}, '${place.name.replace(/'/g, "\\'")}', ${place.latitude}, ${place.longitude}, '${place.category}')">
+                    <div class="font-medium text-gray-900">${place.name}</div>
+                    <div class="text-sm text-gray-600">${place.category}</div>
+                </div>
+            `).join('');
+            resultsDiv.classList.remove('hidden');
+        } else {
+            resultsDiv.innerHTML = '<div class="p-2 text-gray-500">No places found</div>';
+            resultsDiv.classList.remove('hidden');
+        }
+    }
+    
+    // Select destination
+    function selectDestination(id, name, lat, lng, category) {
+        setDestination({ id, name, lat, lng, category });
+        document.getElementById('destination-search').value = '';
+        document.getElementById('destination-results').classList.add('hidden');
+    }
+    
+    // Set destination
+    function setDestination(destination) {
+        // Remove existing destination marker
+        if (destinationMarker) {
+            map.removeLayer(destinationMarker);
+        }
+        
+        // Add destination marker
+        destinationMarker = L.marker([destination.lat, destination.lng], {
+            icon: L.divIcon({
+                className: 'custom-marker destination-marker',
+                html: '<div class="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm">D</div>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            })
+        }).addTo(map);
+        
+        destinationMarker.bindPopup(`
+            <div class="text-center">
+                <h3 class="font-semibold">${destination.name}</h3>
+                <p class="text-sm text-gray-600">${destination.category}</p>
+                <p class="text-xs text-gray-500 mt-1">Destination</p>
+            </div>
+        `);
+        
+        // Update URL
+        const url = new URL(window.location);
+        url.searchParams.set('destination', destination.id);
+        window.history.pushState({}, '', url);
+        
+        // Center map on destination
+        map.setView([destination.lat, destination.lng], 12);
+        
+        // Enable route calculation if start point is set
+        checkRouteCalculationReady();
+    }
+    
+    // Clear destination
+    function clearDestination() {
+        if (destinationMarker) {
+            map.removeLayer(destinationMarker);
+            destinationMarker = null;
+        }
+        
+        // Remove destination from URL
+        const url = new URL(window.location);
+        url.searchParams.delete('destination');
+        window.history.pushState({}, '', url);
+        
+        // Reload page to show destination search
+        location.reload();
+    }
+    
+    // Use current location
+    function useCurrentLocation() {
+        const btn = document.getElementById('use-location-btn');
+        const originalText = btn.innerHTML;
+        
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Getting Location...';
+        btn.disabled = true;
+        
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    setStartPoint(lat, lng, 'Current Location');
+                    
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                },
+                function(error) {
+                    alert('Error getting location: ' + error.message);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            );
+        } else {
+            alert('Geolocation is not supported by this browser.');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    }
+    
+    // Handle address keypress
+    function handleAddressKeypress(event) {
+        if (event.key === 'Enter') {
+            geocodeStartAddress();
+        }
+    }
+    
+    // Geocode start address
+    function geocodeStartAddress() {
+        const address = document.getElementById('start-address').value.trim();
+        if (!address) return;
+        
+        // Simple geocoding using Nominatim (OpenStreetMap)
+        fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const result = data[0];
+                    setStartPoint(parseFloat(result.lat), parseFloat(result.lon), result.display_name);
+                } else {
+                    alert('Address not found. Please try a different address.');
+                }
+            })
+            .catch(error => {
+                console.error('Geocoding error:', error);
+                alert('Error finding address. Please try again.');
+            });
+    }
+    
+    // Enable map click
+    function enableMapClick() {
+        isMapClickEnabled = true;
+        showMapStatus('Click on the map to set your starting point');
+        map.getContainer().style.cursor = 'crosshair';
+    }
+    
+    // Disable map click
+    function disableMapClick() {
+        isMapClickEnabled = false;
+        hideMapStatus();
+        map.getContainer().style.cursor = '';
+    }
+    
+    // Set start point
+    function setStartPoint(lat, lng, name) {
+        // Remove existing start marker
+        if (startMarker) {
+            map.removeLayer(startMarker);
+        }
+        
+        // Add start marker
+        startMarker = L.marker([lat, lng], {
+            icon: L.divIcon({
+                className: 'custom-marker start-marker',
+                html: '<div class="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">S</div>',
+                iconSize: [32, 32],
+                iconAnchor: [16, 16]
+            })
+        }).addTo(map);
+        
+        startMarker.bindPopup(`
+            <div class="text-center">
+                <h3 class="font-semibold">Starting Point</h3>
+                <p class="text-sm text-gray-600">${name}</p>
+                <p class="text-xs text-gray-500 mt-1">${lat.toFixed(6)}, ${lng.toFixed(6)}</p>
+            </div>
+        `);
+        
+        // Update UI
+        document.getElementById('start-point-info').classList.remove('hidden');
+        document.getElementById('start-point-name').textContent = name;
+        document.getElementById('start-point-coords').textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        
+        // Enable route calculation if destination is set
+        checkRouteCalculationReady();
+    }
+    
+    // Clear start point
+    function clearStartPoint() {
+        if (startMarker) {
+            map.removeLayer(startMarker);
+            startMarker = null;
+        }
+        
+        document.getElementById('start-point-info').classList.add('hidden');
+        document.getElementById('calculate-route-btn').disabled = true;
+    }
+    
+    // Check if route calculation is ready
+    function checkRouteCalculationReady() {
+        const canCalculate = startMarker && destinationMarker;
+        document.getElementById('calculate-route-btn').disabled = !canCalculate;
+    }
+    
+    // Update radius value display
+    function updateRadiusValue(value) {
+        document.getElementById('radius-value').textContent = value;
+    }
+    
+    // Calculate route
+    function calculateRoute() {
+        if (!startMarker || !destinationMarker) {
+            alert('Please set both starting point and destination.');
+            return;
+        }
+        
+        showLoadingModal();
+        
+        const startLatLng = startMarker.getLatLng();
+        const destLatLng = destinationMarker.getLatLng();
+        
+        // Remove existing route
+        if (routeControl) {
+            map.removeControl(routeControl);
+        }
+        
+        // Create route control
+        routeControl = L.Routing.control({
+            waypoints: [
+                L.latLng(startLatLng.lat, startLatLng.lng),
+                L.latLng(destLatLng.lat, destLatLng.lng)
+            ],
+            routeWhileDragging: false,
+            addWaypoints: false,
+            createMarker: function() { return null; }, // Don't create default markers
+            lineOptions: {
+                styles: [{ color: '#3B82F6', weight: 6, opacity: 0.8 }]
+            }
+        }).addTo(map);
+        
+        routeControl.on('routesfound', function(e) {
+            currentRoute = e.routes[0];
+            updateRouteSummary(currentRoute);
+            discoverWaypoints(currentRoute);
+            hideLoadingModal();
+        });
+        
+        routeControl.on('routingerror', function(e) {
+            console.error('Routing error:', e);
+            alert('Error calculating route. Please try again.');
+            hideLoadingModal();
+        });
+    }
+    
+    // Update route summary
+    function updateRouteSummary(route) {
+        const distance = (route.summary.totalDistance / 1000).toFixed(1);
+        const time = Math.round(route.summary.totalTime / 60);
+        
+        document.getElementById('route-distance').textContent = distance + ' km';
+        document.getElementById('route-time').textContent = time + ' minutes';
+        document.getElementById('route-summary').classList.remove('hidden');
+    }
+    
+    // Discover waypoints along route
+    function discoverWaypoints(route) {
+        const radius = parseInt(document.getElementById('discovery-radius').value) * 1000; // Convert to meters
+        const categoryFilter = document.getElementById('category-filter').value;
+        const minRating = document.getElementById('min-rating').checked;
+        
+        discoveredWaypoints = [];
+        
+        // Get route coordinates
+        const routeCoords = route.coordinates;
+        
+        // Find places near the route
+        allPlaces.forEach(place => {
+            // Skip if it's the destination
+            if (destinationMarker && 
+                Math.abs(place.latitude - destinationMarker.getLatLng().lat) < 0.001 &&
+                Math.abs(place.longitude - destinationMarker.getLatLng().lng) < 0.001) {
+                return;
+            }
+            
+            // Apply filters
+            if (categoryFilter && place.category.toLowerCase() !== categoryFilter) {
+                return;
+            }
+            
+            // Check if place is within radius of route
+            const placeLatLng = L.latLng(place.latitude, place.longitude);
+            let isNearRoute = false;
+            
+            for (let i = 0; i < routeCoords.length; i += 10) { // Sample every 10th point for performance
+                const routePoint = L.latLng(routeCoords[i].lat, routeCoords[i].lng);
+                if (placeLatLng.distanceTo(routePoint) <= radius) {
+                    isNearRoute = true;
+                    break;
+                }
+            }
+            
+            if (isNearRoute) {
+                discoveredWaypoints.push({
+                    ...place,
+                    rating: Math.random() * 2 + 3 // Mock rating for demo
+                });
+            }
+        });
+        
+        // Apply rating filter
+        if (minRating) {
+            discoveredWaypoints = discoveredWaypoints.filter(place => place.rating >= 3.0);
+        }
+        
+        // Update UI
+        document.getElementById('waypoints-count').textContent = discoveredWaypoints.length;
+        displayWaypoints();
+    }
+    
+    // Display waypoints
+    function displayWaypoints() {
+        const grid = document.getElementById('waypoints-grid');
+        
+        if (discoveredWaypoints.length === 0) {
+            grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500">No waypoints found along this route.</div>';
+        } else {
+            grid.innerHTML = discoveredWaypoints.map((place, index) => `
+                <div class="waypoint-card border border-gray-200 rounded-lg p-4" data-index="${index}" onclick="toggleWaypointSelection(${index})">
+                    <div class="flex items-start justify-between mb-2">
+                        <h4 class="font-medium text-gray-900 text-sm">${place.name}</h4>
+                        <input type="checkbox" class="waypoint-checkbox" data-index="${index}">
+                    </div>
+                    <p class="text-xs text-gray-600 mb-2">${place.category}</p>
+                    <p class="text-xs text-gray-500 mb-3">${place.description ? place.description.substring(0, 80) + '...' : 'No description available'}</p>
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center">
+                            <div class="flex text-yellow-400 text-xs">
+                                ${'★'.repeat(Math.floor(place.rating))}${'☆'.repeat(5 - Math.floor(place.rating))}
+                            </div>
+                            <span class="text-xs text-gray-500 ml-1">${place.rating.toFixed(1)}</span>
+                        </div>
+                        <button onclick="showPlaceOnMap(${place.latitude}, ${place.longitude}, '${place.name.replace(/'/g, "\\'")}'); event.stopPropagation();" 
+                                class="text-blue-600 hover:text-blue-800 text-xs">
+                            <i class="fas fa-map-marker-alt mr-1"></i>Show
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        document.getElementById('waypoints-section').classList.remove('hidden');
+        
+        // Add waypoint markers to map
+        clearWaypointMarkers();
+        discoveredWaypoints.forEach((place, index) => {
+            const marker = L.marker([place.latitude, place.longitude], {
+                icon: L.divIcon({
+                    className: 'custom-marker waypoint-marker',
+                    html: '<div class="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xs">W</div>',
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                })
+            }).addTo(map);
+            
+            marker.bindPopup(`
+                <div class="text-center">
+                    <h3 class="font-semibold">${place.name}</h3>
+                    <p class="text-sm text-gray-600">${place.category}</p>
+                    <div class="flex items-center justify-center mt-1">
+                        <div class="flex text-yellow-400 text-xs">
+                            ${'★'.repeat(Math.floor(place.rating))}${'☆'.repeat(5 - Math.floor(place.rating))}
+                        </div>
+                        <span class="text-xs text-gray-500 ml-1">${place.rating.toFixed(1)}</span>
+                    </div>
+                    <button onclick="toggleWaypointSelection(${index})" class="mt-2 bg-purple-600 text-white px-3 py-1 rounded text-xs">
+                        Add to Route
+                    </button>
+                </div>
+            `);
+            
+            waypointMarkers.push(marker);
+        });
+    }
+    
+    // Toggle waypoint selection
+    function toggleWaypointSelection(index) {
+        const checkbox = document.querySelector(`input[data-index="${index}"]`);
+        const card = document.querySelector(`.waypoint-card[data-index="${index}"]`);
+        
+        checkbox.checked = !checkbox.checked;
+        
+        if (checkbox.checked) {
+            card.classList.add('selected');
+            if (!selectedWaypoints.includes(index)) {
+                selectedWaypoints.push(index);
+            }
+        } else {
+            card.classList.remove('selected');
+            selectedWaypoints = selectedWaypoints.filter(i => i !== index);
+        }
+    }
+    
+    // Select all waypoints
+    function selectAllWaypoints() {
+        selectedWaypoints = [];
+        document.querySelectorAll('.waypoint-checkbox').forEach((checkbox, index) => {
+            checkbox.checked = true;
+            document.querySelector(`.waypoint-card[data-index="${index}"]`).classList.add('selected');
+            selectedWaypoints.push(index);
+        });
+    }
+    
+    // Clear all waypoints
+    function clearAllWaypoints() {
+        selectedWaypoints = [];
+        document.querySelectorAll('.waypoint-checkbox').forEach((checkbox, index) => {
+            checkbox.checked = false;
+            document.querySelector(`.waypoint-card[data-index="${index}"]`).classList.remove('selected');
+        });
+    }
+    
+    // Add selected waypoints to route
+    function addSelectedWaypoints() {
+        if (selectedWaypoints.length === 0) {
+            alert('Please select at least one waypoint.');
+            return;
+        }
+        
+        // Get selected waypoint coordinates
+        const waypoints = [startMarker.getLatLng()];
+        
+        selectedWaypoints.forEach(index => {
+            const place = discoveredWaypoints[index];
+            waypoints.push(L.latLng(place.latitude, place.longitude));
+        });
+        
+        waypoints.push(destinationMarker.getLatLng());
+        
+        // Update route with waypoints
+        if (routeControl) {
+            map.removeControl(routeControl);
+        }
+        
+        routeControl = L.Routing.control({
+            waypoints: waypoints,
+            routeWhileDragging: false,
+            addWaypoints: false,
+            createMarker: function() { return null; },
+            lineOptions: {
+                styles: [{ color: '#7C3AED', weight: 6, opacity: 0.8 }]
+            }
+        }).addTo(map);
+        
+        routeControl.on('routesfound', function(e) {
+            currentRoute = e.routes[0];
+            updateRouteSummary(currentRoute);
+        });
+    }
+    
+    // Show place on map
+    function showPlaceOnMap(lat, lng, name) {
+        map.setView([lat, lng], 15);
+        
+        // Find and open the marker popup
+        waypointMarkers.forEach(marker => {
+            if (Math.abs(marker.getLatLng().lat - lat) < 0.001 && 
+                Math.abs(marker.getLatLng().lng - lng) < 0.001) {
+                marker.openPopup();
+            }
+        });
+    }
+    
+    // Clear waypoint markers
+    function clearWaypointMarkers() {
+        waypointMarkers.forEach(marker => {
+            map.removeLayer(marker);
+        });
+        waypointMarkers = [];
+    }
+    
+    // Reset route
+    function resetRoute() {
+        if (routeControl) {
+            map.removeControl(routeControl);
+            routeControl = null;
+        }
+        
+        clearWaypointMarkers();
+        clearStartPoint();
+        
+        document.getElementById('route-summary').classList.add('hidden');
+        document.getElementById('waypoints-section').classList.add('hidden');
+        
+        selectedWaypoints = [];
+        discoveredWaypoints = [];
+        currentRoute = null;
+    }
+    
+    // Start navigation
+    function startNavigation() {
+        if (!currentRoute) {
+            alert('Please calculate a route first.');
+            return;
+        }
+        
+        // Open in external navigation app
+        const start = startMarker.getLatLng();
+        const dest = destinationMarker.getLatLng();
+        
+        const googleMapsUrl = `https://www.google.com/maps/dir/${start.lat},${start.lng}/${dest.lat},${dest.lng}`;
+        window.open(googleMapsUrl, '_blank');
+    }
+    
+    // Export route
+    function exportRoute() {
+        if (!currentRoute) {
+            alert('Please calculate a route first.');
+            return;
+        }
+        
+        const routeData = {
+            start: startMarker.getLatLng(),
+            destination: destinationMarker.getLatLng(),
+            waypoints: selectedWaypoints.map(index => discoveredWaypoints[index]),
+            summary: currentRoute.summary,
+            coordinates: currentRoute.coordinates
+        };
+        
+        const dataStr = JSON.stringify(routeData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = 'ghostpin_route.json';
+        link.click();
+    }
+    
+    // Toggle fullscreen
+    function toggleFullscreen() {
+        const mapContainer = document.getElementById('route-map');
+        mapContainer.classList.toggle('fullscreen');
+        
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+    }
+    
+    // Center map
+    function centerMap() {
+        if (startMarker && destinationMarker) {
+            const group = new L.featureGroup([startMarker, destinationMarker]);
+            map.fitBounds(group.getBounds().pad(0.1));
+        } else if (destinationMarker) {
+            map.setView(destinationMarker.getLatLng(), 12);
+        } else if (startMarker) {
+            map.setView(startMarker.getLatLng(), 12);
+        }
+    }
+    
+    // Show map status
+    function showMapStatus(message) {
+        document.getElementById('status-text').textContent = message;
+        document.getElementById('map-status').classList.remove('hidden');
+    }
+    
+    // Hide map status
+    function hideMapStatus() {
+        document.getElementById('map-status').classList.add('hidden');
+    }
+    
+    // Show loading modal
+    function showLoadingModal() {
+        document.getElementById('loading-modal').classList.remove('hidden');
+    }
+    
+    // Hide loading modal
+    function hideLoadingModal() {
+        document.getElementById('loading-modal').classList.add('hidden');
+    }
+    
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeMap();
+        
+        // Hide destination search results when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('#destination-search') && !e.target.closest('#destination-results')) {
+                document.getElementById('destination-results').classList.add('hidden');
+            }
+        });
+    });
+</script>
+{% endblock %}
+

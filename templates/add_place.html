@@ -117,13 +117,13 @@
             <!-- Accessibility Information -->
             <div>
                 <label for="{{ form.accessibility_info.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                    Accessibility Information
+                    Accessibility & Visitor Information
                 </label>
                 {{ form.accessibility_info }}
                 {% if form.accessibility_info.errors %}
                     <p class="mt-1 text-sm text-red-600">{{ form.accessibility_info.errors.0 }}</p>
                 {% endif %}
-                <p class="mt-2 text-sm text-gray-500">Information about accessibility for visitors with disabilities</p>
+                <p class="mt-2 text-sm text-gray-500">Include important information for visitors, such as wheelchair access, required attire (e.g., modest dress), entrance rules, or other cultural or religious considerations.</p>
             </div>
 
             <!-- Legends and Stories -->

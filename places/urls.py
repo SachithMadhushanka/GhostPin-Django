@@ -11,6 +11,7 @@ urlpatterns = [
     path('place/<int:pk>/edit/', views.edit_place, name='edit_place'),
     path('place/<int:pk>/check-in/', views.check_in, name='check_in'),
     path('place/<int:pk>/checkins/', views.place_checkins, name='place_checkins'),
+    path('route-planner/', views.route_planner, name='route_planner'),
     
     # User URLs
     path('user/<str:username>/', views.profile, name='profile'),

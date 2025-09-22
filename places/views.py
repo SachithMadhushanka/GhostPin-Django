@@ -894,4 +894,24 @@ def place_checkins(request, pk):
     }
     return render(request, 'place_checkins.html', context)
 
-
+def route_planner(request):
+    """Route planner with waypoint discovery"""
+    destination_id = request.GET.get('destination')
+    destination = None
+    
+    if destination_id:
+        try:
+            destination = Place.objects.get(pk=destination_id, status='approved')
+        except Place.DoesNotExist:
+            destination = None
+    
+    # Get all approved places for potential waypoints
+    all_places = Place.objects.filter(status='approved').values(
+        'id', 'name', 'latitude', 'longitude', 'category', 'description'
+    )
+    
+    context = {
+        'destination': destination,
+        'all_places': list(all_places),
+    }
+    return render(request, 'places/route_planner.html', context)

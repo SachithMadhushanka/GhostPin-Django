@@ -14,6 +14,14 @@
         </svg>
         Back to Places
     </a>
+
+    <!-- Route Planning Button -->
+    <a href="{% url 'places:route_planner' %}?destination={{ place.id }}" 
+        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center">
+        <i class="fas fa-route mr-2"></i>
+        Plan Route
+    </a>
+
     <!-- View Check-ins button -->
         <a href="{% url 'places:place_checkins' place.pk %}" 
         class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow transition-colors">
@@ -164,7 +172,7 @@
                 {% if place.accessibility_info %}
                 <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
                     <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
-                        ♿ Accessibility Information
+                        Accessibility & Visitor Information
                     </h3>
                     <p class="text-gray-700 leading-relaxed text-base">
                         {{ place.accessibility_info|linebreaks }}
