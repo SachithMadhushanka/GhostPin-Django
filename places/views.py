@@ -9,6 +9,8 @@ from django.db.models import Q, Count, Avg
 from django.core.paginator import Paginator
 from django.utils import timezone
 from datetime import timedelta
+from django.utils.timezone import now
+from collections import Counter
 import json
 import os
 from django.conf import settings
@@ -18,7 +20,7 @@ from geopy.distance import geodesic
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import (
-    Place, Comment, PlaceImage, CheckIn, PlaceCollection, CollectionPlace,
+    CollectionFavorite, Place, Comment, PlaceImage, CheckIn, PlaceCollection, CollectionPlace,
     Vote, Favorite, AudioGuide, Badge, UserBadge, Challenge, Notification,
     Report, UserProfile, ExpertArea
 )
@@ -225,8 +227,16 @@ def profile(request, username):
 @login_required
 def favorites(request):
     """User's favorite places"""
-    favorites = Favorite.objects.filter(user=request.user).select_related('place')
-    return render(request, 'favorites.html', {'favorites': favorites})
+    favorites = Favorite.objects.filter(user=request.user).select_related('place').order_by('-created_at')
+    
+    # Calculate category count
+    category_count = favorites.values('place__category').distinct().count()
+    
+    context = {
+        'favorites': favorites,
+        'category_count': category_count,
+    }
+    return render(request, 'favorites.html', context)
 
 
 @login_required
@@ -300,11 +310,79 @@ def check_new_notifications(request):
         'unread_count': unread_count
     })
 
+def get_streaks(checkins):
+    # Extract all unique check-in dates sorted
+    dates = sorted(set(ci.created_at.date() for ci in checkins))
+    if not dates:
+        return []
+
+    streaks = []
+    current_streak = 1
+
+    for i in range(1, len(dates)):
+        # Check if current date is exactly one day after the previous
+        if dates[i] == dates[i-1] + timedelta(days=1):
+            current_streak += 1
+        else:
+            streaks.append(current_streak)
+            current_streak = 1
+    streaks.append(current_streak)
+    return streaks
+
+
 @login_required
 def check_ins(request):
-    """User's check-in history"""
-    checkins = CheckIn.objects.filter(user=request.user).select_related('place')
-    return render(request, 'check_ins.html', {'checkins': checkins})
+    user = request.user
+    today = now().date()
+    checkins = CheckIn.objects.filter(user=user).select_related('place')
+
+    # Total stats
+    total_points = checkins.aggregate(total=Sum('points_awarded'))['total'] or 0
+    unique_places = checkins.values('place').distinct().count()
+
+    # Time-based stats
+    week_ago = today - timedelta(days=7)
+    month_ago = today - timedelta(days=30)
+    week_checkins = checkins.filter(created_at__date__gte=week_ago).count()
+    month_checkins = checkins.filter(created_at__date__gte=month_ago).count()
+
+    total_count = checkins.count()
+    photo_checkins = checkins.filter(photo_proof__isnull=False).count()
+    verified_checkins = checkins.filter(location_verified=True).count()
+
+    photo_percent = round((photo_checkins / total_count) * 100, 1) if total_count else 0
+    verified_percent = round((verified_checkins / total_count) * 100, 1) if total_count else 0
+
+    # Achievements (example logic)
+    streaks = get_streaks(checkins)
+    longest_streak = max(streaks) if streaks else 0
+
+    months = checkins.dates('created_at', 'month')
+    month_counts = Counter([dt.strftime('%B %Y') for dt in months])
+    most_active_month = month_counts.most_common(1)[0][0] if month_counts else 'N/A'
+
+    category_counts = Counter([c.place.category for c in checkins if c.place and c.place.category])
+    favorite_category = category_counts.most_common(1)[0][0] if category_counts else 'N/A'
+
+    # Badges and milestones
+    recent_badges = UserBadge.objects.filter(user=user).select_related('badge').order_by('-earned_at')[:5]
+    #recent_milestones = Milestone.objects.filter(user=user).order_by('-date')[:5]
+
+    return render(request, 'check_ins.html', {
+        'checkins': checkins,
+        'total_points': total_points,
+        'unique_places': unique_places,
+        'week_checkins': week_checkins,
+        'month_checkins': month_checkins,
+        'photo_checkins': photo_percent,
+        'verified_checkins': verified_percent,
+        'longest_streak': longest_streak,
+        'most_active_month': most_active_month,
+        'favorite_category': favorite_category,
+        'recent_badges': recent_badges,
+        #'recent_milestones': recent_milestones,
+    })
+
 
 
 # Check-in System
@@ -345,8 +423,52 @@ def collections(request):
     """Browse public collections"""
     collections = PlaceCollection.objects.filter(is_public=True).annotate(
         place_count=Count('places')
-    )
-    return render(request, 'collections.html', {'collections': collections})
+    ).select_related('created_by').prefetch_related('places')
+    
+    # Search functionality
+    search_query = request.GET.get('search', '')
+    if search_query:
+        collections = collections.filter(
+            Q(name__icontains=search_query) | 
+            Q(description__icontains=search_query) |
+            Q(category__icontains=search_query)
+        )
+    
+    # Filter by difficulty
+    difficulty = request.GET.get('difficulty', '')
+    if difficulty:
+        collections = collections.filter(difficulty=difficulty)
+    
+    # Filter by category
+    category = request.GET.get('category', '')
+    if category:
+        collections = collections.filter(category=category)
+    
+    # Sort collections
+    sort_by = request.GET.get('sort', 'created_at')
+    if sort_by == 'name':
+        collections = collections.order_by('name')
+    elif sort_by == 'places':
+        collections = collections.order_by('-place_count')
+    elif sort_by == 'difficulty':
+        collections = collections.order_by('difficulty')
+    else:
+        collections = collections.order_by('-created_at')
+    
+    # Get filter options for template
+    difficulty_choices = PlaceCollection.DIFFICULTY_CHOICES if hasattr(PlaceCollection, 'DIFFICULTY_CHOICES') else []
+    category_choices = collections.values_list('category', flat=True).distinct()
+    
+    context = {
+        'collections': collections,
+        'search_query': search_query,
+        'selected_difficulty': difficulty,
+        'selected_category': category,
+        'selected_sort': sort_by,
+        'difficulty_choices': difficulty_choices,
+        'category_choices': category_choices,
+    }
+    return render(request, 'collections.html', context)
 
 
 def collection_detail(request, pk):
@@ -360,28 +482,153 @@ def collection_detail(request, pk):
         collection=collection
     ).select_related('place').order_by('order')
     
-    return render(request, 'collection_detail.html', {
+    # Handle collection actions
+    if request.method == 'POST' and request.user.is_authenticated:
+        action = request.POST.get('action')
+        
+        if action == 'save_collection':
+            favorite, created = CollectionFavorite.objects.get_or_create(
+                user=request.user,
+                collection=collection,
+            )
+            if created:
+                messages.success(request, 'Collection saved to your favorites!')
+            else:
+                messages.info(request, 'Collection already in your favorites.')
+
+        elif action == 'start_collection':
+            # Create a collection progress tracking
+            messages.success(request, 'Collection started! Happy exploring!')
+            # In a real app, you'd track user progress through the collection
+        
+        elif action == 'export_route':
+            # Export route as GPX or similar format
+            messages.success(request, 'Route exported successfully!')
+    
+    # Calculate collection statistics
+    total_distance = sum([cp.distance_from_previous or 0 for cp in collection_places])
+    estimated_time = collection.estimated_duration or "Varies"
+    
+    context = {
         'collection': collection,
-        'collection_places': collection_places
-    })
+        'collection_places': collection_places,
+        'total_distance': total_distance,
+        'estimated_time': estimated_time,
+        'can_edit': request.user == collection.created_by or request.user.is_staff,
+    }
+    return render(request, 'collection_detail.html', context)
 
 
 @login_required
 def create_collection(request):
     """Create a new collection"""
     if request.method == 'POST':
-        form = PlaceCollectionForm(request.POST)
+        form = PlaceCollectionForm(request.POST, request.FILES)
         if form.is_valid():
             collection = form.save(commit=False)
             collection.created_by = request.user
+            
+            # Check if saving as draft
+            save_as_draft = request.POST.get('save_as_draft', False)
+            if save_as_draft:
+                collection.is_public = False
+                collection.status = 'draft'  # Assuming you have a status field
+            
             collection.save()
             
-            messages.success(request, 'Collection created successfully!')
+            # Handle selected places
+            selected_places = request.POST.get('selected_places', '')
+            if selected_places:
+                place_ids = [int(id) for id in selected_places.split(',') if id.strip()]
+                for order, place_id in enumerate(place_ids):
+                    try:
+                        place = Place.objects.get(pk=place_id, status='approved')
+                        CollectionPlace.objects.create(
+                            collection=collection,
+                            place=place,
+                            order=order + 1
+                        )
+                    except Place.DoesNotExist:
+                        continue
+            
+            if save_as_draft:
+                messages.success(request, 'Collection saved as draft!')
+            else:
+                messages.success(request, 'Collection created successfully!')
             return redirect('places:collection_detail', pk=collection.pk)
     else:
         form = PlaceCollectionForm()
     
-    return render(request, 'create_collection.html', {'form': form})
+    # Get available places for selection
+    available_places = Place.objects.filter(status='approved').order_by('name')
+    
+    # Handle pre-selected places from URL parameter (from favorites)
+    preselected_places = []
+    places_param = request.GET.get('places', '')
+    if places_param:
+        try:
+            place_ids = [int(id) for id in places_param.split(',') if id.strip()]
+            preselected_places = Place.objects.filter(pk__in=place_ids, status='approved')
+        except ValueError:
+            pass
+    
+    context = {
+        'form': form,
+        'available_places': available_places,
+        'preselected_places': preselected_places,
+    }
+    return render(request, 'create_collection.html', context)
+
+
+@login_required
+def edit_collection(request, pk):
+    """Edit an existing collection"""
+    collection = get_object_or_404(PlaceCollection, pk=pk)
+    
+    # Check permissions
+    if collection.created_by != request.user and not request.user.is_staff:
+        messages.error(request, 'You can only edit your own collections.')
+        return redirect('places:collection_detail', pk=collection.pk)
+    
+    if request.method == 'POST':
+        form = PlaceCollectionForm(request.POST, request.FILES, instance=collection)
+        if form.is_valid():
+            collection = form.save()
+            
+            # Handle selected places - remove existing and add new ones
+            CollectionPlace.objects.filter(collection=collection).delete()
+            
+            selected_places = request.POST.get('selected_places', '')
+            if selected_places:
+                place_ids = [int(id) for id in selected_places.split(',') if id.strip()]
+                for order, place_id in enumerate(place_ids):
+                    try:
+                        place = Place.objects.get(pk=place_id, status='approved')
+                        CollectionPlace.objects.create(
+                            collection=collection,
+                            place=place,
+                            order=order + 1
+                        )
+                    except Place.DoesNotExist:
+                        continue
+            
+            messages.success(request, 'Collection updated successfully!')
+            return redirect('places:collection_detail', pk=collection.pk)
+    else:
+        form = PlaceCollectionForm(instance=collection)
+    
+    # Get available places and current collection places
+    available_places = Place.objects.filter(status='approved').order_by('name')
+    current_places = collection.places.all()
+    
+    context = {
+        'form': form,
+        'collection': collection,
+        'available_places': available_places,
+        'current_places': current_places,
+        'is_editing': True,
+    }
+    return render(request, 'create_collection.html', context)
 
 
 # Gamification

@@ -18,15 +18,53 @@
     
     <!-- Action Bar -->
     <div class="flex flex-col sm:flex-row justify-between items-center mb-8 space-y-4 sm:space-y-0">
-        <div class="flex items-center space-x-4">
-            <span class="text-gray-600">{{ collections.count }} collections found</span>
+        <!-- Search and Filters -->
+        <div class="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
+            <!-- Search -->
+            <form method="get" class="flex items-center space-x-2">
+                <div class="relative">
+                    <input type="text" name="search" value="{{ search_query }}" 
+                           placeholder="Search collections..." 
+                           class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                </div>
+                
+                <!-- Difficulty Filter -->
+                <select name="difficulty" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500">
+                    <option value="">All Difficulties</option>
+                    <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>Easy</option>
+                    <option value="moderate" {% if selected_difficulty == 'moderate' %}selected{% endif %}>Moderate</option>
+                    <option value="hard" {% if selected_difficulty == 'hard' %}selected{% endif %}>Hard</option>
+                </select>
+                
+                <!-- Sort -->
+                <select name="sort" class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500">
+                    <option value="created_at" {% if selected_sort == 'created_at' %}selected{% endif %}>Newest First</option>
+                    <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>Name A-Z</option>
+                    <option value="places" {% if selected_sort == 'places' %}selected{% endif %}>Most Places</option>
+                    <option value="difficulty" {% if selected_sort == 'difficulty' %}selected{% endif %}>Difficulty</option>
+                </select>
+                
+                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-filter mr-1"></i> Filter
+                </button>
+                
+                {% if search_query or selected_difficulty or selected_category %}
+                    <a href="{% url 'places:collections' %}" class="bg-gray-300 hover:bg-gray-400 text-gray-700 px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-times mr-1"></i> Clear
+                    </a>
+                {% endif %}
+            </form>
         </div>
         
-        {% if user.is_authenticated %}
-            <a href="{% url 'places:create_collection' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                <i class="fas fa-plus mr-2"></i> Create Collection
-            </a>
-        {% endif %}
+        <div class="flex items-center space-x-4">
+            <span class="text-gray-600">{{ collections.count }} collections found</span>
+            {% if user.is_authenticated %}
+                <a href="{% url 'places:create_collection' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-plus mr-2"></i> Create Collection
+                </a>
+            {% endif %}
+        </div>
     </div>
     
     <!-- Collections Grid -->
@@ -112,11 +150,11 @@
                     Group related locations together to help others discover amazing routes.
                 </p>
                 {% if user.is_authenticated %}
-                    <a href="{% url 'places:create_collection' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <a href="{% url 'places:create_collection' %}" class="btn-primary">
                         <i class="fas fa-plus mr-2"></i> Create First Collection
                     </a>
                 {% else %}
-                    <a href="{% url 'login' %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    <a href="{% url 'login' %}" class="btn-primary">
                         <i class="fas fa-sign-in-alt mr-2"></i> Login to Create Collections
                     </a>
                 {% endif %}

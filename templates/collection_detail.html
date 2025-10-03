@@ -45,14 +45,18 @@
             
             <div class="flex space-x-3">
                 {% if user.is_authenticated %}
-                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-heart mr-2"></i> Save Collection
-                    </button>
+                    <form method="post" class="inline">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="save_collection">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-heart mr-2"></i> Save Collection
+                        </button>
+                    </form>
                 {% endif %}
-                {% if user == collection.created_by or user.is_staff %}
-                    <button class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
+                {% if can_edit %}
+                    <a href="{% url 'places:edit_collection' collection.pk %}" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
                         <i class="fas fa-edit mr-2"></i> Edit
-                    </button>
+                    </a>
                 {% endif %}
             </div>
         </div>
@@ -160,12 +164,20 @@
                     
                     {% if user.is_authenticated %}
                         <div class="flex space-x-3">
-                            <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
-                                <i class="fas fa-play mr-2"></i> Start Collection
-                            </button>
-                            <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-                                <i class="fas fa-download mr-2"></i> Export Route
-                            </button>
+                            <form method="post" class="inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="start_collection">
+                                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                    <i class="fas fa-play mr-2"></i> Start Collection
+                                </button>
+                            </form>
+                            <form method="post" class="inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="export_route">
+                                <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                    <i class="fas fa-download mr-2"></i> Export Route
+                                </button>
+                            </form>
                         </div>
                     {% endif %}
                 </div>
@@ -259,9 +271,69 @@
         });
     }
     
-    // Initialize map when page loads
+    // Collection progress tracking
+    function trackProgress() {
+        // In a real app, this would track user's progress through the collection
+        const visitedPlaces = JSON.parse(localStorage.getItem('collection_{{ collection.pk }}_progress') || '[]');
+        
+        // Mark visited places
+        document.querySelectorAll('.place-item').forEach((item, index) => {
+            if (visitedPlaces.includes(index)) {
+                item.classList.add('visited');
+                item.querySelector('.order-number').innerHTML = '<i class="fas fa-check"></i>';
+            }
+        });
+        
+        // Update progress bar
+        const progressPercent = (visitedPlaces.length / {{ collection_places.count }}) * 100;
+        const progressBar = document.getElementById('progress-bar');
+        if (progressBar) {
+            progressBar.style.width = progressPercent + '%';
+        }
+    }
+    
+    // Mark place as visited
+    function markVisited(placeIndex) {
+        const visitedPlaces = JSON.parse(localStorage.getItem('collection_{{ collection.pk }}_progress') || '[]');
+        if (!visitedPlaces.includes(placeIndex)) {
+            visitedPlaces.push(placeIndex);
+            localStorage.setItem('collection_{{ collection.pk }}_progress', JSON.stringify(visitedPlaces));
+            trackProgress();
+        }
+    }
+    
+    // Share collection
+    function shareCollection() {
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ collection.name|escapejs }}',
+                text: '{{ collection.description|escapejs|truncatechars:100 }}',
+                url: window.location.href
+            });
+        } else {
+            // Fallback to copying URL
+            navigator.clipboard.writeText(window.location.href).then(() => {
+                alert('Collection URL copied to clipboard!');
+            });
+        }
+    }
+    
+    // Print collection
+    function printCollection() {
+        window.print();
+    }
+    
+    // Initialize page
     document.addEventListener('DOMContentLoaded', function() {
         initMap();
+        trackProgress();
+        
+        // Add click handlers for place items
+        document.querySelectorAll('.place-item').forEach((item, index) => {
+            item.addEventListener('click', function() {
+                markVisited(index);
+            });
+        });
     });
 </script>
 {% endblock %}

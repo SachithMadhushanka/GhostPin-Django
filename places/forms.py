@@ -2,7 +2,7 @@ from django import forms
 from django.contrib.auth.models import User
 from .models import (
     Place, Comment, PlaceImage, CheckIn, PlaceCollection, 
-    AudioGuide, Report, UserProfile, Vote
+    AudioGuide, Report, UserProfile, Vote, ExpertArea
 )
 
 
@@ -123,7 +123,17 @@ class CheckInForm(forms.ModelForm):
 class PlaceCollectionForm(forms.ModelForm):
     class Meta:
         model = PlaceCollection
-        fields = ['name', 'description', 'is_public', 'estimated_duration', 'difficulty']
+        fields = [
+            'name',
+            'description',
+            'is_public',
+            'allow_comments',       # ✅ ADD
+            'estimated_duration',
+            'distance',             # ✅ ADD
+            'difficulty',
+            'category',             # ✅ ADD
+            'cover_image',          # ✅ ADD
+        ]
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
@@ -137,14 +147,28 @@ class PlaceCollectionForm(forms.ModelForm):
             'is_public': forms.CheckboxInput(attrs={
                 'class': 'rounded border-gray-300 text-green-600 shadow-sm focus:border-green-300 focus:ring focus:ring-green-200 focus:ring-opacity-50'
             }),
+            'allow_comments': forms.CheckboxInput(attrs={     # ✅ NEW
+                'class': 'rounded border-gray-300 text-green-600 shadow-sm focus:border-green-300 focus:ring focus:ring-green-200 focus:ring-opacity-50'
+            }),
             'estimated_duration': forms.TextInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
                 'placeholder': 'e.g., 2:30:00 (2 hours 30 minutes)'
             }),
+            'distance': forms.NumberInput(attrs={              # ✅ NEW
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
+                'placeholder': 'Total distance in km'
+            }),
             'difficulty': forms.Select(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
-            })
+            }),
+            'category': forms.Select(attrs={                  # ✅ NEW
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
+            }),
+            'cover_image': forms.ClearableFileInput(attrs={   # ✅ NEW
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
+            }),
         }
+
 
 
 class AudioGuideForm(forms.ModelForm):
@@ -186,9 +210,22 @@ class ReportForm(forms.ModelForm):
 
 
 class UserProfileForm(forms.ModelForm):
+    expert_areas = forms.ModelMultipleChoiceField(
+        queryset=ExpertArea.objects.all(),
+        widget=forms.SelectMultiple(attrs={
+            'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
+        }),
+        required=False,
+        label="Areas of Expertise"
+    )
+
     class Meta:
         model = UserProfile
-        fields = ['avatar', 'bio']
+        fields = [
+            'avatar', 'bio', 'location', 'website', 'expert_areas',
+            'show_email', 'show_location', 'allow_messages',
+            'email_notifications', 'push_notifications', 'weekly_digest'
+        ]
         widgets = {
             'avatar': forms.FileInput(attrs={
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
@@ -198,9 +235,35 @@ class UserProfileForm(forms.ModelForm):
                 'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
                 'rows': 4,
                 'placeholder': 'Tell us about yourself...'
-            })
+            }),
+            'location': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
+                'placeholder': 'Your city or region'
+            }),
+            'website': forms.URLInput(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
+                'placeholder': 'https://yourwebsite.com'
+            }),
+            # 👇 Remove 'expert_areas' from widgets — it's already defined above
+            'show_email': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+            }),
+            'show_location': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+            }),
+            'allow_messages': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+            }),
+            'email_notifications': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+            }),
+            'push_notifications': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+            }),
+            'weekly_digest': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded'
+            }),
         }
-
 
 class SearchForm(forms.Form):
     query = forms.CharField(

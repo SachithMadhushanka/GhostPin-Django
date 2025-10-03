@@ -141,10 +141,10 @@
                     <div class="p-6 border-b border-gray-100">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-4">
-                                <!-- User Avatar -->
-                                <div class="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                                <!-- Clickable User Avatar -->
+                                <a href="{% url 'places:profile' checkin.user.username %}" class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 hover:opacity-90 transition">
                                     {{ checkin.user.username|first|upper }}
-                                </div>
+                                </a>
                                 
                                 <!-- User Info -->
                                 <div>

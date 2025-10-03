@@ -184,12 +184,22 @@ class PlaceCollection(models.Model):
         ('moderate', 'Moderate'),
         ('challenging', 'Challenging'),
     ]
+    CATEGORY_CHOICES = Place.CATEGORY_CHOICES  # Reuse from Place
+
+    category = models.CharField(
+        max_length=50,
+        choices=CATEGORY_CHOICES,
+        default='other',
+    )
     
     name = models.CharField(max_length=200)
     description = models.TextField()
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    places = models.ManyToManyField(Place, through='CollectionPlace')
+    places = models.ManyToManyField('Place', through='CollectionPlace')
     is_public = models.BooleanField(default=True)
+    allow_comments = models.BooleanField(default=True)  # ✅ ADD THIS
+    cover_image = models.ImageField(upload_to='collection_covers/', null=True, blank=True)  # ✅ ADD THIS
+    distance = models.FloatField(null=True, blank=True)  # ✅ ADD THIS
     estimated_duration = models.DurationField(null=True, blank=True)
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='easy')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -207,6 +217,7 @@ class CollectionPlace(models.Model):
     order = models.PositiveIntegerField()
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    distance_from_previous = models.FloatField(null=True, blank=True)
     
     class Meta:
         ordering = ['order']
@@ -272,6 +283,19 @@ class Favorite(models.Model):
     def __str__(self):
         return f"{self.user.username} favorited {self.place.name}"
 
+class CollectionFavorite(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    collection = models.ForeignKey(PlaceCollection, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'collection']
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} favorited {self.collection.name}"
+
+
 
 class AudioGuide(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='audio_guides')
@@ -287,10 +311,18 @@ class AudioGuide(models.Model):
 
 
 class Badge(models.Model):
+    CATEGORY_CHOICES = [
+        ('explorer', 'Explorer'),
+        ('contributor', 'Contributor'),
+        ('social', 'Social'),
+        ('special', 'Special'),
+    ]
+    
     name = models.CharField(max_length=100)
     description = models.TextField()
     icon = models.CharField(max_length=10)
     criteria = models.JSONField()
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='explorer')
     points_required = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -17,14 +17,14 @@
 
     <!-- Route Planning Button -->
     <a href="{% url 'places:route_planner' %}?destination={{ place.id }}" 
-        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors inline-flex items-center">
+        class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
         <i class="fas fa-route mr-2"></i>
         Plan Route
     </a>
 
     <!-- View Check-ins button -->
         <a href="{% url 'places:place_checkins' place.pk %}" 
-        class="inline-flex items-center px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow transition-colors">
+        class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
             <svg xmlns="http://www.w3.org/2000/svg" 
                 class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -37,7 +37,7 @@
     <!-- Right side: Edit button (only for owner or staff) -->
     {% if user == place.created_by or user.is_staff %}
         <a href="{% url 'places:edit_place' place.pk %}" 
-           class="inline-flex items-center px-4 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-600 text-white font-medium shadow transition-colors">
+           class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
             <svg xmlns="http://www.w3.org/2000/svg" 
                  class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -96,7 +96,7 @@
                         </form>
                         <!-- Check-in Button -->
                             <a href="{% url 'places:check_in' place.pk %}" 
-                            class="btn-primary flex items-center space-x-2 px-4 py-2 rounded-lg text-white font-medium shadow hover:bg-green-600 transition-colors">
+                            class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
                                 <svg xmlns="http://www.w3.org/2000/svg" 
                                     class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -216,11 +216,10 @@
                 {% for comment in comments %}
                     <div class="comment-item border-b border-gray-100 pb-6 last:border-b-0" data-comment-id="{{ comment.id }}">
                         <div class="flex items-start space-x-4">
-                            <!-- User Avatar -->
-                            <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">
+                            <!-- Clickable User Avatar -->
+                            <a href="{% url 'places:profile' comment.user.username %}" class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 hover:opacity-90 transition">
                                 {{ comment.user.username|first|upper }}
-                            </div>
-                            
+                            </a>
                             <!-- Comment Content -->
                             <div class="flex-1">
                                 <div class="flex items-center space-x-2 mb-2">
@@ -367,7 +366,7 @@
 {% block extra_js %}
 <script>
     // Initialize map
-    const map = L.map('map').setView(['{{ place.latitude }}, {{ place.longitude }}'], 15);
+    const map = L.map('map').setView(['{{ place.latitude }}', '{{ place.longitude }}'], 15);
     
     // Add tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

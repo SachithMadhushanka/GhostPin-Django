@@ -90,14 +90,14 @@
                         <div class="checkin-item bg-white rounded-lg shadow-lg overflow-hidden card-hover"
                              data-date="{{ checkin.created_at|date:'c' }}"
                              data-verified="{{ checkin.is_verified|yesno:'true,false' }}"
-                             data-photo="{{ checkin.photo|yesno:'true,false' }}"
-                             data-points="{{ checkin.points_earned }}">
+                             data-photo="{{ checkin.photo_proof|yesno:'true,false' }}"
+                             data-points="{{ checkin.points_awarded }}">
                             
                             <div class="flex flex-col sm:flex-row">
                                 <!-- Check-in Photo/Icon -->
                                 <div class="sm:w-48 h-48 sm:h-auto flex-shrink-0 relative">
-                                    {% if checkin.photo %}
-                                        <img src="{{ checkin.photo.url }}" alt="Check-in photo" 
+                                    {% if checkin.photo_proof %}
+                                        <img src="{{ checkin.photo_proof.url }}" alt="Check-in photo" 
                                              class="w-full h-full object-cover">
                                         <div class="absolute top-3 left-3 bg-green-600 text-white px-2 py-1 rounded-full text-xs font-semibold">
                                             <i class="fas fa-camera mr-1"></i> Photo
@@ -173,7 +173,7 @@
                                                 <span class="text-gray-600">Base check-in:</span>
                                                 <span class="font-medium">+10 points</span>
                                             </div>
-                                            {% if checkin.photo %}
+                                            {% if checkin.photo_proof %}
                                                 <div class="flex justify-between">
                                                     <span class="text-gray-600">Photo bonus:</span>
                                                     <span class="font-medium text-green-600">+5 points</span>
@@ -201,9 +201,9 @@
                                                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                                                 <i class="fas fa-eye mr-1"></i> View Place
                                             </a>
-                                            {% if checkin.photo %}
+                                            {% if checkin.photo_proof %}
                                                 <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                                        onclick="viewPhoto('{{ checkin.photo.url }}')">
+                                                        onclick="viewPhoto('{{ checkin.photo_proof.url }}')">
                                                     <i class="fas fa-expand mr-1"></i> View Photo
                                                 </button>
                                             {% endif %}
@@ -460,9 +460,9 @@
                     lng: {{ checkin.place.longitude }},
                     name: "{{ checkin.place.name|escapejs }}",
                     date: "{{ checkin.created_at|date:'M d, Y' }}",
-                    points: {{ checkin.points_earned }},
+                    points: {{ checkin.points_awarded }},
                     verified: {{ checkin.is_verified|yesno:'true,false' }},
-                    photo: {{ checkin.photo|yesno:'true,false' }}
+                    photo: {{ checkin.photo_proof|yesno:'true,false' }}
                 }{% if not forloop.last %},{% endif %}
             {% endfor %}
         ];
@@ -478,7 +478,7 @@
                             <p class="text-sm text-gray-600 mt-1">${checkin.date}</p>
                             <p class="text-sm font-medium text-green-600">+${checkin.points} points</p>
                             ${checkin.verified ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Verified</span>' : ''}
-                            ${checkin.photo ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full ml-1">Photo</span>' : ''}
+                            ${checkin.photo_proof ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full ml-1">Photo</span>' : ''}
                         </div>
                     `)
                     .addTo(checkinsMap);

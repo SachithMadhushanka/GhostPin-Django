@@ -1,6 +1,8 @@
 {% extends 'base.html' %}
 
-{% block title %}Create Collection - GhostPin{% endblock %}
+{% block title %}
+    {% if is_editing %}Edit Collection{% else %}Create Collection{% endif %} - GhostPin
+{% endblock %}
 
 {% block content %}
 <div class="max-w-4xl mx-auto">
@@ -10,12 +12,23 @@
             <div>
                 <h1 class="text-3xl font-bold text-gray-900 mb-2">
                     <i class="fas fa-layer-group text-purple-600 mr-2"></i>
-                    Create New Collection
+                    {% if is_editing %}
+                        Edit Collection: {{ collection.name }}
+                    {% else %}
+                        Create New Collection
+                    {% endif %}
                 </h1>
-                <p class="text-gray-600">Create a curated trail connecting multiple historical places</p>
+                <p class="text-gray-600">
+                    {% if is_editing %}
+                        Update your curated trail of historical places
+                    {% else %}
+                        Create a curated trail connecting multiple historical places
+                    {% endif %}
+                </p>
             </div>
-            <a href="{% url 'places:collections' %}" class="btn-secondary">
-                <i class="fas fa-arrow-left mr-2"></i> Back to Collections
+            <a href="{% if is_editing %}{% url 'places:collection_detail' collection.pk %}{% else %}{% url 'places:collections' %}{% endif %}" class="btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i> 
+                {% if is_editing %}Back to Collection{% else %}Back to Collections{% endif %}
             </a>
         </div>
     </div>
@@ -215,14 +228,16 @@
             <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
                 <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
                     <i class="fas fa-save mr-2"></i>
-                    Create Collection
+                    {% if is_editing %}Update Collection{% else %}Create Collection{% endif %}
                 </button>
-                <button type="button" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"
-                        onclick="saveDraft()">
-                    <i class="fas fa-file-alt mr-2"></i>
-                    Save as Draft
-                </button>
-                <a href="{% url 'places:collections' %}" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors text-center">
+                {% if not is_editing %}
+                    <button type="button" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"
+                            onclick="saveDraft()">
+                        <i class="fas fa-file-alt mr-2"></i>
+                        Save as Draft
+                    </button>
+                {% endif %}
+                <a href="{% if is_editing %}{% url 'places:collection_detail' collection.pk %}{% else %}{% url 'places:collections' %}{% endif %}" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors text-center">
                     <i class="fas fa-times mr-2"></i>
                     Cancel
                 </a>
@@ -231,32 +246,61 @@
     </div>
 
     <!-- Tips -->
-    <div class="mt-8 bg-yellow-50 rounded-lg p-6">
-        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-            <i class="fas fa-lightbulb text-yellow-600 mr-2"></i>
-            Tips for Creating Great Collections
-        </h3>
-        
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <h4 class="font-medium text-gray-900 mb-2">📍 Route Planning</h4>
-                <ul class="text-sm text-gray-600 space-y-1">
-                    <li>• Select 3-8 places for optimal experience</li>
-                    <li>• Consider geographical proximity</li>
-                    <li>• Think about logical visiting order</li>
-                </ul>
-            </div>
+    {% if not is_editing %}
+        <div class="mt-8 bg-yellow-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-lightbulb text-yellow-600 mr-2"></i>
+                Tips for Creating Great Collections
+            </h3>
             
-            <div>
-                <h4 class="font-medium text-gray-900 mb-2">✍️ Description Tips</h4>
-                <ul class="text-sm text-gray-600 space-y-1">
-                    <li>• Highlight unique themes or connections</li>
-                    <li>• Mention best times to visit</li>
-                    <li>• Include difficulty and accessibility info</li>
-                </ul>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-medium text-gray-900 mb-2">📍 Route Planning</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Select 3-8 places for optimal experience</li>
+                        <li>• Consider geographical proximity</li>
+                        <li>• Think about logical visiting order</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-gray-900 mb-2">✍️ Description Tips</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Highlight unique themes or connections</li>
+                        <li>• Mention best times to visit</li>
+                        <li>• Include difficulty and accessibility info</li>
+                    </ul>
+                </div>
             </div>
         </div>
-    </div>
+    {% else %}
+        <div class="mt-8 bg-blue-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                Editing Collection
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-medium text-gray-900 mb-2">🔄 Making Changes</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Add or remove places from your collection</li>
+                        <li>• Reorder places by selecting them again</li>
+                        <li>• Update description and metadata</li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h4 class="font-medium text-gray-900 mb-2">⚠️ Important Notes</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Changes will affect all users following this collection</li>
+                        <li>• Consider the impact on existing followers</li>
+                        <li>• Save changes to update the collection immediately</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 </div>
 {% endblock %}
 
@@ -418,20 +462,21 @@
         form.submit();
     }
     
-    // Form validation
-    document.querySelector('form').addEventListener('submit', function(e) {
-        if (selectedPlaces.length < 2) {
-            e.preventDefault();
-            alert('Please select at least 2 places for your collection.');
-            return false;
-        }
+    // Initialize page
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle preselected places from URL parameter
+        {% if preselected_places %}
+            {% for place in preselected_places %}
+                togglePlace({{ place.pk }});
+            {% endfor %}
+        {% endif %}
         
-        const name = document.querySelector('input[name="name"]').value.trim();
-        if (!name) {
-            e.preventDefault();
-            alert('Please enter a name for your collection.');
-            return false;
-        }
+        // Handle current places in edit mode
+        {% if is_editing and current_places %}
+            {% for place in current_places %}
+                togglePlace({{ place.pk }});
+            {% endfor %}
+        {% endif %}
     });
 </script>
 {% endblock %}

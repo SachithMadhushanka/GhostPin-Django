@@ -36,6 +36,7 @@ urlpatterns = [
     path('collections/', views.collections, name='collections'),
     path('collection/<int:pk>/', views.collection_detail, name='collection_detail'),
     path('collection/create/', views.create_collection, name='create_collection'),
+    path('collection/<int:pk>/edit/', views.edit_collection, name='edit_collection'),
     
     # Gamification URLs
     path('leaderboard/', views.leaderboard, name='leaderboard'),
