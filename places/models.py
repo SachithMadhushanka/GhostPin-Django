@@ -1,3 +1,4 @@
+import re
 from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
@@ -89,13 +90,16 @@ class Place(models.Model):
     ]
 
     CATEGORY_CHOICES = [
-        ('buddhist_temple', 'Buddhist Temple'),
-        ('hindu_temple', 'Hindu Temple'),
-        ('mosque', 'Islam Mosque'),
-        ('church', 'Christian Church'),
-        ('gurdwara', 'Sikh Gurdwara'),
-        ('synagogue', 'Jewish Synagogue'),
-        ('other', 'Other'),
+    ('buddhist_temple', 'Buddhist Temple'),
+    ('hindu_temple', 'Hindu Temple'),
+    ('mosque', 'Islam Mosque'),
+    ('church', 'Christian Church'),
+    ('gurdwara', 'Sikh Gurdwara'),
+    ('synagogue', 'Jewish Synagogue'),
+    ('waterfall', 'Waterfall'),
+    ('camping_spot', 'Camping Spot'),
+    ('local_food', 'Local Food Spot'),
+    ('other', 'Other'),
     ]
 
     name = models.CharField(max_length=200)
@@ -239,6 +243,14 @@ class Comment(models.Model):
         null=True, blank=True
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def youtube_id(self):
+        match = re.search(
+            r'(?:https?://)?(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})',
+            self.text
+        )
+        return match.group(1) if match else None
     
     class Meta:
         ordering = ['-created_at']

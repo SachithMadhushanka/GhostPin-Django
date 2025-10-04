@@ -102,12 +102,26 @@ def place_detail(request, pk):
     # Handle comment submission
     comment_form = CommentForm()
     if request.method == 'POST' and request.user.is_authenticated:
+        #print("POST request received")
+        # fallback if 'comment_submit' is missing
         if 'comment_submit' in request.POST:
+            #print("comment_submit found in POST")
             comment_form = CommentForm(request.POST)
             if comment_form.is_valid():
+                #print("Form is valid")
                 comment = comment_form.save(commit=False)
                 comment.user = request.user
                 comment.place = place
+                
+                # 💡 Assign checkin manually if provided
+                checkin_id = request.POST.get('checkin_id')
+                if checkin_id:
+                    try:
+                        checkin = CheckIn.objects.get(id=checkin_id)
+                        comment.checkin = checkin
+                    except CheckIn.DoesNotExist:
+                        pass  # Or handle gracefully
+                
                 comment.save()
                 
                 # Award points for commenting
@@ -117,6 +131,10 @@ def place_detail(request, pk):
                 
                 messages.success(request, 'Comment added successfully!')
                 return redirect('places:place_detail', pk=place.pk)
+            else:
+                print("Form errors:", comment_form.errors)
+        else:
+            print("comment_submit NOT found in POST data")
     
     context = {
         'place': place,
@@ -1162,3 +1180,6 @@ def route_planner(request):
         'all_places': list(all_places),
     }
     return render(request, 'places/route_planner.html', context)
+
+def about(request):
+    return render(request, 'about.html')

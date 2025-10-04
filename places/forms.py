@@ -127,12 +127,12 @@ class PlaceCollectionForm(forms.ModelForm):
             'name',
             'description',
             'is_public',
-            'allow_comments',       # ✅ ADD
+            'allow_comments',       
             'estimated_duration',
-            'distance',             # ✅ ADD
+            'distance',             
             'difficulty',
-            'category',             # ✅ ADD
-            'cover_image',          # ✅ ADD
+            'category',             
+            'cover_image',          
         ]
         widgets = {
             'name': forms.TextInput(attrs={

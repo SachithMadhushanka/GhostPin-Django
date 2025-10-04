@@ -239,7 +239,19 @@
                                     {% endif %}
                                 </div>
                                 
+                                <!-- Comment Text -->
                                 <p class="text-gray-700 mb-3">{{ comment.text }}</p>
+
+                                <!-- YouTube Thumbnail (if exists) -->
+                                {% if comment.youtube_id %}
+                                    <div class="mb-3">
+                                        <a href="https://www.youtube.com/watch?v={{ comment.youtube_id }}" target="_blank" rel="noopener">
+                                            <img src="https://img.youtube.com/vi/{{ comment.youtube_id }}/0.jpg"
+                                                alt="YouTube thumbnail"
+                                                class="rounded-lg shadow-md hover:opacity-80 transition w-full max-w-xs">
+                                        </a>
+                                    </div>
+                                {% endif %}
                                 
                                 <!-- Voting Controls -->
                                 <div class="flex items-center space-x-4">

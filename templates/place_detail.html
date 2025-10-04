@@ -35,20 +35,14 @@
 
 
     <!-- Right side: Edit button (only for owner or staff) -->
-    {% if user == place.created_by or user.is_staff %}
-        <a href="{% url 'places:edit_place' place.pk %}" 
-           class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
-            <svg xmlns="http://www.w3.org/2000/svg" 
-                 class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M11 5h2m-1 0v12m9 4H4a2 2 0 01-2-2V5a2 2 0 
-                         012-2h16a2 2 0 012 2v14a2 2 0 
-                         01-2 2z" />
-            </svg>
-            Edit Place
-        </a>
-    {% endif %}
-</div>
+        {% if user == place.created_by or user.is_staff %}
+            <a href="{% url 'places:edit_place' place.pk %}" 
+            class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
+                <i class="fas fa-edit text-green-600 mr-2"></i>
+                Edit Place
+            </a>
+        {% endif %}
+    </div>
 
 
     <!-- Place Header -->
@@ -137,7 +131,7 @@
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Category</h3>
                     <div class="text-lg font-medium text-gray-800 flex items-center">
-                        <span class="text-xl mr-2">🏷️</span>{{ place.category }}
+                        <span class="text-xl mr-2">🏷️</span>{{ place.get_category_display }}
                     </div>
                 </div>
                 {% endif %}
@@ -155,10 +149,26 @@
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Safety Rating</h3>
                     <div class="text-lg font-medium text-gray-800 flex items-center">
-                        <span class="text-xl mr-2">🛡️</span>{{ place.safety_rating }}
+                        <div>
+                            <div class="flex text-base leading-none">
+                                {% for i in "12345" %}
+                                    {% if forloop.counter <= place.safety_rating %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-400" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" title="Safety Level {{ forloop.counter }}">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 6v6c0 5.25 3.75 10 9 10s9-4.75 9-10V6l-9-4z" />
+                                        </svg>
+                                    {% else %}
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-300" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" title="No Shield">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 6v6c0 5.25 3.75 10 9 10s9-4.75 9-10V6l-9-4z" />
+                                        </svg>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
+
+
 
                 {% if place.best_time_to_visit %}
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -238,8 +248,21 @@
                                     {% endif %}
                                 </div>
                                 
+                                <!-- Comment Text -->
                                 <p class="text-gray-700 mb-3">{{ comment.text }}</p>
-                                
+
+                                <!-- YouTube Thumbnail (if exists) -->
+                                {% if comment.youtube_id %}
+                                    <div class="mb-3">
+                                        <a href="https://www.youtube.com/watch?v={{ comment.youtube_id }}" target="_blank" rel="noopener">
+                                            <img src="https://img.youtube.com/vi/{{ comment.youtube_id }}/0.jpg"
+                                                alt="YouTube thumbnail"
+                                                class="rounded-lg shadow-md hover:opacity-80 transition w-full max-w-xs">
+                                        </a>
+                                    </div>
+                                {% endif %}
+
+
                                 <!-- Voting Controls -->
                                 <div class="flex items-center space-x-4">
                                     <div class="flex items-center space-x-2">
@@ -353,7 +376,7 @@
                 
                 <!-- Submit Button -->
                 <div class="flex justify-end">
-                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+                    <button type="submit" name="comment_submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
                         <i class="fas fa-paper-plane mr-2"></i>
                         Post Comment
                     </button>
@@ -479,6 +502,7 @@
         e.preventDefault();
         
         const formData = new FormData(this);
+        formData.append('comment_submit', 'true');
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         

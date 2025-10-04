@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'pwa',
     'places',  # Our main app
 ]
 
@@ -137,3 +138,49 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# PWA Configuration
+PWA_APP_NAME = 'GhostPin - Explore Historical Places'
+PWA_APP_DESCRIPTION = 'Discover and explore historical places around the world'
+PWA_APP_THEME_COLOR = '#4CAF50'  # Green theme color for the app
+PWA_APP_BACKGROUND_COLOR = '#ffffff'  # White background
+PWA_APP_ICONS = {
+    'src': '/static/icons/icon-192x192.png',  # Path to the 192x192 icon
+    'sizes': '192x192',
+    'type': 'image/png',
+}
+PWA_APP_SIZES = ['192x192', '512x512']  # Icon sizes for various devices
+
+PWA_APP_START_URL = '/'  # The URL the app starts with
+PWA_APP_DISPLAY = 'standalone'  # Makes it behave like a native app (no browser UI)
+PWA_APP_ORIENTATION = 'portrait-primary'  # Lock to portrait orientation
+PWA_APP_SCOPE = '/'  # Define the scope of your app (root path is common)
+PWA_APP_LANG = 'en'  # Language of the app
+PWA_APP_CATEGORIES = ['travel', 'education', 'lifestyle']  # App categories
+
+# The screenshots are optional but can be a nice touch.
+PWA_APP_SCREENSHOTS = [
+    {
+        'src': '/static/icons/screenshot-mobile.png',
+        'sizes': '390x844',
+        'type': 'image/png',
+        'form_factor': 'narrow',
+    },
+    {
+        'src': '/static/icons/screenshot-desktop.png',
+        'sizes': '1920x1080',
+        'type': 'image/png',
+        'form_factor': 'wide',
+    },
+]
+
+# App Shortcuts (optional for quick links inside the app)
+PWA_APP_SHORTCUTS = [
+    {
+        'name': 'Add New Place',
+        'short_name': 'Add Place',
+        'description': 'Submit a new historical place',
+        'url': '/place/add/',
+        'icons': [{'src': '/static/icons/icon-192x192.png', 'sizes': '192x192'}],
+    }
+]

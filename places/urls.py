@@ -31,6 +31,7 @@ urlpatterns = [
     path('api/nearby-places/', views.get_nearby_places, name='get_nearby_places'),
     path('search/', views.search_results, name='search_results'),
     path('edit/', views.edit_profile, name='edit_profile'),
+    path('about/', views.about, name='about'),
 
     # Collections URLs
     path('collections/', views.collections, name='collections'),
