@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,6 +21,8 @@
     
     <!-- Leaflet Routing Machine CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.css" />
+
+    <link rel="icon" type="image/x-icon" href="{% static 'icons/favicon.ico' %}">
 
     <!-- Custom CSS -->
     <style>
@@ -49,32 +52,28 @@
             transition: max-height 0.2s ease-out;
             overflow: hidden;
         }
-        /* Custom install banner */
         #install-banner {
-            background-color: #4CAF50;
+            background: #4CAF50;
             color: white;
-            padding: 10px;
+            padding: 1rem;
             text-align: center;
             position: fixed;
             bottom: 0;
-            width: 100%;
-            display: none;
-            z-index: 1000;
+            left: 0;
+            right: 0;
+            z-index: 9999;
         }
 
         #install-banner button {
-            background-color: #45a049;
+            background-color: white;
+            color: #4CAF50;
             border: none;
-            color: white;
-            padding: 10px 20px;
-            margin-left: 10px;
-            cursor: pointer;
+            padding: 8px 12px;
+            margin-left: 8px;
             border-radius: 5px;
+            cursor: pointer;
         }
 
-        #install-banner button:hover {
-            background-color: #3d8b3a;
-        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -188,11 +187,11 @@
                                 <!-- {% if user.is_staff %}
                                 {% endif %} -->
                         {% else %}
+                            <a href="{% url 'places:about' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    📖 About GhostPin
+                            </a>
                             <a href="{% url 'login' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                 🔑 Login
-                            </a>
-                            <a href="{% url 'places:about' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                📖 About GhostPin
                             </a>
                         {% endif %}
                         
@@ -302,11 +301,16 @@
         </div>
     {% endif %}
 
-    <!-- Custom Install Banner -->
-    <div id="install-banner">
-        <span>Install our app for offline access and better experience!</span>
-        <button id="install-button">Install App</button>
+    <!-- Universal Install Banner -->
+    <div id="install-banner" class="fixed bottom-0 left-0 right-0 bg-green-600 text-white p-4 z-50 hidden">
+        <div id="install-message" class="mb-2 text-center"></div>
+        <div class="flex justify-center gap-3">
+            <button id="install-button" class="bg-white text-green-700 px-4 py-2 rounded hidden">Install App</button>
+            <button onclick="hideBanner()" class="bg-green-800 px-4 py-2 rounded">Dismiss</button>
+        </div>
     </div>
+
+
 
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -361,54 +365,67 @@
         }
     </script>
 
-    <!-- PWA Registration -->
     <script>
-        let deferredPrompt;
+        (function () {
+            let deferredPrompt = null;
+            const banner = document.getElementById('install-banner');
+            const installBtn = document.getElementById('install-button');
+            const installMessage = document.getElementById('install-message');
 
-        // Listen for the 'beforeinstallprompt' event
-        window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent the default prompt
-            e.preventDefault();
-            deferredPrompt = e;
+            // Skip if user dismissed already
+            if (localStorage.getItem('installBannerDismissed') === 'true') return;
 
-            // Show the custom install banner
-            const installBanner = document.getElementById('install-banner');
-            installBanner.style.display = 'block';
+            const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+            const isFirefox = /firefox/i.test(navigator.userAgent);
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
-            // When the user clicks the install button, show the default install prompt
-            const installButton = document.getElementById('install-button');
-            installButton.addEventListener('click', () => {
-                // Show the install prompt
-                deferredPrompt.prompt();
+            // 1. Chrome + Edge (Android/Desktop)
+            window.addEventListener('beforeinstallprompt', (e) => {
+                console.log('✅ beforeinstallprompt triggered');
+                e.preventDefault();
+                deferredPrompt = e;
 
-                // Wait for the user to respond to the prompt
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        console.log('User accepted the install prompt');
-                    } else {
-                        console.log('User dismissed the install prompt');
-                    }
-                    // Hide the banner after the prompt is shown
-                    installBanner.style.display = 'none';
-                    deferredPrompt = null;
+                installMessage.innerText = 'Install GhostPin for offline access and better performance.';
+                installBtn.classList.remove('hidden');
+                banner.classList.remove('hidden');
+
+                installBtn.addEventListener('click', () => {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        console.log(choiceResult.outcome === 'accepted' ? '✅ User installed' : '❌ User dismissed');
+                        hideBanner();
+                        deferredPrompt = null;
+                    });
                 });
             });
-        });
 
-        // Register Service Worker for PWA (existing code)
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
+            // 2. iOS Safari
+            if (isIOS && !isStandalone) {
+                installMessage.innerHTML = `To install GhostPin on iOS, tap the <i class="fas fa-share-square"></i> Share button and then "Add to Home Screen".`;
+                banner.classList.remove('hidden');
+            }
+
+            // 3. Firefox
+            if (isFirefox && !isStandalone) {
+                installMessage.innerText = 'To install GhostPin, tap the browser menu and choose "Add to Home Screen" or "Install App".';
+                banner.classList.remove('hidden');
+            }
+
+            // 4. Dismiss Handler
+            window.hideBanner = function () {
+                banner.classList.add('hidden');
+                localStorage.setItem('installBannerDismissed', 'true');
+            };
+
+            // 5. Service Worker
+            if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('{% url "places:service_worker" %}')
-                    .then(function(registration) {
-                        console.log('ServiceWorker registration successful');
-                    })
-                    .catch(function(err) {
-                        console.log('ServiceWorker registration failed');
-                    });
-            });
-        }
-    </script>
-
+                    .then(() => console.log('✅ Service Worker registered'))
+                    .catch(err => console.error('❌ Service Worker registration failed:', err));
+            }
+        })();
+        </script>
     {% block extra_js %}
     {% endblock %}
 </body>
