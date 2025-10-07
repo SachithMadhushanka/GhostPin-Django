@@ -7,7 +7,7 @@
     <!-- Back Button -->
     <div class="mb-6 flex items-center justify-between">
     <!-- Left side: Back button -->
-    <a href="{% url 'places:home' %}" class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
+    <a href="{% url 'places:home' %}" class="inline-flex items-center text-green-700 hover:text-green-700 font-medium">
         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                   d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
@@ -17,14 +17,14 @@
 
     <!-- Route Planning Button -->
     <a href="{% url 'places:route_planner' %}?destination={{ place.id }}" 
-        class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
+        class="inline-flex items-center text-green-700 hover:text-green-700 font-medium">
         <i class="fas fa-route mr-2"></i>
         Plan Route
     </a>
 
     <!-- View Check-ins button -->
         <a href="{% url 'places:place_checkins' place.pk %}" 
-        class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
+        class="inline-flex items-center text-green-700 hover:text-green-700 font-medium">
             <svg xmlns="http://www.w3.org/2000/svg" 
                 class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -37,8 +37,8 @@
     <!-- Right side: Edit button (only for owner or staff) -->
         {% if user == place.created_by or user.is_staff %}
             <a href="{% url 'places:edit_place' place.pk %}" 
-            class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
-                <i class="fas fa-edit text-green-600 mr-2"></i>
+            class="inline-flex items-center text-green-700 hover:text-green-700 font-medium">
+                <i class="fas fa-edit text-green-700 mr-2"></i>
                 Edit Place
             </a>
         {% endif %}
@@ -77,7 +77,7 @@
                                 {% else %}
                                     <!-- Outline heart -->
                                     <svg xmlns="http://www.w3.org/2000/svg" 
-                                        class="h-8 w-8 text-gray-700 hover:text-red-500 transition-colors" 
+                                        class="h-8 w-8 text-gray-800 hover:text-red-500 transition-colors" 
                                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                             d="M4.318 6.318a4.5 4.5 0 000 6.364L12 
@@ -90,7 +90,7 @@
                         </form>
                         <!-- Check-in Button -->
                             <a href="{% url 'places:check_in' place.pk %}" 
-                            class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
+                            class="inline-flex items-center text-green-700 hover:text-green-800 font-medium">
                                 <svg xmlns="http://www.w3.org/2000/svg" 
                                     class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
@@ -110,8 +110,8 @@
                 </div>
             </div>
 
-            
-            <div class="flex items-center text-gray-600 mb-4">
+
+            <div class="flex items-center text-gray-800 mb-4">
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
                 </svg>
@@ -120,7 +120,7 @@
                 <span>Added {{ place.created_at|date:"M d, Y" }} by {{ place.created_by.username }}</span>
             </div>
             
-            <p class="text-gray-700 text-lg leading-relaxed">
+            <p class="text-gray-800 text-lg leading-relaxed">
                 {{ place.description|linebreaks }}
             </p>
 
@@ -138,7 +138,7 @@
 
                 {% if place.difficulty %}
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h2 class="text-sm font-semibold text-gray-600 uppercase mb-1">Difficulty</h2>
+                    <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Difficulty</h2>
                     <div class="text-lg font-medium text-gray-800 flex items-center">
                         <span class="text-xl mr-2">🧭</span>{{ place.difficulty }}
                     </div>
@@ -147,7 +147,7 @@
 
                 {% if place.safety_rating %}
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h2 class="text-sm font-semibold text-gray-600 uppercase mb-1">Safety Rating</h2>
+                    <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Safety Rating</h2>
                     <div class="text-lg font-medium text-gray-800 flex items-center">
                         <div>
                             <div class="flex text-base leading-none">
@@ -157,7 +157,7 @@
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 6v6c0 5.25 3.75 10 9 10s9-4.75 9-10V6l-9-4z" />
                                         </svg>
                                     {% else %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-300" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" title="No Shield">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" title="No Shield">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 6v6c0 5.25 3.75 10 9 10s9-4.75 9-10V6l-9-4z" />
                                         </svg>
                                     {% endif %}
@@ -172,7 +172,7 @@
 
                 {% if place.best_time_to_visit %}
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h2 class="text-sm font-semibold text-gray-600 uppercase mb-1">Best Time to Visit</h2>
+                    <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Best Time to Visit</h2>
                     <div class="text-lg font-medium text-gray-800 flex items-center">
                         <span class="text-xl mr-2">📅</span>{{ place.best_time_to_visit }}
                     </div>
@@ -184,7 +184,7 @@
                     <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
                         Accessibility & Visitor Information
                     </h2>
-                    <p class="text-gray-700 leading-relaxed text-base">
+                    <p class="text-gray-800 leading-relaxed text-base">
                         {{ place.accessibility_info|linebreaks }}
                     </p>
                 </div>
@@ -195,7 +195,7 @@
                     <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
                         📖 Legends & Stories
                     </h2>
-                    <p class="text-gray-700 leading-relaxed text-base whitespace-pre-line">
+                    <p class="text-gray-800 leading-relaxed text-base whitespace-pre-line">
                         {{ place.legends_stories|linebreaks }}
                     </p>
                 </div>
@@ -218,7 +218,7 @@
         <h2 class="text-xl font-semibold text-gray-900 mb-6">
             <i class="fas fa-comments text-blue-600 mr-2"></i>
             Visitor Comments
-            <span class="text-sm font-normal text-gray-500 ml-2">({{ comments.count|default:0 }})</span>
+            <span class="text-sm font-normal text-gray-800 ml-2">({{ comments.count|default:0 }})</span>
         </h2>
 
         {% if comments %}
@@ -234,14 +234,14 @@
                             <div class="flex-1">
                                 <div class="flex items-center space-x-2 mb-2">
                                     <span class="font-semibold text-gray-900">{{ comment.user.username }}</span>
-                                    <span class="text-gray-500 text-sm">{{ comment.created_at|timesince }} ago</span>
+                                    <span class="text-gray-800 text-sm">{{ comment.created_at|timesince }} ago</span>
                                     {% if comment.rating %}
                                         <div class="flex items-center space-x-1">
                                             {% for i in "12345" %}
                                                 {% if forloop.counter <= comment.rating %}
                                                     <i class="fas fa-star text-yellow-400 text-xs"></i>
                                                 {% else %}
-                                                    <i class="far fa-star text-gray-300 text-xs"></i>
+                                                    <i class="far fa-star text-gray-800 text-xs"></i>
                                                 {% endif %}
                                             {% endfor %}
                                         </div>
@@ -249,7 +249,7 @@
                                 </div>
                                 
                                 <!-- Comment Text -->
-                                <p class="text-gray-700 mb-3">{{ comment.text }}</p>
+                                <p class="text-gray-800 mb-3">{{ comment.text }}</p>
 
                                 <!-- YouTube Thumbnail (if exists) -->
                                 {% if comment.youtube_id %}
@@ -267,16 +267,16 @@
                                 <div class="flex items-center space-x-4">
                                     <div class="flex items-center space-x-2">
                                         <button class="vote-btn" aria-label="Upvote comment" data-comment-id="{{ comment.id }}" data-vote-type="up" onclick="voteComment('{{ comment.id }}', 'up')">
-                                            <i class="fas fa-thumbs-up text-green-600 hover:text-green-700 cursor-pointer transition-colors"></i>
+                                            <i class="fas fa-thumbs-up text-green-700 hover:text-green-800 cursor-pointer transition-colors"></i>
                                         </button>
-                                        <span class="text-sm text-gray-600 vote-count-up">{{ comment.upvotes|default:0 }}</span>
+                                        <span class="text-sm text-gray-800 vote-count-up">{{ comment.upvotes|default:0 }}</span>
                                     </div>
                                     
                                     <div class="flex items-center space-x-2">
                                         <button class="vote-btn" aria-label="Downvote comment" data-comment-id="{{ comment.id }}" data-vote-type="down" onclick="voteComment('{{ comment.id }}', 'down')">
                                             <i class="fas fa-thumbs-down text-red-600 hover:text-red-700 cursor-pointer transition-colors"></i>
                                         </button>
-                                        <span class="text-sm text-gray-600 vote-count-down">{{ comment.downvotes|default:0 }}</span>
+                                        <span class="text-sm text-gray-800 vote-count-down">{{ comment.downvotes|default:0 }}</span>
                                     </div>
                                     
                                     <button class="text-sm text-blue-600 hover:text-blue-700 cursor-pointer" aria-label="Reply to comment" onclick="toggleReplyForm('{{ comment.id }}')">
@@ -294,7 +294,7 @@
                                                   placeholder="Write your reply..."></textarea>
                                         <div class="flex justify-end space-x-2 mt-2">
                                             <button type="button" onclick="toggleReplyForm('{{ comment.id }}')" 
-                                                    class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800">
+                                                    class="px-3 py-1 text-sm text-gray-800 hover:text-gray-600">
                                                 Cancel
                                             </button>
                                             <button type="submit" class="px-4 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
@@ -315,9 +315,9 @@
                                                 <div class="flex-1">
                                                     <div class="flex items-center space-x-2 mb-1">
                                                         <span class="font-medium text-gray-900 text-sm">{{ reply.user.username }}</span>
-                                                        <span class="text-gray-500 text-xs">{{ reply.created_at|timesince }} ago</span>
+                                                        <span class="text-gray-800 text-xs">{{ reply.created_at|timesince }} ago</span>
                                                     </div>
-                                                    <p class="text-gray-700 text-sm">{{ reply.text }}</p>
+                                                    <p class="text-gray-800 text-sm">{{ reply.text }}</p>
                                                 </div>
                                             </div>
                                         {% endfor %}
@@ -331,9 +331,9 @@
         {% else %}
             <!-- Empty State -->
             <div class="text-center py-12">
-                <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
+                <i class="fas fa-comments text-6xl text-gray-800 mb-4"></i>
                 <h4 class="text-xl font-semibold text-gray-900 mb-2">No comments yet</h4>
-                <p class="text-gray-600 mb-6">Be the first to share your thoughts about this check-in!</p>
+                <p class="text-gray-800 mb-6">Be the first to share your thoughts about this check-in!</p>
             </div>
         {% endif %}
     </div>
@@ -342,7 +342,7 @@
     {% if user.is_authenticated %}
         <div class="bg-white rounded-lg shadow-lg p-6">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                <i class="fas fa-pen text-green-600 mr-2"></i>
+                <i class="fas fa-pen text-green-700 mr-2"></i>
                 Leave a Comment
             </h2>
 
@@ -352,7 +352,7 @@
                 
                 <!-- Comment Text -->
                 <div>
-                    <label for="comment-text" class="block text-sm font-medium text-gray-700 mb-2">
+                    <label for="comment-text" class="block text-sm font-medium text-gray-800 mb-2">
                         Your Comment
                     </label>
                     <textarea name="text" id="comment-text" rows="4" required
@@ -362,12 +362,12 @@
                 
                 <!-- Rating (Optional) -->
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                    <label class="block text-sm font-medium text-gray-800 mb-2">
                         Rating (Optional)
                     </label>
                     <div class="flex items-center space-x-1" id="rating-stars">
                         {% for i in "12345" %}
-                            <i class="far fa-star text-gray-300 text-xl cursor-pointer hover:text-yellow-400 transition-colors" 
+                            <i class="far fa-star text-gray-800 text-xl cursor-pointer hover:text-yellow-400 transition-colors" 
                                data-rating="{{ forloop.counter }}" onclick="setRating('{{ forloop.counter }}')"></i>
                         {% endfor %}
                     </div>
@@ -410,11 +410,11 @@
         
         stars.forEach((star, index) => {
             if (index < rating) {
-                star.classList.remove('far', 'text-gray-300');
+                star.classList.remove('far', 'text-gray-800');
                 star.classList.add('fas', 'text-yellow-400');
             } else {
                 star.classList.remove('fas', 'text-yellow-400');
-                star.classList.add('far', 'text-gray-300');
+                star.classList.add('far', 'text-gray-800');
             }
         });
         
