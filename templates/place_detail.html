@@ -77,7 +77,7 @@
                                 {% else %}
                                     <!-- Outline heart -->
                                     <svg xmlns="http://www.w3.org/2000/svg" 
-                                        class="h-8 w-8 text-gray-400 hover:text-red-500 transition-colors" 
+                                        class="h-8 w-8 text-gray-700 hover:text-red-500 transition-colors" 
                                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
                                             d="M4.318 6.318a4.5 4.5 0 000 6.364L12 
@@ -129,7 +129,7 @@
 
                 {% if place.category %}
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Category</h3>
+                    <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Category</h2>
                     <div class="text-lg font-medium text-gray-800 flex items-center">
                         <span class="text-xl mr-2">🏷️</span>{{ place.get_category_display }}
                     </div>
@@ -138,7 +138,7 @@
 
                 {% if place.difficulty %}
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Difficulty</h3>
+                    <h2 class="text-sm font-semibold text-gray-600 uppercase mb-1">Difficulty</h2>
                     <div class="text-lg font-medium text-gray-800 flex items-center">
                         <span class="text-xl mr-2">🧭</span>{{ place.difficulty }}
                     </div>
@@ -147,7 +147,7 @@
 
                 {% if place.safety_rating %}
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Safety Rating</h3>
+                    <h2 class="text-sm font-semibold text-gray-600 uppercase mb-1">Safety Rating</h2>
                     <div class="text-lg font-medium text-gray-800 flex items-center">
                         <div>
                             <div class="flex text-base leading-none">
@@ -172,7 +172,7 @@
 
                 {% if place.best_time_to_visit %}
                 <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-600 uppercase mb-1">Best Time to Visit</h3>
+                    <h2 class="text-sm font-semibold text-gray-600 uppercase mb-1">Best Time to Visit</h2>
                     <div class="text-lg font-medium text-gray-800 flex items-center">
                         <span class="text-xl mr-2">📅</span>{{ place.best_time_to_visit }}
                     </div>
@@ -181,9 +181,9 @@
 
                 {% if place.accessibility_info %}
                 <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
                         Accessibility & Visitor Information
-                    </h3>
+                    </h2>
                     <p class="text-gray-700 leading-relaxed text-base">
                         {{ place.accessibility_info|linebreaks }}
                     </p>
@@ -192,9 +192,9 @@
 
                 {% if place.legends_stories %}
                 <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                    <h3 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
+                    <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
                         📖 Legends & Stories
-                    </h3>
+                    </h2>
                     <p class="text-gray-700 leading-relaxed text-base whitespace-pre-line">
                         {{ place.legends_stories|linebreaks }}
                     </p>
@@ -215,12 +215,12 @@
 
     <!-- Comments Section -->
     <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <h3 class="text-xl font-semibold text-gray-900 mb-6">
+        <h2 class="text-xl font-semibold text-gray-900 mb-6">
             <i class="fas fa-comments text-blue-600 mr-2"></i>
             Visitor Comments
             <span class="text-sm font-normal text-gray-500 ml-2">({{ comments.count|default:0 }})</span>
-        </h3>
-        
+        </h2>
+
         {% if comments %}
             <div class="space-y-6" id="comments-list">
                 {% for comment in comments %}
@@ -341,11 +341,11 @@
     <!-- Comment Form -->
     {% if user.is_authenticated %}
         <div class="bg-white rounded-lg shadow-lg p-6">
-            <h3 class="text-xl font-semibold text-gray-900 mb-4">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">
                 <i class="fas fa-pen text-green-600 mr-2"></i>
                 Leave a Comment
-            </h3>
-            
+            </h2>
+
             <form method="post" id="comment-form" class="space-y-4">
                 {% csrf_token %}
                 <input type="hidden" name="checkin_id" value="{{ checkin.id }}">
