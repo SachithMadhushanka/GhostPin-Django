@@ -302,11 +302,17 @@
     {% endif %}
 
     <!-- Universal Install Banner -->
-    <div id="install-banner" class="fixed bottom-0 left-0 right-0 bg-green-600 text-white p-4 z-50 hidden">
-        <div id="install-message" class="mb-2 text-center"></div>
+    <div id="install-banner" class="fixed bottom-0 left-0 right-0 bg-green-600 text-white p-4 z-50 hidden"
+     role="region" 
+     aria-label="App Installation Prompt">
+        <div id="install-message" class="mb-2 text-center" 
+         role="status" 
+         aria-live="polite"></div>
         <div class="flex justify-center gap-3">
-            <button id="install-button" class="bg-white text-green-700 px-4 py-2 rounded hidden">Install App</button>
-            <button onclick="hideBanner()" class="bg-green-800 px-4 py-2 rounded">Dismiss</button>
+            <button id="install-button" class="bg-white text-green-700 px-4 py-2 rounded hidden" 
+                aria-label="Install the GhostPin app">Install App</button>
+            <button onclick="hideBanner()" class="bg-green-800 px-4 py-2 rounded" 
+                aria-label="Dismiss installation prompt">Dismiss</button>
         </div>
     </div>
 
