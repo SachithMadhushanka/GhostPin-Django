@@ -89,17 +89,17 @@
                 
                 <div class="hidden md:block">
                     <div class="ml-10 flex items-baseline space-x-4">
-                        <a href="{% url 'places:home' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                        <a href="{% url 'places:home' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                             🏠 Home
                         </a>
                         {% if user.is_authenticated %}
-                            <a href="{% url 'places:add_place' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <a href="{% url 'places:add_place' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                 ➕ Add Place
                             </a>
                             
                                 <!-- Dropdown menu for Collections/Favorites/Check-ins -->
                                 <div class="relative group">
-                                    <button class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
+                                    <button class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
                                         🌍 Explore 
                                     </button>
                                     <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-200 z-50">
@@ -121,7 +121,7 @@
                                 
                                 <!-- Dropdown menu for Challenges/Badges/Leaderboard -->
                                 <div class="relative group">
-                                    <button class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
+                                    <button class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
                                         🏆 Achievements
                                     </button>
                                     <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -139,7 +139,7 @@
 
                                 <!-- Dropdown menu for Search -->
                                 <div class="relative group">
-                                    <button class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
+                                    <button class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
                                         🔍 Search
                                     </button>
                                     <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
@@ -152,13 +152,13 @@
                                     </div>
                                 </div>
 
-                                <a href="{% url 'places:notifications' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                <a href="{% url 'places:notifications' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                      🔔 Notifications
                                 </a>
 
                                 <!-- Dropdown menu for profile/logout -->
                                 <div class="relative group">
-                                    <button class="flex items-center space-x-2 text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
+                                    <button class="flex items-center space-x-2 text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
                                         {% if user.profile.avatar %}
                                             <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="w-8 h-8 rounded-full object-cover border-2 border-white" title="{{ user.username }}">
                                         {% else %}
@@ -187,10 +187,10 @@
                                 <!-- {% if user.is_staff %}
                                 {% endif %} -->
                         {% else %}
-                            <a href="{% url 'places:about' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <a href="{% url 'places:about' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                     📖 About GhostPin
                             </a>
-                            <a href="{% url 'login' %}" class="text-white hover:bg-green-600 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <a href="{% url 'login' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
                                 🔑 Login
                             </a>
                         {% endif %}
@@ -201,7 +201,7 @@
                 
                 <!-- Mobile menu button -->
                 <div class="md:hidden">
-                    <button id="mobile-menu-button" class="text-white hover:bg-green-600 p-2 rounded-md" aria-label="Toggle mobile menu">
+                    <button id="mobile-menu-button" class="text-white hover:bg-green-800 p-2 rounded-md" aria-label="Toggle mobile menu">
                         <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                         </svg>
@@ -211,7 +211,7 @@
         </div>
         
         <!-- Mobile menu -->
-        <div id="mobile-menu" class="md:hidden mobile-menu hidden bg-green-600">
+        <div id="mobile-menu" class="md:hidden mobile-menu hidden bg-green-800">
             <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                 <a href="{% url 'places:home' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🏠 Home</a>
                 
@@ -302,16 +302,16 @@
     {% endif %}
 
     <!-- Universal Install Banner -->
-    <div id="install-banner" class="fixed bottom-0 left-0 right-0 bg-green-600 text-white p-4 z-50 hidden"
+    <div id="install-banner" class="fixed bottom-0 left-0 right-0 bg-green-800 text-white p-4 z-50 hidden"
      role="region" 
      aria-label="App Installation Prompt">
         <div id="install-message" class="mb-2 text-center" 
          role="status" 
          aria-live="polite"></div>
         <div class="flex justify-center gap-3">
-            <button id="install-button" class="bg-white text-green-700 px-4 py-2 rounded hidden" 
+            <button id="install-button" class="bg-white text-green-800 px-4 py-2 rounded hidden" 
                 aria-label="Install the GhostPin app">Install App</button>
-            <button onclick="hideBanner()" class="bg-green-800 px-4 py-2 rounded" 
+            <button onclick="hideBanner()" class="bg-green-900 px-4 py-2 rounded" 
                 aria-label="Dismiss installation prompt">Dismiss</button>
         </div>
     </div>
