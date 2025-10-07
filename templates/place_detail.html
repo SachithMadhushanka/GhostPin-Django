@@ -266,20 +266,20 @@
                                 <!-- Voting Controls -->
                                 <div class="flex items-center space-x-4">
                                     <div class="flex items-center space-x-2">
-                                        <button class="vote-btn" data-comment-id="{{ comment.id }}" data-vote-type="up" onclick="voteComment('{{ comment.id }}', 'up')">
+                                        <button class="vote-btn" aria-label="Upvote comment" data-comment-id="{{ comment.id }}" data-vote-type="up" onclick="voteComment('{{ comment.id }}', 'up')">
                                             <i class="fas fa-thumbs-up text-green-600 hover:text-green-700 cursor-pointer transition-colors"></i>
                                         </button>
                                         <span class="text-sm text-gray-600 vote-count-up">{{ comment.upvotes|default:0 }}</span>
                                     </div>
                                     
                                     <div class="flex items-center space-x-2">
-                                        <button class="vote-btn" data-comment-id="{{ comment.id }}" data-vote-type="down" onclick="voteComment('{{ comment.id }}', 'down')">
+                                        <button class="vote-btn" aria-label="Downvote comment" data-comment-id="{{ comment.id }}" data-vote-type="down" onclick="voteComment('{{ comment.id }}', 'down')">
                                             <i class="fas fa-thumbs-down text-red-600 hover:text-red-700 cursor-pointer transition-colors"></i>
                                         </button>
                                         <span class="text-sm text-gray-600 vote-count-down">{{ comment.downvotes|default:0 }}</span>
                                     </div>
                                     
-                                    <button class="text-sm text-blue-600 hover:text-blue-700 cursor-pointer" onclick="toggleReplyForm('{{ comment.id }}')">
+                                    <button class="text-sm text-blue-600 hover:text-blue-700 cursor-pointer" aria-label="Reply to comment" onclick="toggleReplyForm('{{ comment.id }}')">
                                         <i class="fas fa-reply mr-1"></i>
                                         Reply
                                     </button>
