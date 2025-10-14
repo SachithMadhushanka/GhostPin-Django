@@ -10,17 +10,17 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-from pathlib import Path
+from pathlib import Path        # For handling file paths
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent # Root directory of the project
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-x0l3b9c*ogm8rymr5egpd2-6be^ayim)me9fuyc)e3(pmmf2l^'
+SECRET_KEY = 'django-insecure-x0l3b9c*ogm8rymr5egpd2-6be^ayim)me9fuyc)e3(pmmf2l^' # Replace with a secure key in production
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -31,47 +31,47 @@ ALLOWED_HOSTS = ['*']  # Allow all hosts for development and deployment
 # Application definition
 
 INSTALLED_APPS = [
-    'django_extensions',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'pwa',
-    'places',  # Our main app
+    'django_extensions',    # For additional management commands and utilities
+    'django.contrib.admin', # Admin site
+    'django.contrib.auth',  # Authentication framework
+    'django.contrib.contenttypes',  # Content types framework
+    'django.contrib.sessions',  # Session framework
+    'django.contrib.messages',  # Messaging framework
+    'django.contrib.staticfiles',  # Static files framework
+    'pwa',  # Progressive Web App support
+    'places',  # Places app
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.security.SecurityMiddleware', # Security middleware for various security enhancements
+    'django.contrib.sessions.middleware.SessionMiddleware', # Manages sessions across requests
+    'django.middleware.common.CommonMiddleware', # Common HTTP features
+    'django.middleware.csrf.CsrfViewMiddleware',    # CSRF protection
+    'django.contrib.auth.middleware.AuthenticationMiddleware',  # Associates users with requests using sessions
+    'django.contrib.messages.middleware.MessageMiddleware', # Enables cookie- and session-based message support
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',   # Prevents clickjacking attacks
 ]
 
-ROOT_URLCONF = 'ghostpin.urls'
+ROOT_URLCONF = 'ghostpin.urls'  # Root URL configuration module
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Add project-level templates directory
-        'APP_DIRS': True,
+        'DIRS': [BASE_DIR / 'templates'], # Global templates directory
+        'APP_DIRS': True, # Enable app-specific templates
         'OPTIONS': {
             'context_processors': [
-                'django.template.context_processors.debug',
-                'django.template.context_processors.request',
-                'django.template.context_processors.csrf',  
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.debug',  # Debug context processor
+                'django.template.context_processors.request',   # Request context processor 
+                'django.template.context_processors.csrf',      # CSRF token context processor
+                'django.contrib.auth.context_processors.auth',  # Authentication context processor
+                'django.contrib.messages.context_processors.messages',  # Messages context processor
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'ghostpin.wsgi.application'
+WSGI_APPLICATION = 'ghostpin.wsgi.application'  # WSGI application path
 
 
 # Database
@@ -79,8 +79,8 @@ WSGI_APPLICATION = 'ghostpin.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.sqlite3', # Using SQLite for simplicity
+        'NAME': BASE_DIR / 'db.sqlite3', # Database file location
     }
 }
 
@@ -90,16 +90,16 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', # Validate against user attributes
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', # Enforce minimum password length
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',  # Prevent common passwords
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', # Prevent entirely numeric passwords
     },
 ]
 
@@ -107,45 +107,45 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'en-us'   # Language code for the project
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'UTC' # Time zone for the project
 
-USE_I18N = True
+USE_I18N = True # Enable internationalization
 
-USE_TZ = True
+USE_TZ = True   # Enable timezone-aware datetimes
 
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
+STATIC_URL = '/static/' # URL to access static files
 STATICFILES_DIRS = [
-    BASE_DIR / 'static',
+    BASE_DIR / 'static', # Directory for global static files
 ]
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles' # Directory where static files will be collected
 
 # Media files (User uploads)
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = '/media/'   # URL to access media files
+MEDIA_ROOT = BASE_DIR / 'media' # Directory where media files are stored
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'    
 
 # Login/Logout URLs
-LOGIN_URL = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/'
-LOGOUT_REDIRECT_URL = '/'
+LOGIN_URL = '/accounts/login/'  # Login URL
+LOGIN_REDIRECT_URL = '/'    # Redirect URL after successful login
+LOGOUT_REDIRECT_URL = '/'   # Redirect URL after logout
 
 # PWA Configuration
-PWA_APP_NAME = 'GhostPin - Explore Historical Places'
-PWA_APP_DESCRIPTION = 'Discover and explore historical places around the world'
+PWA_APP_NAME = 'GhostPin - Explore Historical Places'   # App name
+PWA_APP_DESCRIPTION = 'Discover and explore historical places around the world' # App description
 PWA_APP_THEME_COLOR = '#4CAF50'  # Green theme color for the app
 PWA_APP_BACKGROUND_COLOR = '#ffffff'  # White background
 PWA_APP_ICONS = {
-    'src': '/static/icons/icon-192x192.png',  # Path to the 192x192 icon
+    'src': '/static/icons/icon-192x192.png',  # Path to your app icon
     'sizes': '192x192',
     'type': 'image/png',
 }
@@ -161,13 +161,13 @@ PWA_APP_CATEGORIES = ['travel', 'education', 'lifestyle']  # App categories
 # The screenshots are optional but can be a nice touch.
 PWA_APP_SCREENSHOTS = [
     {
-        'src': '/static/icons/screenshot-mobile.png',
+        'src': '/static/icons/screenshot-mobile.png', # Path to a screenshot image
         'sizes': '390x844',
         'type': 'image/png',
         'form_factor': 'narrow',
     },
     {
-        'src': '/static/icons/screenshot-desktop.png',
+        'src': '/static/icons/screenshot-desktop.png', # Path to a screenshot image
         'sizes': '1920x1080',
         'type': 'image/png',
         'form_factor': 'wide',
@@ -177,10 +177,10 @@ PWA_APP_SCREENSHOTS = [
 # App Shortcuts (optional for quick links inside the app)
 PWA_APP_SHORTCUTS = [
     {
-        'name': 'Add New Place',
-        'short_name': 'Add Place',
-        'description': 'Submit a new historical place',
-        'url': '/place/add/',
-        'icons': [{'src': '/static/icons/icon-192x192.png', 'sizes': '192x192'}],
+        'name': 'Add New Place',    # Shortcut name
+        'short_name': 'Add Place', # Short name for the shortcut
+        'description': 'Submit a new historical place', # Description
+        'url': '/place/add/',   # URL to navigate to
+        'icons': [{'src': '/static/icons/icon-192x192.png', 'sizes': '192x192'}],   # Icon for the shortcut
     }
 ]
