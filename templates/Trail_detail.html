@@ -1,0 +1,652 @@
+{% extends 'base.html' %}
+{% block title %}{{ trail.name }} - Trails - RoamLk{% endblock %}
+{% block content %}
+    <div class="max-w-6xl mx-auto">
+        <!-- Trail Hero Header -->
+        <div class="relative rounded-xl shadow-lg overflow-hidden mb-8"
+             style="min-height:280px">
+            <!-- Background: cover image or gradient fallback -->
+            {% if trail.cover_image %}
+                <img src="{{ trail.cover_image.url }}"
+                     alt="{{ trail.name }}"
+                     class="absolute inset-0 w-full h-full object-cover">
+                <!-- Deep scrim: transparent top → dark bottom so text is always readable -->
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10"></div>
+            {% else %}
+                <div class="absolute inset-0 gradient-bg"></div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+            {% endif %}
+            <!-- Content overlay -->
+            <div class="relative z-10 p-8 flex flex-col justify-end h-full"
+                 style="min-height:280px">
+                <!-- Action buttons — top-right -->
+                <div class="absolute top-6 right-6 flex gap-2">
+                    {% if user.is_authenticated %}
+                        <form method="post" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="save_trail">
+                            <button type="submit"
+                                    class="{% if is_saved %}bg-red-500 hover:bg-red-600{% else %}bg-white/20 hover:bg-white/30 backdrop-blur-sm{% endif %} text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium border border-white/30">
+                                <i class="fas fa-heart mr-1.5"></i>
+                                {% if is_saved %}
+                                    Unsave
+                                {% else %}
+                                    Save
+                                {% endif %}
+                            </button>
+                        </form>
+                    {% endif %}
+                    {% if can_edit %}
+                        <a href="{% url 'places:edit_trail' trail.pk %}"
+                           class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg transition-colors text-sm font-medium border border-white/30">
+                            <i class="fas fa-edit mr-1.5"></i> Edit
+                        </a>
+                    {% endif %}
+                </div>
+                <!-- Difficulty badge -->
+                <div class="mb-3">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border border-white/30 backdrop-blur-sm {% if trail.difficulty == 'easy' %}bg-green-500/80 text-white {% elif trail.difficulty == 'moderate' %}bg-yellow-500/80 text-white {% else %}bg-red-500/80 text-white{% endif %}">
+                        <i class="fas fa-signal mr-1.5"></i>
+                        {{ trail.get_difficulty_display }}
+                    </span>
+                    {% if trail.required_points > 0 %}
+                        <span class="inline-flex items-center ml-2 px-3 py-1 rounded-full text-xs font-semibold bg-black/40 text-white border border-white/20 backdrop-blur-sm">
+                            <i class="fas fa-lock mr-1.5"></i>{{ trail.required_points }} pts to unlock
+                        </span>
+                    {% endif %}
+                </div>
+                <!-- Title & description -->
+                <h1 class="text-3xl lg:text-4xl font-bold text-white mb-2 drop-shadow-lg">{{ trail.name }}</h1>
+                <p class="text-white/85 text-sm lg:text-base mb-4 max-w-2xl line-clamp-2">{{ trail.description }}</p>
+                <!-- Meta pills -->
+                <div class="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-white/80">
+                    <span class="flex items-center gap-1.5">
+                        <i class="fas fa-user text-white/60"></i>
+                        <a href="{% url 'places:profile' trail.created_by.username %}"
+                           class="hover:text-white underline underline-offset-2 transition-colors">
+                            {{ trail.created_by.username }}
+                        </a>
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <i class="fas fa-map-marker-alt text-white/60"></i>
+                        {{ trail_places.count }} place{{ trail_places.count|pluralize }}
+                    </span>
+                    <span class="flex items-center gap-1.5">
+                        <i class="fas fa-clock text-white/60"></i>
+                        {% if trail.estimated_duration %}
+                            {{ trail.estimated_duration }}
+                        {% else %}
+                            Duration varies
+                        {% endif %}
+                    </span>
+                    {# trail.distance = stored value from create/edit form; total_distance = sum of TrailPlace.distance_from_previous #}
+                    {% if trail.distance %}
+                        <span class="flex items-center gap-1.5">
+                            <i class="fas fa-road text-white/60"></i>
+                            {{ trail.distance|floatformat:1 }} km
+                        </span>
+                    {% elif total_distance %}
+                        <span class="flex items-center gap-1.5">
+                            <i class="fas fa-road text-white/60"></i>
+                            {{ total_distance|floatformat:1 }} km
+                        </span>
+                    {% endif %}
+                    <span class="flex items-center gap-1.5">
+                        <i class="fas fa-calendar text-white/60"></i>
+                        {{ trail.created_at|date:"M d, Y" }}
+                    </span>
+                </div>
+            </div>
+        </div>
+        <!-- Lock banner -->
+        {% if is_locked %}
+            <div class="bg-amber-50 border border-amber-300 rounded-lg p-6 mb-8 text-center">
+                <i class="fas fa-lock text-amber-500 text-3xl mb-3"></i>
+                <h3 class="text-lg font-bold text-gray-900 mb-1">Trail Locked</h3>
+                <p class="text-gray-600 mb-3">
+                    {% if user.is_authenticated %}
+                        You need <strong>{{ trail.required_points }} points</strong> to unlock this trail.
+                        {% with profile=request.user.userprofile %}
+                            You currently have <strong>{{ profile.points }}</strong> points.
+                        {% endwith %}
+                    {% else %}
+                        <a href="{% url 'login' %}" class="text-blue-600 hover:underline">Log in</a> and earn
+                        <strong>{{ trail.required_points }} points</strong> to unlock this trail.
+                    {% endif %}
+                </p>
+                <a href="{% url 'places:leaderboard' %}"
+                   class="text-blue-600 hover:underline text-sm">See how to earn points →</a>
+            </div>
+        {% endif %}
+        <!-- Progress bar -->
+        {% if progress and not is_locked %}
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-lg font-bold text-gray-900">
+                        <i class="fas fa-tasks text-green-600 mr-2"></i>Your Progress
+                    </h3>
+                    <span class="text-sm font-semibold {% if progress.percent == 100 %}text-green-600{% else %}text-gray-500{% endif %}">
+                        {{ progress.completed }} / {{ progress.total }} places
+                    </span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4 mb-2">
+                    <div class="{% if progress.percent == 100 %}bg-green-500{% else %}bg-blue-500{% endif %} h-4 rounded-full transition-all duration-700"
+                         style="width: {{ progress.percent }}%"></div>
+                </div>
+                {% if progress.percent == 100 %}
+                    <p class="text-green-600 font-semibold text-sm mt-2">
+                        🎉 Trail complete! Check your notifications for your bonus points.
+                    </p>
+                {% else %}
+                    <p class="text-gray-500 text-xs mt-1">
+                        Complete all {{ progress.total }} places to earn
+                        <strong>
+                            {% if trail.difficulty == 'easy' %}
+                                100
+                            {% elif trail.difficulty == 'moderate' %}
+                                130
+                            {% else %}
+                                150
+                            {% endif %}
+                            bonus points
+                        </strong>
+                    </p>
+                {% endif %}
+            </div>
+        {% endif %}
+        <!-- Route Map -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-xl font-bold text-gray-900">
+                    <i class="fas fa-road text-green-600 mr-2"></i>
+                    Trail Route
+                </h2>
+                <!-- Legend -->
+                <span class="text-xs text-gray-400 flex items-center gap-3 flex-shrink-0">
+                    <span class="flex items-center gap-1">
+                        <span style="display:inline-block;
+                                     width:14px;
+                                     height:14px;
+                                     border-radius:50%;
+                                     background:#16a34a;
+                                     border:2px solid #fff;
+                                     box-shadow:0 1px 3px rgba(0,0,0,.3)"></span>
+                        Start
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span style="display:inline-block;
+                                     width:14px;
+                                     height:14px;
+                                     border-radius:50%;
+                                     background:#dc2626;
+                                     border:2px solid #fff;
+                                     box-shadow:0 1px 3px rgba(0,0,0,.3)"></span>
+                        End
+                    </span>
+                    <span class="flex items-center gap-1">
+                        <span style="display:inline-block;
+                                     width:14px;
+                                     height:14px;
+                                     border-radius:50%;
+                                     background:#7c3aed;
+                                     border:2px solid #fff;
+                                     box-shadow:0 1px 3px rgba(0,0,0,.3)"></span>
+                        Stop
+                    </span>
+                </span>
+            </div>
+            <!-- Map container — position:relative needed for loading overlay -->
+            <div class="relative rounded-xl overflow-hidden shadow-inner">
+                <div id="trail-map" style="height:420px;" class="w-full rounded-xl"></div>
+                <!-- OSRM loading overlay (injected by JS) -->
+            </div>
+            <!-- Road stats bar — shown after OSRM resolves -->
+            <div id="road-stats-bar"
+                 class="hidden mt-3 grid grid-cols-3 gap-3 text-center text-sm">
+                <div class="bg-purple-50 rounded-lg py-2 px-3">
+                    <div class="font-bold text-purple-700 text-lg" id="rs-km">—</div>
+                    <div class="text-xs text-gray-500">Road km</div>
+                </div>
+                <div class="bg-blue-50 rounded-lg py-2 px-3">
+                    <div class="font-bold text-blue-700 text-lg" id="rs-drive">—</div>
+                    <div class="text-xs text-gray-500">Drive time</div>
+                </div>
+                <div class="bg-green-50 rounded-lg py-2 px-3">
+                    <div class="font-bold text-green-700 text-lg" id="rs-stops">{{ trail_places.count }}</div>
+                    <div class="text-xs text-gray-500">Stops</div>
+                </div>
+            </div>
+            <!-- Per-segment breakdown — shown after OSRM resolves -->
+            <div id="road-segment-breakdown" class="hidden mt-4"></div>
+        </div>
+        <!-- Places List -->
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-bold text-gray-900 mb-6">
+                <i class="fas fa-list text-blue-600 mr-2"></i>
+                Places in This Trail
+            </h2>
+            {% if trail_places %}
+                <div class="space-y-6" id="places-list">
+                    {% for trail_place in trail_places %}
+                        {% with place=trail_place.place %}
+                            <div class="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                                 id="place-card-{{ trail_place.order }}">
+                                <!-- Order bubble -->
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm text-white {% if forloop.first %}bg-green-600 {% elif forloop.last %}bg-red-500 {% else %}bg-purple-600{% endif %}">
+                                    {{ trail_place.order }}
+                                </div>
+                                <!-- Place Image -->
+                                <div class="flex-shrink-0">
+                                    {% if place.image %}
+                                        <img src="{{ place.image.url }}"
+                                             alt="{{ place.name }}"
+                                             class="w-20 h-20 rounded-lg object-cover">
+                                    {% else %}
+                                        <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-2xl">
+                                            🏛️
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <!-- Place Info -->
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-lg font-semibold text-gray-900 mb-1">
+                                        <a href="{% url 'places:place_detail' place.slug %}"
+                                           class="hover:text-green-600 transition-colors">{{ place.name }}</a>
+                                    </h3>
+                                    <p class="text-gray-600 text-sm mb-2">{{ place.description|truncatewords:25 }}</p>
+                                    <div class="flex flex-wrap items-center gap-4 text-xs text-gray-500 mb-2">
+                                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                            {% for cat in place.category.all %}
+                                                {{ cat.name }}
+                                                {% if not forloop.last %},{% endif %}
+                                            {% endfor %}
+                                        </span>
+                                        <span class="flex items-center">
+                                            <i class="fas fa-signal mr-1"></i>
+                                            {{ place.get_difficulty_display }}
+                                        </span>
+                                        {% if place.average_rating > 0 %}
+                                            <span class="flex items-center">
+                                                <i class="fas fa-star text-yellow-500 mr-1"></i>
+                                                {{ place.average_rating|floatformat:1 }}
+                                            </span>
+                                        {% endif %}
+                                        <!-- Road distance badge — filled by JS after OSRM resolves -->
+                                        <span class="road-dist-badge hidden text-purple-600 bg-purple-50 border border-purple-200 px-2 py-0.5 rounded-full"
+                                              data-stop="{{ trail_place.order }}">
+                                            <i class="fas fa-road mr-0.5"></i>
+                                            <span class="road-dist-value"></span>
+                                        </span>
+                                    </div>
+                                    {% if trail_place.notes %}
+                                        <div class="bg-blue-50 border-l-4 border-blue-400 p-3 mt-3">
+                                            <p class="text-blue-800 text-sm">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                <strong>Trail Note:</strong> {{ trail_place.notes }}
+                                            </p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <!-- Actions -->
+                                <div class="flex-shrink-0 flex flex-col space-y-2">
+                                    <a href="{% url 'places:place_detail' place.slug %}"
+                                       class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm transition-colors">
+                                        <i class="fas fa-eye mr-1"></i> View
+                                    </a>
+                                    {% if user.is_authenticated %}
+                                        <button class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition-colors"
+                                                onclick="focusOnPlace({{ place.latitude }}, {{ place.longitude }}, {{ trail_place.order }})">
+                                            <i class="fas fa-crosshairs mr-1"></i> Map
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endwith %}
+                    {% endfor %}
+                </div>
+                <!-- Trail Actions -->
+                <div class="mt-8 pt-6 border-t border-gray-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-center space-y-4 sm:space-y-0">
+                        <div class="text-sm text-gray-600">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Follow this route in order for the best experience
+                        </div>
+                        {% if user.is_authenticated and not is_locked %}
+                            <div class="flex space-x-3">
+                                <form method="post" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="start_trail">
+                                    <button type="submit"
+                                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                        <i class="fas fa-play mr-2"></i>
+                                        {% if progress and progress.completed > 0 %}
+                                            Continue
+                                        {% else %}
+                                            Start
+                                        {% endif %}
+                                        Trail
+                                    </button>
+                                </form>
+                                <form method="post" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="export_route">
+                                    <button type="submit"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                        <i class="fas fa-download mr-2"></i> Export GPX
+                                    </button>
+                                </form>
+                            </div>
+                        {% elif is_locked %}
+                            <p class="text-sm text-amber-600">
+                                <i class="fas fa-lock mr-1"></i>
+                                Unlock this trail to start exploring.
+                            </p>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-12">
+                    <i class="fas fa-map-marker-alt text-6xl text-gray-300 mb-4"></i>
+                    <h3 class="text-xl font-medium text-gray-900 mb-2">No places in this trail</h3>
+                    <p class="text-gray-500">This trail is empty or still being created.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+// ─────────────────────────────────────────────────────────
+// Trail detail — OSRM road routing engine
+// ─────────────────────────────────────────────────────────
+
+const OSRM_BASE = 'https://router.project-osrm.org/route/v1/driving';
+
+// Stop data injected from Django template
+const TRAIL_STOPS = [
+    {% for tp in trail_places %}
+    {
+        order: {{ tp.order }},
+        lat:   {{ tp.place.latitude }},
+        lng:   {{ tp.place.longitude }},
+        name:  "{{ tp.place.name|escapejs }}",
+        url:   "{% url 'places:place_detail' tp.place.slug %}"
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+];
+
+let map;
+let markerLayer;
+let routeLayer;
+let allMarkers = [];   // indexed by order-1 for focusOnPlace
+
+// ── Helpers ───────────────────────────────────────────────
+function fmtMinutes(m) {
+    const h = Math.floor(m / 60), rem = Math.round(m % 60);
+    if (h && rem) return `${h}h ${rem}m`;
+    if (h)        return `${h}h`;
+    return `${rem}m`;
+}
+
+// ── Custom numbered divIcon (matches create form colours) ─
+function makeStopIcon(n, isFirst, isLast) {
+    const bg = isFirst ? '#16a34a' : isLast ? '#dc2626' : '#7c3aed';
+    return L.divIcon({
+        className: '',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
+        popupAnchor: [0, -18],
+        html: `<div style=" width:32px;height:32px;border-radius:50%; background:${bg};color:#fff; display:flex;align-items:center;justify-content:center; font-weight:700;font-size:13px; border:2px solid #fff; box-shadow:0 2px 8px rgba(0,0,0,.35);">${n}</div>`
+    });
+}
+
+// ── Loading spinner overlay ───────────────────────────────
+function showRouteLoading(show) {
+    let el = document.getElementById('osrm-loading-overlay');
+    if (show) {
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'osrm-loading-overlay';
+            el.style.cssText = `
+                position:absolute;top:0;left:0;right:0;bottom:0;
+                background:rgba(255,255,255,.6);
+                display:flex;align-items:center;justify-content:center;
+                z-index:1000;pointer-events:none;`;
+            el.innerHTML = `<div style="text-align:center;">
+                <div style="width:34px;height:34px;border:3px solid #7c3aed33; border-top-color:#7c3aed;border-radius:50%; animation:osrmSpin .8s linear infinite;margin:0 auto 8px;"></div>
+                <span style="font-size:11px;color:#7c3aed;font-weight:600;">
+                    Loading road route…
+                </span></div>`;
+            if (!document.getElementById('osrm-spin-style')) {
+                const s = document.createElement('style');
+                s.id = 'osrm-spin-style';
+                s.textContent = '@keyframes osrmSpin{to{transform:rotate(360deg)}}';
+                document.head.appendChild(s);
+            }
+            document.getElementById('trail-map').parentElement.appendChild(el);
+        }
+        el.style.display = 'flex';
+    } else if (el) {
+        el.style.display = 'none';
+    }
+}
+
+// ── OSRM fetch ────────────────────────────────────────────
+async function fetchOSRMRoute(stops) {
+    const coords = stops.map(s => `${s.lng},${s.lat}`).join(';');
+    const url    = `${OSRM_BASE}/${coords}?overview=full&geometries=geojson&steps=true`;
+    const resp   = await fetch(url);
+    if (!resp.ok) throw new Error(`OSRM HTTP ${resp.status}`);
+    const json = await resp.json();
+    if (json.code !== 'Ok' || !json.routes.length) throw new Error('No route');
+    return json.routes[0];
+}
+
+function extractLegs(route) {
+    return route.legs.map(leg => ({
+        roadKm:    leg.distance / 1000,
+        durationS: leg.duration,
+        summary:   leg.summary || ''
+    }));
+}
+
+// ── Place markers ─────────────────────────────────────────
+function drawMarkers() {
+    markerLayer.clearLayers();
+    allMarkers = [];
+    const bounds = L.latLngBounds();
+
+    TRAIL_STOPS.forEach((stop, i) => {
+        const isFirst = i === 0;
+        const isLast  = i === TRAIL_STOPS.length - 1;
+        const marker  = L.marker([stop.lat, stop.lng], {
+            icon: makeStopIcon(stop.order, isFirst, isLast)
+        }).bindPopup(
+            `<div style="min-width:160px;">
+                <b>Stop ${stop.order}: ${stop.name}</b><br>
+                <a href="${stop.url}" style="color:#16a34a;font-size:12px;">
+                    View details →
+                </a>
+             </div>`
+        );
+        markerLayer.addLayer(marker);
+        allMarkers.push(marker);
+        bounds.extend([stop.lat, stop.lng]);
+    });
+
+    if (TRAIL_STOPS.length === 1) {
+        map.setView([TRAIL_STOPS[0].lat, TRAIL_STOPS[0].lng], 14);
+    } else if (TRAIL_STOPS.length > 1) {
+        map.fitBounds(bounds, { padding: [40, 40] });
+    }
+}
+
+// ── Fallback: straight-line polyline ─────────────────────
+function drawFallbackPolyline() {
+    const coords = TRAIL_STOPS.map(s => [s.lat, s.lng]);
+    routeLayer.addLayer(L.polyline(coords, {
+        color: '#7c3aed', weight: 3, opacity: 0.5, dashArray: '8 6'
+    }));
+    const note = document.createElement('p');
+    note.className = 'text-xs text-amber-600 mt-2 flex items-center gap-1';
+    note.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Road routing unavailable — showing straight-line route.';
+    document.getElementById('trail-map').parentElement.after(note);
+    setTimeout(() => note.remove(), 7000);
+}
+
+// ── Update road stats bar ─────────────────────────────────
+function updateRoadStats(legs, totalKm) {
+    const driveMin = legs.reduce((s, l) => s + l.durationS / 60, 0);
+
+    document.getElementById('rs-km').textContent    = totalKm.toFixed(1) + ' km';
+    document.getElementById('rs-drive').textContent = fmtMinutes(driveMin);
+    document.getElementById('rs-stops').textContent = TRAIL_STOPS.length;
+    document.getElementById('road-stats-bar').classList.remove('hidden');
+}
+
+// ── Per-segment breakdown below map ──────────────────────
+function updateSegmentBreakdown(legs) {
+    const bd = document.getElementById('road-segment-breakdown');
+    if (!bd) return;
+
+    let html = `<h3 class="text-sm font-semibold text-gray-700 mb-2">
+        <i class="fas fa-list-ol text-purple-500 mr-1"></i>Segment Breakdown
+    </h3><div class="space-y-1.5">`;
+
+    TRAIL_STOPS.forEach((stop, i) => {
+        const isFirst = i === 0;
+        const isLast  = i === TRAIL_STOPS.length - 1;
+        const bubbleBg = isFirst ? 'bg-green-600' : isLast ? 'bg-red-500' : 'bg-purple-600';
+
+        if (i > 0 && legs[i - 1]) {
+            const leg = legs[i - 1];
+            const km  = leg.roadKm;
+            const col = km < 10 ? 'text-green-600' : km < 50 ? 'text-yellow-600' : 'text-red-500';
+            html += `
+            <div class="pl-3 flex items-center gap-1 text-xs text-gray-400 py-0.5">
+                <div class="w-px h-4 bg-gray-300 ml-2 mr-1"></div>
+                <i class="fas fa-road text-purple-300 mr-0.5"></i>
+                <span class="${col} font-semibold">${km.toFixed(1)} km</span>
+                <span class="text-gray-300 mx-0.5">·</span>
+                <span>~${fmtMinutes(leg.durationS / 60)} drive</span>
+                ${leg.summary ? `<span class="text-gray-300 mx-0.5">·</span><span class="text-gray-400 truncate max-w-[140px]">via ${leg.summary}</span>` : ''}
+            </div>`;
+        }
+
+        html += `
+        <div class="flex items-center gap-2 text-xs py-1.5 ${!isLast ? 'border-b border-gray-100' : ''}">
+            <span class="w-5 h-5 rounded-full ${bubbleBg} text-white flex items-center justify-center font-bold flex-shrink-0 text-xs">
+                ${stop.order}
+            </span>
+            <a href="${stop.url}" class="flex-1 text-gray-700 font-medium truncate hover:text-green-600">
+                ${stop.name}
+            </a>
+            ${isFirst ? '<span class="text-green-600 text-xs font-semibold">START</span>' : ''}
+            ${isLast  ? '<span class="text-red-500 text-xs font-semibold">END</span>'   : ''}
+        </div>`;
+    });
+
+    // Total row
+    const totalKm     = legs.reduce((s, l) => s + l.roadKm, 0);
+    const totalDriveM = legs.reduce((s, l) => s + l.durationS / 60, 0);
+    html += `</div>
+    <div class="mt-3 pt-2 border-t border-gray-200 flex justify-between text-xs font-semibold text-gray-700">
+        <span><i class="fas fa-flag-checkered mr-1 text-purple-500"></i>Total road route</span>
+        <span class="text-purple-700">${totalKm.toFixed(2)} km · ${fmtMinutes(totalDriveM)}</span>
+    </div>
+    <p class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+        <i class="fas fa-info-circle text-purple-300"></i>
+        Road distances via OSRM / OpenStreetMap
+    </p>`;
+
+    bd.innerHTML = html;
+    bd.classList.remove('hidden');
+}
+
+// ── Annotate place-card road badges ──────────────────────
+function annotateCardBadges(legs) {
+    // legs[0] = segment from stop 1 → stop 2, so badge goes on card for stop 2
+    legs.forEach((leg, i) => {
+        const stopOrder = i + 2;  // card that receives this segment's distance
+        const badge     = document.querySelector(`.road-dist-badge[data-stop="${stopOrder}"]`);
+        if (!badge) return;
+        badge.querySelector('.road-dist-value').textContent = `${leg.roadKm.toFixed(1)} km`;
+        badge.classList.remove('hidden');
+    });
+}
+
+// ── Annotate marker popups with road data ─────────────────
+function annotatePopups(legs) {
+    legs.forEach((leg, i) => {
+        const marker = allMarkers[i + 1];
+        if (!marker) return;
+        const stop = TRAIL_STOPS[i + 1];
+        marker.setPopupContent(
+            `<div style="min-width:180px;">
+                <b>Stop ${stop.order}: ${stop.name}</b><br>
+                <span style="color:#7c3aed;font-size:11px;">
+                    🛣 ${leg.roadKm.toFixed(1)} km by road &nbsp;·&nbsp;
+                    ⏱ ${fmtMinutes(leg.durationS / 60)} drive
+                    ${leg.summary ? `<br>via ${leg.summary}` : ''}
+                </span><br>
+                <a href="${stop.url}" style="color:#16a34a;font-size:12px;">View details →</a>
+             </div>`
+        );
+    });
+}
+
+// ── Main init ─────────────────────────────────────────────
+async function initMap() {
+    map = L.map('trail-map').setView([7.8731, 80.7718], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    markerLayer = L.layerGroup().addTo(map);
+    routeLayer  = L.layerGroup().addTo(map);
+
+    if (!TRAIL_STOPS.length) return;
+
+    // Draw markers instantly
+    drawMarkers();
+
+    if (TRAIL_STOPS.length < 2) return;
+
+    // Fetch road route
+    showRouteLoading(true);
+    try {
+        const route = await fetchOSRMRoute(TRAIL_STOPS);
+        const legs  = extractLegs(route);
+
+        // Road geometry
+        routeLayer.addLayer(L.geoJSON(route.geometry, {
+            style: { color: '#7c3aed', weight: 4, opacity: 0.85 }
+        }));
+        // Direction dashes
+        routeLayer.addLayer(L.geoJSON(route.geometry, {
+            style: { color: '#fff', weight: 2, opacity: 0.55, dashArray: '6 10' }
+        }));
+
+        updateRoadStats(legs, legs.reduce((s, l) => s + l.roadKm, 0));
+        updateSegmentBreakdown(legs);
+        annotateCardBadges(legs);
+        annotatePopups(legs);
+
+    } catch (err) {
+        console.warn('OSRM failed, using fallback polyline:', err);
+        drawFallbackPolyline();
+    } finally {
+        showRouteLoading(false);
+    }
+}
+
+// ── focusOnPlace (called from Map buttons in place list) ──
+function focusOnPlace(lat, lng, order) {
+    map.setView([lat, lng], 15, { animate: true });
+    const marker = allMarkers[order - 1];
+    if (marker) marker.openPopup();
+}
+
+document.addEventListener('DOMContentLoaded', initMap);
+    </script>
+{% endblock %}

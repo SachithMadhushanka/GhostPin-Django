@@ -8,13 +8,27 @@ import os
 from django.utils.text import slugify
 import uuid
 
-
 def place_image_upload_to(instance, filename):
-    place_name = slugify(instance.name) if instance.name else 'unknown'
+    # Used for Place.image — instance IS the Place
+    place_name = slugify(instance.name)
     ext = filename.split('.')[-1]
     unique_suffix = uuid.uuid4().hex[:8]
     filename = f"{place_name}_{unique_suffix}.{ext}"
     return os.path.join('places', place_name, filename)
+
+def place_extra_image_upload_to(instance, filename):
+    # Used for PlaceImage.image — instance has a .place FK
+    place_name = slugify(instance.place.name) if instance.place else 'unknown'
+    ext = filename.split('.')[-1]
+    unique_suffix = uuid.uuid4().hex[:8]
+    filename = f"{place_name}_{unique_suffix}.{ext}"
+    return os.path.join('places', place_name, filename)
+
+def badge_image_upload_to(instance, filename):
+    ext = filename.split('.')[-1]
+    unique_suffix = uuid.uuid4().hex[:8]
+    return os.path.join('badges', f"{slugify(instance.name)}_{unique_suffix}.{ext}")
+
 
 def user_avatar_upload_to(instance, filename):
     username = slugify(instance.user.username) if instance.user else 'anonymous'
@@ -54,6 +68,10 @@ class UserProfile(models.Model):
     level = models.IntegerField(default=1)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    @property
+    def approved_places(self):
+        return Place.objects.filter(created_by=self.user, status='approved').count()
+
     def __str__(self):
         return f"{self.user.username}'s Profile"
 
@@ -67,6 +85,13 @@ class ExpertArea(models.Model):
     def __str__(self):
         return self.name
 
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    # icon = models.ImageField(upload_to='category_icons/', blank=True, null=True)
+
+    def __str__(self):
+        return self.name
 
 class Place(models.Model):
     STATUS_CHOICES = [
@@ -89,31 +114,34 @@ class Place(models.Model):
         (5, '⭐⭐⭐⭐⭐ Very Safe'),
     ]
 
-    CATEGORY_CHOICES = [
-    ('buddhist_temple', 'Buddhist Temple'),
-    ('hindu_temple', 'Hindu Temple'),
-    ('mosque', 'Islam Mosque'),
-    ('church', 'Christian Church'),
-    ('gurdwara', 'Sikh Gurdwara'),
-    ('synagogue', 'Jewish Synagogue'),
-    ('waterfall', 'Waterfall'),
-    ('camping_spot', 'Camping Spot'),
-    ('local_food', 'Local Food Spot'),
-    ('other', 'Other'),
-    ]
+    # CATEGORY_CHOICES = [
+    # ('buddhist_temple', 'Buddhist Temple'),
+    # ('hindu_temple', 'Hindu Temple'),
+    # ('mosque', 'Islam Mosque'),
+    # ('church', 'Christian Church'),
+    # ('gurdwara', 'Sikh Gurdwara'),
+    # ('synagogue', 'Jewish Synagogue'),
+    # ('waterfall', 'Waterfall'),
+    # ('camping_spot', 'Camping Spot'),
+    # ('local_food', 'Local Food Spot'),
+    # ('other', 'Other'),
+    # ]
 
     name = models.CharField(max_length=200)
+    slug = models.SlugField(max_length=250, unique=True, blank=True)
     description = models.TextField()
     legends_stories = models.TextField(blank=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
     image = models.ImageField(upload_to=place_image_upload_to, null=True, blank=True)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
+    # category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
+    category = models.ManyToManyField(Category, related_name='places')
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='easy')
     accessibility_info = models.TextField(blank=True)
     best_time_to_visit = models.CharField(max_length=100, blank=True)
     safety_rating = models.IntegerField(choices=SAFETY_CHOICES, default=3)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL,null=True, blank=True,related_name='updated_places')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     approval_votes = models.IntegerField(default=0)
     rejection_votes = models.IntegerField(default=0)
@@ -121,14 +149,28 @@ class Place(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+
     class Meta:
         ordering = ['-created_at']
     
     def __str__(self):
         return self.name
     
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.name)
+            slug = base_slug
+            # Handle duplicates by appending a short uuid
+            while Place.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{uuid.uuid4().hex[:6]}"
+            self.slug = slug
+        super().save(*args, **kwargs)
+
     def get_absolute_url(self):
-        return reverse('place_detail', kwargs={'pk': self.pk})
+        return reverse('places:place_detail', kwargs={'slug': self.slug})
+    
+    # def get_absolute_url(self):
+    #     return reverse('place_detail', kwargs={'pk': self.pk})
     
     @property
     def is_approved(self):
@@ -141,21 +183,20 @@ class Place(models.Model):
             return ratings.aggregate(models.Avg('rating'))['rating__avg']
         return 0
     
-    def get_icon_url(self):
-        icon_map = {
-            'buddhist_temple': 'static/icons/buddhist_temple.png',
-            'hindu_temple': 'static/icons/hindu_temple.png',
-            'mosque': 'static/icons/mosque.png',
-            'church': 'static/icons/church.png',
-            'gurdwara': 'static/icons/gurdwara.png',
-            'synagogue': 'static/icons/synagogue.png',
-        }
-        return icon_map.get(self.category, 'static/icons/other.png')
-
+    # def get_icon_url(self):
+    #     icon_map = {
+    #         'buddhist_temple': 'static/icons/buddhist_temple.png',
+    #         'hindu_temple': 'static/icons/hindu_temple.png',
+    #         'mosque': 'static/icons/mosque.png',
+    #         'church': 'static/icons/church.png',
+    #         'gurdwara': 'static/icons/gurdwara.png',
+    #         'synagogue': 'static/icons/synagogue.png',
+    #     }
+    #     return icon_map.get(self.category, 'static/icons/other.png')
 
 class PlaceImage(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to=place_image_upload_to)
+    image = models.ImageField(upload_to=place_extra_image_upload_to)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
     is_challenge_photo = models.BooleanField(default=False)
     challenge_description = models.CharField(max_length=200, blank=True)
@@ -182,32 +223,31 @@ class CheckIn(models.Model):
         return f"{self.user.username} checked in at {self.place.name}"
 
 
-class PlaceCollection(models.Model):
+class Trail(models.Model):
     DIFFICULTY_CHOICES = [
         ('easy', 'Easy'),
         ('moderate', 'Moderate'),
         ('challenging', 'Challenging'),
     ]
-    CATEGORY_CHOICES = Place.CATEGORY_CHOICES  # Reuse from Place
+    # CATEGORY_CHOICES = Place.CATEGORY_CHOICES  # Reuse from Place
 
-    category = models.CharField(
-        max_length=50,
-        choices=CATEGORY_CHOICES,
-        default='other',
-    )
-    
+    category = models.ManyToManyField(Category, related_name='trails', blank=True)
+
     name = models.CharField(max_length=200)
     description = models.TextField()
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    places = models.ManyToManyField('Place', through='CollectionPlace')
+    places = models.ManyToManyField('Place', through='TrailPlace', related_name='trails')
     is_public = models.BooleanField(default=True)
     allow_comments = models.BooleanField(default=True)  # ✅ ADD THIS
-    cover_image = models.ImageField(upload_to='collection_covers/', null=True, blank=True)  # ✅ ADD THIS
+    cover_image = models.ImageField(upload_to='trail_covers/', null=True, blank=True)  # ✅ ADD THIS
     distance = models.FloatField(null=True, blank=True)  # ✅ ADD THIS
     estimated_duration = models.DurationField(null=True, blank=True)
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='easy')
     created_at = models.DateTimeField(auto_now_add=True)
-    
+    # In Trail model, add:
+    required_points = models.IntegerField(default=0)  # unlock condition
+    completion_badge = models.ForeignKey('Badge', on_delete=models.SET_NULL, null=True, blank=True, related_name='trail_reward')
+
     class Meta:
         ordering = ['-created_at']
     
@@ -215,8 +255,8 @@ class PlaceCollection(models.Model):
         return self.name
 
 
-class CollectionPlace(models.Model):
-    collection = models.ForeignKey(PlaceCollection, on_delete=models.CASCADE)
+class TrailPlace(models.Model):
+    trail = models.ForeignKey(Trail, on_delete=models.CASCADE)
     place = models.ForeignKey(Place, on_delete=models.CASCADE)
     order = models.PositiveIntegerField()
     notes = models.TextField(blank=True)
@@ -225,10 +265,10 @@ class CollectionPlace(models.Model):
     
     class Meta:
         ordering = ['order']
-        unique_together = ['collection', 'place']
-    
+        unique_together = ['trail', 'place']
+
     def __str__(self):
-        return f"{self.place.name} in {self.collection.name}"
+        return f"{self.place.name} in {self.trail.name}"
 
 
 class Comment(models.Model):
@@ -295,32 +335,17 @@ class Favorite(models.Model):
     def __str__(self):
         return f"{self.user.username} favorited {self.place.name}"
 
-class CollectionFavorite(models.Model):
+class TrailFavorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    collection = models.ForeignKey(PlaceCollection, on_delete=models.CASCADE)
+    trail = models.ForeignKey(Trail, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['user', 'collection']
+        unique_together = ['user', 'trail']
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.user.username} favorited {self.collection.name}"
-
-
-
-class AudioGuide(models.Model):
-    place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='audio_guides')
-    title = models.CharField(max_length=200)
-    audio_file = models.FileField(upload_to='audio_guides/')
-    duration = models.DurationField(null=True, blank=True)
-    created_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    is_approved = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return f"Audio guide: {self.title} for {self.place.name}"
-
+        return f"{self.user.username} favorited {self.trail.name}"
 
 class Badge(models.Model):
     CATEGORY_CHOICES = [
@@ -329,16 +354,21 @@ class Badge(models.Model):
         ('social', 'Social'),
         ('special', 'Special'),
     ]
-    
+
     name = models.CharField(max_length=100)
     description = models.TextField()
-    icon = models.CharField(max_length=10)
+    icon = models.CharField(max_length=10, blank=True)     
+    image = models.ImageField(                                
+        upload_to=badge_image_upload_to,
+        null=True,
+        blank=True
+    )
     criteria = models.JSONField()
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='explorer')
     points_required = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    
+
     def __str__(self):
         return self.name
 
@@ -354,6 +384,24 @@ class UserBadge(models.Model):
     
     def __str__(self):
         return f"{self.user.username} earned {self.badge.name}"
+    
+
+class UserChallengeCompletion(models.Model):
+    """
+    Records that a user completed a challenge and received the reward.
+    Auto-tracking: no join step. Progress is computed live from CheckIn records.
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='challenge_completions')
+    challenge = models.ForeignKey('Challenge', on_delete=models.CASCADE, related_name='completions')
+    completed_at = models.DateTimeField(auto_now_add=True)
+    points_awarded = models.IntegerField(default=0)
+
+    class Meta:
+        unique_together = ['user', 'challenge']  # ensures reward fires exactly once
+        ordering = ['-completed_at']
+
+    def __str__(self):
+        return f"{self.user.username} completed '{self.challenge.title}'"
 
 
 class Challenge(models.Model):
@@ -387,6 +435,7 @@ class Notification(models.Model):
         ('challenge', 'Challenge'),
         ('badge_earned', 'Badge Earned'),
         ('welcome', 'Welcome'),
+        ('welcome_back', 'Welcome Back'),
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -394,34 +443,193 @@ class Notification(models.Model):
     message = models.CharField(max_length=255)
     notification_type = models.CharField(max_length=50, choices=NOTIFICATION_TYPES)
     is_read = models.BooleanField(default=False)
-    related_place = models.ForeignKey(Place, on_delete=models.CASCADE, null=True, blank=True)
-    related_collection = models.ForeignKey(PlaceCollection, on_delete=models.CASCADE, null=True, blank=True)
+    related_place = models.ForeignKey(Place, on_delete=models.SET_NULL, null=True, blank=True)
+    related_trail = models.ForeignKey(Trail, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         ordering = ['-created_at']
+    
+    def get_icon(self):
+        icons = {
+            'place_added': 'fa-map-marker-alt',
+            'place_approved': 'fa-check-circle',
+            'place_rejected': 'fa-times-circle',
+            'comment_reply': 'fa-reply',
+            'nearby_place': 'fa-location-arrow',
+            'challenge': 'fa-tasks',
+            'badge_earned': 'fa-trophy',
+            'welcome': 'fa-hand-wave',
+            'welcome_back': 'fa-hand-wave',
+        }
+        return icons.get(self.notification_type, 'fa-bell')
+
+    def get_icon_color(self):
+        colors = {
+            'place_approved': 'bg-green-100 text-green-600',
+            'place_rejected': 'bg-red-100 text-red-600',
+            'badge_earned': 'bg-yellow-100 text-yellow-600',
+            'comment_reply': 'bg-blue-100 text-blue-600',
+            'challenge': 'bg-purple-100 text-purple-600',
+            'welcome': 'bg-green-100 text-green-600',
+            'welcome_back': 'bg-green-100 text-green-600',
+        }
+        return colors.get(self.notification_type, 'bg-gray-100 text-gray-600')
     
     def __str__(self):
         return f"Notification for {self.user.username}: {self.title}"
 
-
-class Report(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('resolved', 'Resolved'),
+class PlaceVideo(models.Model):
+    PLATFORM_CHOICES = [
+        ('youtube', 'YouTube'),
+        ('facebook', 'Facebook'),
+        ('instagram', 'Instagram'),
+        ('tiktok', 'TikTok'),
     ]
-    
-    reported_by = models.ForeignKey(User, on_delete=models.CASCADE)
-    place = models.ForeignKey(Place, on_delete=models.CASCADE, null=True, blank=True)
-    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True)
-    reason = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='videos')
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    url = models.URLField()
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES)
+    thumbnail_url = models.URLField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.platform} video for {self.place.name}"
     
+
+# ─────────────────────────────────────────────────────────
+# Tour model
+# ─────────────────────────────────────────────────────────
+
+
+class TourOffering(models.Model):
+    """
+    Reusable offering options (Breakfast, Tent, Guide, etc.)
+    Staff can manage these in Django admin.
+    """
+    name = models.CharField(max_length=100)
+    icon = models.CharField(
+        max_length=50, blank=True,
+        help_text="FontAwesome class e.g. 'fas fa-utensils'"
+    )
+
+    class Meta:
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class TourPackage(models.Model):
+    # ── Core info ─────────────────────────────────────────
+    name        = models.CharField(max_length=200)
+    slug        = models.SlugField(max_length=220, unique=True, blank=True)
+    description = models.TextField()
+    image       = models.ImageField(upload_to='tours/', blank=True, null=True)
+
+    # ── Logistics ─────────────────────────────────────────
+    duration_hours = models.DecimalField(
+        max_digits=5, decimal_places=1,
+        help_text="Duration in hours, e.g. 9.5"
+    )
+    price_lkr = models.DecimalField(
+        max_digits=10, decimal_places=2,
+        help_text="Price per person in LKR"
+    )
+
+    # ── Relationships ─────────────────────────────────────
+    trails   = models.ManyToManyField(
+        'Trail',
+        related_name='tour_packages',
+        blank=True,
+        help_text="Select existing trails included in this tour"
+    )
+    offerings = models.ManyToManyField(
+        TourOffering,
+        related_name='tour_packages',
+        blank=True,
+        help_text="What is included in the tour"
+    )
+
+    # ── Booking ────────────────────────────────────────────
+    contact_numbers = models.TextField(
+        help_text="One phone number per line",
+        blank=True
+    )
+
+    # ── Meta ───────────────────────────────────────────────
+    is_active   = models.BooleanField(default=True)
+    created_by  = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, related_name='tour_packages'
+    )
+    created_at  = models.DateTimeField(auto_now_add=True)
+    updated_at  = models.DateTimeField(auto_now=True)
+
     class Meta:
         ordering = ['-created_at']
-    
+
     def __str__(self):
-        target = self.place or self.comment
-        return f"Report by {self.reported_by.username} on {target}"
+        return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            from django.utils.text import slugify
+            base = slugify(self.name)
+            slug = base
+            n = 1
+            while TourPackage.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{n}"
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    @property
+    def contact_list(self):
+        """Returns contact numbers as a clean list."""
+        return [c.strip() for c in self.contact_numbers.splitlines() if c.strip()]
+
+    @property
+    def duration_display(self):
+        h = self.duration_hours
+        hours = int(h)
+        mins  = int((h - hours) * 60)
+        if mins:
+            return f"{hours}h {mins}m"
+        return f"{hours} hours"
+
+    @property
+    def price_display(self):
+        return f"LKR {self.price_lkr:,.0f}"
+
+# class AudioGuide(models.Model):
+#     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='audio_guides')
+#     title = models.CharField(max_length=200)
+#     audio_file = models.FileField(upload_to='audio_guides/')
+#     duration = models.DurationField(null=True, blank=True)
+#     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
+#     is_approved = models.BooleanField(default=False)
+#     created_at = models.DateTimeField(auto_now_add=True)
+    
+#     def __str__(self):
+#         return f"Audio guide: {self.title} for {self.place.name}"
+
+# class Report(models.Model):
+#     STATUS_CHOICES = [
+#         ('pending', 'Pending'),
+#         ('resolved', 'Resolved'),
+#     ]
+    
+#     reported_by = models.ForeignKey(User, on_delete=models.CASCADE)
+#     place = models.ForeignKey(Place, on_delete=models.CASCADE, null=True, blank=True)
+#     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, null=True, blank=True)
+#     reason = models.CharField(max_length=100)
+#     description = models.TextField(blank=True)
+#     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+#     created_at = models.DateTimeField(auto_now_add=True)
+    
+#     class Meta:
+#         ordering = ['-created_at']
+    
+#     def __str__(self):
+#         target = self.place or self.comment
+#         return f"Report by {self.reported_by.username} on {target}"

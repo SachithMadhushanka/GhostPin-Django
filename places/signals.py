@@ -9,14 +9,14 @@ def send_welcome_notification(sender, request, user, **kwargs):
     # Check if welcome notification already sent
     already_sent = Notification.objects.filter(
         user=user,
-        notification_type='welcome',
+        notification_type='welcome_back',
+
     ).exists()
 
-    if not already_sent:
-        Notification.objects.create(
-            user=user,
-            title="Welcome Back!",
-            message="We're glad to see you again. Ready to explore new places?",
-            notification_type="welcome"
-        )
+    Notification.objects.create(
+        user=user,
+        title="Welcome Back!",
+        message="We're glad to see you again. Ready to explore new places?",
+        notification_type="welcome_back"
+    )
 

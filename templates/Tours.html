@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% block title %}Tour Packages — RoamLk{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-10">
+
+  <!-- Hero header -->
+  <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-800 via-green-700 to-teal-800
+              mb-12 px-8 py-14 text-white shadow-2xl">
+    <!-- Background texture -->
+    <div class="absolute inset-0 opacity-10"
+         style="background-image: url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"></div>
+    <div class="relative z-10 max-w-2xl">
+      <div class="inline-flex items-center gap-2 bg-white bg-opacity-20 rounded-full px-4 py-1.5 text-sm font-semibold mb-4 backdrop-blur-sm">
+        <i class="fas fa-map-marked-alt"></i> Curated Sri Lanka Experiences
+      </div>
+      <h1 class="text-4xl md:text-5xl font-black leading-tight mb-4">
+        Tour Packages
+      </h1>
+      <p class="text-emerald-100 text-lg leading-relaxed">
+        Handcrafted adventures led by local experts. Every tour combines the finest trails into an unforgettable journey.
+      </p>
+    </div>
+    <!-- Decorative circles -->
+    <div class="absolute -right-16 -top-16 w-64 h-64 bg-white opacity-5 rounded-full"></div>
+    <div class="absolute right-16 -bottom-24 w-96 h-96 bg-teal-400 opacity-10 rounded-full"></div>
+  </div>
+
+  {% if user.is_staff %}
+  <div class="flex justify-end mb-6">
+    <a href="{% url 'places:create_tour' %}"
+       class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white
+              px-5 py-2.5 rounded-xl font-semibold text-sm shadow-md transition-all active:scale-95">
+      <i class="fas fa-plus"></i> Create Tour Package
+    </a>
+  </div>
+  {% endif %}
+
+  {% if tours %}
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-7">
+    {% for tour in tours %}
+    <article class="tour-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100
+                    hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+
+      <!-- Image / poster -->
+      <div class="relative h-52 overflow-hidden bg-gradient-to-br from-green-600 to-teal-700">
+        {% if tour.image %}
+          <img src="{{ tour.image.url }}" alt="{{ tour.name }}"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+        {% else %}
+          <div class="w-full h-full flex items-center justify-center">
+            <i class="fas fa-mountain text-white text-5xl opacity-40"></i>
+          </div>
+        {% endif %}
+
+        <!-- Price badge -->
+        <div class="absolute top-4 right-4 bg-white bg-opacity-95 backdrop-blur-sm
+                    rounded-xl px-3 py-1.5 shadow-md">
+          <div class="text-xs text-gray-400 leading-none">per person</div>
+          <div class="text-sm font-black text-green-700">LKR {{ tour.price_lkr|floatformat:0 }}</div>
+        </div>
+
+        <!-- Duration badge -->
+        <div class="absolute bottom-4 left-4 flex items-center gap-1.5 bg-black bg-opacity-50
+                    backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs font-semibold">
+          <i class="fas fa-clock text-emerald-300"></i>
+          {{ tour.duration_display }}
+        </div>
+      </div>
+
+      <div class="p-5">
+        <h2 class="text-lg font-bold text-gray-900 mb-2 leading-snug group-hover:text-green-700 transition-colors">
+          {{ tour.name }}
+        </h2>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
+          {{ tour.description }}
+        </p>
+
+        <!-- Trail count + offering chips -->
+        <div class="flex flex-wrap items-center gap-2 mb-5">
+          <span class="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-xs font-semibold
+                       rounded-full px-3 py-1">
+            <i class="fas fa-route text-green-500"></i>
+            {{ tour.trails.count }} trail{% if tour.trails.count != 1 %}s{% endif %}
+          </span>
+          {% for offering in tour.offerings.all|slice:":3" %}
+          <span class="inline-flex items-center gap-1 bg-gray-50 text-gray-600 text-xs rounded-full px-2.5 py-1 border border-gray-200">
+            {% if offering.icon %}<i class="{{ offering.icon }} text-gray-400"></i>{% endif %}
+            {{ offering.name }}
+          </span>
+          {% endfor %}
+          {% if tour.offerings.count > 3 %}
+          <span class="text-xs text-gray-400">+{{ tour.offerings.count|add:"-3" }} more</span>
+          {% endif %}
+        </div>
+
+        <a href="{% url 'places:tour_detail' slug=tour.slug %}"
+           class="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700
+                  text-white font-semibold text-sm py-2.5 rounded-xl transition-colors active:scale-95">
+          View Details <i class="fas fa-arrow-right text-xs"></i>
+        </a>
+
+        {% if user.is_staff %}
+        <div class="flex gap-2 mt-2">
+          <a href="{% url 'places:edit_tour' slug=tour.slug %}"
+             class="flex-1 text-center text-xs text-gray-500 hover:text-green-600 py-1.5 rounded-lg
+                    hover:bg-gray-50 transition-colors">
+            <i class="fas fa-edit mr-1"></i> Edit
+          </a>
+          <button onclick="toggleTour('{{ tour.slug }}', this)"
+                  class="flex-1 text-xs py-1.5 rounded-lg hover:bg-gray-50 transition-colors
+                         {% if tour.is_active %}text-yellow-600 hover:text-yellow-700{% else %}text-green-600 hover:text-green-700{% endif %}">
+            <i class="fas {% if tour.is_active %}fa-eye-slash{% else %}fa-eye{% endif %} mr-1"></i>
+            {% if tour.is_active %}Deactivate{% else %}Activate{% endif %}
+          </button>
+        </div>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="text-center py-24">
+    <div class="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
+      <i class="fas fa-map-marked-alt text-4xl text-green-300"></i>
+    </div>
+    <h3 class="text-2xl font-bold text-gray-800 mb-3">No Tours Available Yet</h3>
+    <p class="text-gray-500 mb-8 max-w-md mx-auto">
+      Our team is crafting amazing tour experiences. Check back soon!
+    </p>
+    {% if user.is_staff %}
+    <a href="{% url 'places:create_tour' %}"
+       class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white
+              px-6 py-3 rounded-xl font-semibold transition-colors">
+      <i class="fas fa-plus"></i> Create First Tour
+    </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Staggered card entrance
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.tour-card').forEach((card, i) => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(20px)';
+    card.style.transition = 'opacity 0.45s ease, transform 0.45s ease';
+    setTimeout(() => {
+      card.style.opacity = '1';
+      card.style.transform = 'translateY(0)';
+    }, 60 + i * 80);
+  });
+});
+
+function toggleTour(slug, btn) {
+  fetch(`/tours/${slug}/toggle/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '' }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) location.reload();
+  });
+}
+</script>
+{% endblock %}

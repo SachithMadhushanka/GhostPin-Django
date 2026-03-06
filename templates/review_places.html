@@ -1,123 +1,122 @@
 {% extends 'base.html' %}
-
-{% block title %}Review Places - GhostPin Admin{% endblock %}
-
+{% block title %}Review Places - RoamLk Admin{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto">
-    <!-- Header -->
-    <div class="mb-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">
-            🔍 Review Submitted Places
-        </h1>
-        <p class="text-gray-600">
-            Review and approve historical places submitted by the community.
-        </p>
+    {% csrf_token %}
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">🔍 Review Submitted Places</h1>
+            <p class="text-gray-600">Review and approve places submitted by the community.</p>
+        </div>
+        {% if places %}
+            <div class="space-y-6">
+                {% for place in places %}
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden"
+                         id="place-{{ place.slug }}">
+                        <div class="md:flex">
+                            <!-- Image -->
+                            <div class="md:w-1/3">
+                                {% if place.image %}
+                                    <img src="{{ place.image.url }}"
+                                         alt="{{ place.name }}"
+                                         class="w-full h-48 md:h-full object-cover">
+                                {% else %}
+                                    <div class="w-full h-48 md:h-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                                        <span class="text-white text-6xl">🏛️</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <!-- Content -->
+                            <div class="md:w-2/3 p-6">
+                                <div class="flex items-start justify-between mb-4">
+                                    <div>
+                                        <h3 class="text-2xl font-bold text-gray-800 mb-2">{{ place.name }}</h3>
+                                        <div class="flex items-center text-sm text-gray-600 mb-2">
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            Submitted by {{ place.created_by.username }}
+                                            <span class="mx-2">•</span>
+                                            {{ place.created_at|date:"M d, Y H:i" }}
+                                        </div>
+                                        <div class="flex items-center text-sm text-gray-600">
+                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd">
+                                                </path>
+                                            </svg>
+                                            {{ place.latitude|floatformat:6 }}, {{ place.longitude|floatformat:6 }}
+                                        </div>
+                                    </div>
+                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
+                                        {{ place.get_status_display }}
+                                    </span>
+                                </div>
+                                <p class="text-gray-700 mb-6 leading-relaxed">{{ place.description|linebreaks }}</p>
+                                <!-- Action Buttons -->
+                                <div class="flex flex-col sm:flex-row gap-3">
+                                    <button onclick="updatePlaceStatus('{{ place.slug }}', 'approved')"
+                                            class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                                        ✅ Approve
+                                    </button>
+                                    <button onclick="updatePlaceStatus('{{ place.slug }}', 'rejected')"
+                                            class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                                        ❌ Reject
+                                    </button>
+                                    <a href="{% url 'places:place_detail' place.slug %}"
+                                       class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center">
+                                        👁️ View Details
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Map Preview -->
+                        <div class="border-t border-gray-200 p-4">
+                            <div id="map-{{ place.slug }}" style="height: 200px;"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-16">
+                <div class="text-6xl mb-4">✅</div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">All Caught Up!</h2>
+                <p class="text-gray-600 mb-8">There are no places pending review at the moment.</p>
+                <a href="{% url 'places:home' %}"
+                   class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">Back to Home</a>
+            </div>
+        {% endif %}
     </div>
-
-    {% if places %}
-        <div class="space-y-6">
-            {% for place in places %}
-                <div class="bg-white rounded-lg shadow-lg overflow-hidden" id="place-{{ place.pk }}">
-                    <div class="md:flex">
-                        <!-- Image -->
-                        <div class="md:w-1/3">
-                            {% if place.image %}
-                                <img src="{{ place.image.url }}" alt="{{ place.name }}" class="w-full h-48 md:h-full object-cover">
-                            {% else %}
-                                <div class="w-full h-48 md:h-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                                    <span class="text-white text-6xl">🏛️</span>
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <!-- Content -->
-                        <div class="md:w-2/3 p-6">
-                            <div class="flex items-start justify-between mb-4">
-                                <div>
-                                    <h3 class="text-2xl font-bold text-gray-800 mb-2">{{ place.name }}</h3>
-                                    <div class="flex items-center text-sm text-gray-600 mb-2">
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        Submitted by {{ place.created_by.username }}
-                                        <span class="mx-2">•</span>
-                                        {{ place.created_at|date:"M d, Y H:i" }}
-                                    </div>
-                                    <div class="flex items-center text-sm text-gray-600">
-                                        <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        {{ place.latitude|floatformat:6 }}, {{ place.longitude|floatformat:6 }}
-                                    </div>
-                                </div>
-                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-                                    {{ place.get_status_display }}
-                                </span>
-                            </div>
-                            
-                            <p class="text-gray-700 mb-6 leading-relaxed">
-                                {{ place.description|linebreaks }}
-                            </p>
-                            
-                            <!-- Action Buttons -->
-                            <div class="flex flex-col sm:flex-row gap-3">
-                                <button onclick="updatePlaceStatus('{{ place.pk }}', 'approved')"
-                                        class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
-                                    ✅ Approve
-                                </button>
-                                <button onclick="updatePlaceStatus('{{ place.pk }}', 'rejected')" 
-                                        class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
-                                    ❌ Reject
-                                </button>
-                                <a href="{% url 'places:place_detail' place.pk %}" 
-                                   class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center">
-                                    👁️ View Details
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Map Preview -->
-                    <div class="border-t border-gray-200 p-4">
-                        <div id="map-{{ place.pk }}" style="height: 200px;"></div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="text-center py-16">
-            <div class="text-6xl mb-4">✅</div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">All Caught Up!</h2>
-            <p class="text-gray-600 mb-8">There are no places pending review at the moment.</p>
-            <a href="{% url 'places:home' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
-                Back to Home
-            </a>
-        </div>
-    {% endif %}
-</div>
-
-<!-- Success/Error Messages -->
-<div id="message-container" class="fixed top-20 right-4 z-50"></div>
+    <!-- Success/Error Messages -->
+    <div id="message-container" class="fixed top-20 right-4 z-50"></div>
 {% endblock %}
-
 {% block extra_js %}
-<script>
+    <script>
     // Initialize maps for each place
     document.addEventListener('DOMContentLoaded', function() {
+        // Create a hidden CSRF token input for AJAX requests
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = '{{ csrf_token }}';
+        document.body.appendChild(csrfInput);
+
         {% for place in places %}
-            const map{{ place.pk }} = L.map('map-{{ place.pk }}').setView([{{ place.latitude }}, {{ place.longitude }}], 13);
+        {
+            const map = L.map('map-{{ place.slug }}').setView([{{ place.latitude }}, {{ place.longitude }}], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
-            }).addTo(map{{ place.pk }});
-            L.marker([{{ place.latitude }}, {{ place.longitude }}]).addTo(map{{ place.pk }});
+            }).addTo(map);
+            L.marker([{{ place.latitude }}, {{ place.longitude }}]).addTo(map);
+        }
         {% endfor %}
     });
 
     // Function to update place status
-    function updatePlaceStatus(placeId, status) {
+    function updatePlaceStatus(placeSlug, status) {
+        if (!confirm(`Are you sure you want to ${status} this place?`)) return;
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
         
-        fetch(`/place/${placeId}/update-status/`, {
+        fetch(`/place/${placeSlug}/update-status/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
@@ -129,7 +128,7 @@
         .then(data => {
             if (data.success) {
                 // Remove the place card from the page
-                const placeCard = document.getElementById(`place-${placeId}`);
+                const placeCard = document.getElementById(`place-${placeSlug}`);
                 placeCard.style.transition = 'opacity 0.3s ease';
                 placeCard.style.opacity = '0';
                 
@@ -170,15 +169,9 @@
         }, 3000);
     }
 
-    // Add CSRF token to all forms (if any)
-    document.addEventListener('DOMContentLoaded', function() {
-        // Create a hidden CSRF token input for AJAX requests
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = '{{ csrf_token }}';
-        document.body.appendChild(csrfInput);
-    });
-</script>
+    // // Add CSRF token to all forms (if any)
+    // document.addEventListener('DOMContentLoaded', function() {
+        
+    // });
+    </script>
 {% endblock %}
-

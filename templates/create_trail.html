@@ -1,0 +1,1276 @@
+{% extends 'base.html' %}
+{% block title %}
+    {% if is_editing %}
+        Edit Trail
+    {% else %}
+        Create Trail
+    {% endif %}
+    - RoamLk
+{% endblock %}
+{% block content %}
+    <div class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                        <i class="fas fa-hiking text-purple-600 mr-2"></i>
+                        {% if is_editing %}
+                            Edit Trail: {{ trail.name }}
+                        {% else %}
+                            Create New Trail
+                        {% endif %}
+                    </h1>
+                    <p class="text-gray-600">
+                        {% if is_editing %}
+                            Update your curated trail of places
+                        {% else %}
+                            Create a curated trail connecting multiple places
+                        {% endif %}
+                    </p>
+                </div>
+                <a href="{% if is_editing %}{% url 'places:trail_detail' trail.pk %}{% else %}{% url 'places:trails' %}{% endif %}"
+                   class="btn-secondary">
+                    <i class="fas fa-arrow-left mr-2"></i>
+                    {% if is_editing %}
+                        Back to Trail
+                    {% else %}
+                        Back to Trails
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+        <!-- Trail Form -->
+        <div class="bg-white rounded-lg shadow-lg p-8">
+            <form method="post"
+                  enctype="multipart/form-data"
+                  class="space-y-6"
+                  id="trail-form">
+                {% csrf_token %}
+                <!-- Basic Information -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label for="{{ form.name.id_for_label }}"
+                               class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-tag text-blue-600 mr-1"></i>Trail Name
+                        </label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
+                    </div>
+                    <div>
+                        <label for="{{ form.difficulty.id_for_label }}"
+                               class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-signal text-orange-600 mr-1"></i>Difficulty Level
+                        </label>
+                        {{ form.difficulty }}
+                        {% if form.difficulty.errors %}<p class="mt-1 text-sm text-red-600">{{ form.difficulty.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+                <!-- Description -->
+                <div>
+                    <label for="{{ form.description.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-align-left text-green-600 mr-1"></i>Description
+                    </label>
+                    {{ form.description }}
+                    {% if form.description.errors %}<p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>{% endif %}
+                </div>
+                <!-- Trail Details -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label for="{{ form.estimated_duration.id_for_label }}"
+                               class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-clock text-blue-600 mr-1"></i>Estimated Duration
+                            <span id="dur-auto-badge"
+                                  class="hidden ml-1 text-xs font-normal text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                                auto
+                            </span>
+                        </label>
+                        {{ form.estimated_duration }}
+                        {% if form.estimated_duration.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.estimated_duration.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-xs text-gray-400">Format: HH:MM:SS — auto-estimated from distance &amp; difficulty.</p>
+                    </div>
+                    <div>
+                        <label for="{{ form.distance.id_for_label }}"
+                               class="block text-sm font-medium text-gray-700 mb-2">
+                            <i class="fas fa-route text-purple-600 mr-1"></i>Total Distance (km)
+                            <span id="dist-auto-badge"
+                                  class="hidden ml-1 text-xs font-normal text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-full">
+                                auto
+                            </span>
+                        </label>
+                        {{ form.distance }}
+                        {% if form.distance.errors %}<p class="mt-1 text-sm text-red-600">{{ form.distance.errors.0 }}</p>{% endif %}
+                        <p class="mt-1 text-xs text-gray-400" id="dist-hint">Filled automatically when you select places.</p>
+                    </div>
+                    <div>
+                        <label for="{{ form.category.id_for_label }}"
+                               class="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                        {{ form.category }}
+                        {% if form.category.errors %}<p class="mt-1 text-sm text-red-600">{{ form.category.errors.0 }}</p>{% endif %}
+                    </div>
+                </div>
+                <!-- Cover Image with Live Preview -->
+                <div>
+                    <label for="{{ form.cover_image.id_for_label }}"
+                           class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-image text-pink-600 mr-1"></i>Cover Image
+                    </label>
+                    <!-- Drop zone -->
+                    <div id="cover-dropzone"
+                         class="relative border-2 border-dashed border-gray-300 rounded-xl overflow-hidden transition-colors hover:border-pink-400 cursor-pointer"
+                         onclick="document.getElementById('{{ form.cover_image.id_for_label }}').click()"
+                         ondragover="event.preventDefault(); this.classList.add('border-pink-400','bg-pink-50')"
+                         ondragleave="this.classList.remove('border-pink-400','bg-pink-50')"
+                         ondrop="handleCoverDrop(event)">
+                        <!-- Placeholder state -->
+                        <div id="cover-placeholder"
+                             class="flex flex-col items-center justify-center py-10 text-gray-400">
+                            <i class="fas fa-cloud-upload-alt text-4xl mb-2 text-pink-300"></i>
+                            <p class="text-sm font-medium">Click or drag &amp; drop to upload cover</p>
+                            <p class="text-xs mt-1">JPG, PNG, WebP — recommended 1200×400px</p>
+                        </div>
+                        <!-- Preview state (hidden until file chosen) -->
+                        <div id="cover-preview-wrap" class="hidden relative">
+                            <img id="cover-preview-img"
+                                 src=""
+                                 alt="Cover preview"
+                                 class="w-full h-48 object-cover">
+                            <!-- Overlay on hover -->
+                            <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                                <span class="text-white text-sm font-semibold">
+                                    <i class="fas fa-pencil-alt mr-1"></i>Change image
+                                </span>
+                            </div>
+                            <!-- Remove button -->
+                            <button type="button"
+                                    id="cover-remove-btn"
+                                    onclick="event.stopPropagation(); removeCoverPreview()"
+                                    class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs shadow-lg transition-colors">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <!-- File name badge -->
+                            <div id="cover-filename"
+                                 class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs px-3 py-1.5 truncate">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Hidden real file input -->
+                    <div class="hidden">{{ form.cover_image }}</div>
+                    {% if form.cover_image.errors %}<p class="mt-1 text-sm text-red-600">{{ form.cover_image.errors.0 }}</p>{% endif %}
+                    {% if is_editing and trail.cover_image %}
+                        {# Existing cover: show in the preview widget via a data attribute; JS picks it up on DOMContentLoaded #}
+                        <div id="existing-cover-url"
+                             data-url="{{ trail.cover_image.url }}"
+                             data-name="{{ trail.cover_image.name|default:'current cover' }}"
+                             class="hidden"></div>
+                    {% endif %}
+                </div>
+                <!-- Place Selection -->
+                <div class="bg-gray-50 rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            <i class="fas fa-map-marker-alt text-red-600 mr-2"></i>
+                            Select Places for Your Trail
+                        </h3>
+                        {# ✅ FIX: show the max-places limit to the user #}
+                        <span class="text-xs text-gray-500 bg-white border border-gray-200 px-2 py-1 rounded-full">
+                            Max {{ max_places }} places
+                        </span>
+                    </div>
+                    <!-- Search Places -->
+                    <div class="mb-4">
+                        <div class="relative">
+                            <input type="text"
+                                   id="place-search"
+                                   placeholder="Search places to add..."
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <!-- max-places warning -->
+                    <div id="max-places-warning"
+                         class="hidden mb-4 p-3 bg-red-50 border border-red-300 rounded-lg text-red-700 text-sm">
+                        <i class="fas fa-exclamation-circle mr-1"></i>
+                        Maximum of {{ max_places }} places reached. Remove a place before adding another.
+                    </div>
+                    <!-- min-places warning -->
+                    <div id="min-places-warning"
+                         class="hidden mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg text-amber-700 text-sm">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                        A published trail must include at least 1 place. Add a place or save as draft.
+                    </div>
+                    <!-- Available Places -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6"
+                         id="available-places">
+                        {% for place in available_places %}
+                            <div class="place-item bg-white rounded-lg p-4 border border-gray-200 hover:border-purple-300 transition-colors cursor-pointer"
+                                 data-place-id="{{ place.id }}"
+                                 data-lat="{{ place.latitude }}"
+                                 data-lng="{{ place.longitude }}"
+                                 onclick="togglePlace('{{ place.id }}')">
+                                <div class="flex items-center space-x-3">
+                                    {% if place.image %}
+                                        <img src="{{ place.image.url }}"
+                                             alt="{{ place.name }}"
+                                             class="w-12 h-12 rounded-lg object-cover">
+                                    {% else %}
+                                        <div class="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-white text-lg">
+                                            🏛️
+                                        </div>
+                                    {% endif %}
+                                    <div class="flex-1">
+                                        <h4 class="font-semibold text-gray-900">{{ place.name }}</h4>
+                                        <p class="text-sm text-gray-600">
+                                            {% for cat in place.category.all %}
+                                                {{ cat.name }}
+                                                {% if not forloop.last %},{% endif %}
+                                            {% endfor %}
+                                        </p>
+                                    </div>
+                                    <div class="place-checkbox">
+                                        <i class="fas fa-plus text-gray-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <!-- Selected Places -->
+                    <div id="selected-places-container" class="hidden">
+                        <div class="flex items-center justify-between mb-3">
+                            <h4 class="font-semibold text-gray-900">
+                                <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                Selected Places (<span id="selected-count">0</span>/{{ max_places }})
+                            </h4>
+                            <span class="text-xs text-gray-400 flex items-center gap-1">
+                                <i class="fas fa-grip-vertical"></i> Drag to reorder
+                            </span>
+                        </div>
+                        <div id="selected-places" class="space-y-2 mb-4"></div>
+                        <!-- Route Preview Map -->
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex items-center justify-between mb-3">
+                                <h5 class="font-medium text-gray-900">
+                                    <i class="fas fa-road text-blue-600 mr-2"></i>Road Route Preview
+                                </h5>
+                                <span class="text-xs text-gray-400 flex items-center gap-1">
+                                    <i class="fas fa-map-marker-alt text-green-600"></i> Start
+                                    <i class="fas fa-map-marker-alt text-red-500 ml-2"></i> End
+                                    <i class="fas fa-map-marker-alt text-purple-600 ml-2"></i> Stop
+                                </span>
+                            </div>
+                            <div class="relative rounded-lg overflow-hidden">
+                                <div id="route-map" class="w-full rounded-lg" style="height:320px;"></div>
+                            </div>
+                        </div>
+                        <!-- ✅ NEW: Live Route Stats panel -->
+                        <div id="route-stats-panel"
+                             class="mt-4 bg-white rounded-lg border border-gray-200 overflow-hidden">
+                            <div class="bg-gradient-to-r from-purple-600 to-blue-600 px-4 py-2">
+                                <h5 class="text-white font-semibold text-sm">
+                                    <i class="fas fa-calculator mr-1"></i> Route Statistics
+                                </h5>
+                            </div>
+                            <div class="p-4">
+                                <!-- Summary row -->
+                                <div class="grid grid-cols-3 gap-4 mb-4">
+                                    <div class="text-center p-3 bg-purple-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-purple-700" id="stat-total-km">0.00</div>
+                                        <div class="text-xs text-gray-500 mt-0.5">Total km</div>
+                                    </div>
+                                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-blue-700" id="stat-duration">—</div>
+                                        <div class="text-xs text-gray-500 mt-0.5">Est. time</div>
+                                    </div>
+                                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                                        <div class="text-2xl font-bold text-green-700" id="stat-stops">0</div>
+                                        <div class="text-xs text-gray-500 mt-0.5">Stops</div>
+                                    </div>
+                                </div>
+                                <!-- Speed assumption note -->
+                                <p class="text-xs text-gray-400 mb-3" id="speed-note">
+                                    Distances are straight-line (Haversine). Duration estimated at
+                                    <span id="speed-label">30 km/h</span> based on selected difficulty.
+                                </p>
+                                <!-- Per-segment breakdown -->
+                                <div id="segment-breakdown" class="space-y-1.5">
+                                    <!-- populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Hidden input -->
+                    <input type="hidden" name="selected_places" id="selected-places-input">
+                </div>
+                <!-- Additional Options -->
+                <div class="bg-blue-50 rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-cog text-blue-600 mr-2"></i>Additional Options
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="flex items-center">
+                            <input type="checkbox"
+                                   id="is_public"
+                                   name="is_public"
+                                   {% if not is_editing or trail.is_public %}checked{% endif %}
+                                   class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            <label for="is_public" class="ml-2 block text-sm text-gray-900">Make this trail public</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox"
+                                   id="allow_comments"
+                                   name="allow_comments"
+                                   {% if not is_editing or trail.allow_comments %}checked{% endif %}
+                                   class="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded">
+                            <label for="allow_comments" class="ml-2 block text-sm text-gray-900">Allow comments on this trail</label>
+                        </div>
+                    </div>
+                </div>
+                <!-- Form Actions -->
+                <div class="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+                    <button type="submit"
+                            class="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
+                        <i class="fas fa-save mr-2"></i>
+                        {% if is_editing %}
+                            Update Trail
+                        {% else %}
+                            Create Trail
+                        {% endif %}
+                    </button>
+                    {% if not is_editing %}
+                        <button type="button"
+                                class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors"
+                                onclick="saveDraft()">
+                            <i class="fas fa-file-alt mr-2"></i>Save as Draft
+                        </button>
+                    {% endif %}
+                    <a href="{% if is_editing %}{% url 'places:trail_detail' trail.pk %}{% else %}{% url 'places:trails' %}{% endif %}"
+                       class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors text-center">
+                        <i class="fas fa-times mr-2"></i>Cancel
+                    </a>
+                </div>
+            </form>
+        </div>
+        <!-- Travel Tips -->
+        <div class="mt-8 bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-xl p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-5 flex items-center gap-2">
+                <i class="fas fa-lightbulb text-amber-500"></i>
+                {% if is_editing %}
+                    Editing Tips
+                {% else %}
+                    Tips for Creating Great Trails
+                {% endif %}
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div class="bg-white rounded-lg p-4 border border-amber-100 shadow-sm">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 flex-shrink-0">
+                            <i class="fas fa-map-marker-alt text-sm"></i>
+                        </span>
+                        <h4 class="font-semibold text-gray-800 text-sm">Route Planning</h4>
+                    </div>
+                    <ul class="text-xs text-gray-600 space-y-1.5 pl-1">
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-green-400 mt-1" style="font-size:5px"></i>Select 3–8 places for the best experience
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-green-400 mt-1" style="font-size:5px"></i>Maximum {{ max_places }} places per trail
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-green-400 mt-1" style="font-size:5px"></i>Drag to reorder stops after selecting
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-green-400 mt-1" style="font-size:5px"></i>Group nearby places to minimise travel time
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-amber-100 shadow-sm">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 flex-shrink-0">
+                            <i class="fas fa-clock text-sm"></i>
+                        </span>
+                        <h4 class="font-semibold text-gray-800 text-sm">Timing &amp; Difficulty</h4>
+                    </div>
+                    <ul class="text-xs text-gray-600 space-y-1.5 pl-1">
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-blue-400 mt-1" style="font-size:5px"></i><span><strong>Easy</strong> — half-day trips, flat terrain, families</span>
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-blue-400 mt-1" style="font-size:5px"></i><span><strong>Moderate</strong> — full-day trips, some walking</span>
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-blue-400 mt-1" style="font-size:5px"></i><span><strong>Challenging</strong> — multi-day or remote places</span>
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-blue-400 mt-1" style="font-size:5px"></i>Duration auto-fills — you can override it
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-amber-100 shadow-sm">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 flex-shrink-0">
+                            <i class="fas fa-pencil-alt text-sm"></i>
+                        </span>
+                        <h4 class="font-semibold text-gray-800 text-sm">Description Tips</h4>
+                    </div>
+                    <ul class="text-xs text-gray-600 space-y-1.5 pl-1">
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-purple-400 mt-1" style="font-size:5px"></i>Highlight what makes this trail unique
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-purple-400 mt-1" style="font-size:5px"></i>Mention best seasons or times to visit
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-purple-400 mt-1" style="font-size:5px"></i>Note accessibility requirements
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-purple-400 mt-1" style="font-size:5px"></i>Use vivid language — inspire explorers!
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-amber-100 shadow-sm">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-8 h-8 bg-pink-100 rounded-full flex items-center justify-center text-pink-600 flex-shrink-0">
+                            <i class="fas fa-camera text-sm"></i>
+                        </span>
+                        <h4 class="font-semibold text-gray-800 text-sm">Cover Image</h4>
+                    </div>
+                    <ul class="text-xs text-gray-600 space-y-1.5 pl-1">
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-pink-400 mt-1" style="font-size:5px"></i>Ideal size: 1200 × 400 px (landscape)
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-pink-400 mt-1" style="font-size:5px"></i>Drag &amp; drop or click to upload
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-pink-400 mt-1" style="font-size:5px"></i>Use a scenic shot from one of your stops
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-pink-400 mt-1" style="font-size:5px"></i>Bright, well-lit images get more clicks
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-amber-100 shadow-sm">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-600 flex-shrink-0">
+                            <i class="fas fa-star text-sm"></i>
+                        </span>
+                        <h4 class="font-semibold text-gray-800 text-sm">Make It Shine</h4>
+                    </div>
+                    <ul class="text-xs text-gray-600 space-y-1.5 pl-1">
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-orange-400 mt-1" style="font-size:5px"></i>Add a badge reward to motivate completions
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-orange-400 mt-1" style="font-size:5px"></i>Use point locks for exclusive trails
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-orange-400 mt-1" style="font-size:5px"></i>Mix popular &amp; hidden-gem places
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-orange-400 mt-1" style="font-size:5px"></i>Save as draft to refine before publishing
+                        </li>
+                    </ul>
+                </div>
+                <div class="bg-white rounded-lg p-4 border border-amber-100 shadow-sm">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center text-teal-600 flex-shrink-0">
+                            <i class="fas fa-shield-alt text-sm"></i>
+                        </span>
+                        <h4 class="font-semibold text-gray-800 text-sm">Safety &amp; Respect</h4>
+                    </div>
+                    <ul class="text-xs text-gray-600 space-y-1.5 pl-1">
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-teal-400 mt-1" style="font-size:5px"></i>Only include places you've personally visited
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-teal-400 mt-1" style="font-size:5px"></i>Note any entry fees or permits needed
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-teal-400 mt-1" style="font-size:5px"></i>Respect religious &amp; cultural sites
+                        </li>
+                        <li class="flex items-start gap-1">
+                            <i class="fas fa-circle text-teal-400 mt-1" style="font-size:5px"></i>Leave No Trace — protect what you share
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <!-- SortableJS for drag reorder -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+    <script>
+    // TomSelect for category
+    document.addEventListener("DOMContentLoaded", function () {
+        if (document.getElementById("id_category")) {
+            new TomSelect("#id_category", {
+                plugins: ["remove_button"],
+                maxItems: null,
+                placeholder: "Select categories..."
+            });
+        }
+    });
+    </script>
+    <script>
+    const MAX_PLACES = {{ max_places }};
+    const MIN_PLACES = 1;  // minimum for a published trail
+    let selectedPlaces = [];   // ordered list of place IDs (strings)
+    let routeMap = null;
+    let sortableInstance = null;
+
+    // ─────────────────────────────────────────────────────
+    // Haversine distance (km)
+    // ─────────────────────────────────────────────────────
+    function haversineKm(lat1, lng1, lat2, lng2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLng = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(dLat / 2) ** 2
+                + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+                * Math.sin(dLng / 2) ** 2;
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    const SPEED_KMH = { easy: 4, moderate: 3, challenging: 2 };
+    const STOP_MIN  = { easy: 30, moderate: 45, challenging: 60 };
+
+    function getDifficulty() {
+        const s = document.getElementById('id_difficulty');
+        return s ? s.value : 'easy';
+    }
+
+    function buildSegments() {
+        return selectedPlaces.map((id, i) => {
+            const el  = document.querySelector(`[data-place-id="${id}"]`);
+            const lat = parseFloat(el.dataset.lat);
+            const lng = parseFloat(el.dataset.lng);
+            const name = el.querySelector('h4').textContent.trim();
+            let segKm = 0;
+            if (i > 0) {
+                const prev = document.querySelector(`[data-place-id="${selectedPlaces[i-1]}"]`);
+                segKm = haversineKm(parseFloat(prev.dataset.lat), parseFloat(prev.dataset.lng), lat, lng);
+            }
+            return { id, name, lat, lng, segKm };
+        });
+    }
+
+    function fmtMinutes(m) {
+        const h = Math.floor(m / 60), rem = Math.round(m % 60);
+        if (h && rem) return `${h}h ${rem}m`;
+        if (h)        return `${h}h`;
+        return `${rem}m`;
+    }
+    function fmtDjangoDuration(m) {
+        const h = Math.floor(m / 60), rem = Math.round(m % 60);
+        return `${String(h).padStart(2,'0')}:${String(rem).padStart(2,'0')}:00`;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Auto distance + duration recalc
+    // Uses Haversine as instant placeholder; OSRM overrides
+    // road distance + duration once the async fetch resolves.
+    // ─────────────────────────────────────────────────────
+    function recalcDistance() {
+        const segs       = buildSegments();
+        const diff       = getDifficulty();
+        const speedKmh   = SPEED_KMH[diff] || 4;
+        const stopMin    = STOP_MIN[diff]   || 30;
+        const totalKm    = segs.reduce((s, x) => s + x.segKm, 0);
+        const travelMin  = (totalKm / speedKmh) * 60;
+        const totalMin   = travelMin + selectedPlaces.length * stopMin;
+
+        // Distance field
+        const df = document.getElementById('id_distance');
+        if (df) {
+            if (selectedPlaces.length >= 2) {
+                df.value = totalKm.toFixed(2);
+                df.classList.add('bg-purple-50','border-purple-300');
+                df.readOnly = true;
+                document.getElementById('dist-auto-badge').classList.remove('hidden');
+                document.getElementById('dist-hint').innerHTML =
+                    `<i class="fas fa-sync-alt mr-1 text-purple-400"></i>Auto-calculated. ` +
+                    `<button type="button" class="underline text-purple-500" onclick="unlockDistField()">Edit manually</button>`;
+            } else if (df.readOnly) {
+                unlockDistField();
+            }
+        }
+
+        // Duration field
+        const durf = document.getElementById('id_estimated_duration');
+        if (durf) {
+            if (selectedPlaces.length >= 1) {
+                durf.value = fmtDjangoDuration(totalMin);
+                durf.classList.add('bg-blue-50','border-blue-300');
+                durf.readOnly = true;
+                document.getElementById('dur-auto-badge').classList.remove('hidden');
+            } else {
+                durf.readOnly = false;
+                durf.classList.remove('bg-blue-50','border-blue-300');
+                document.getElementById('dur-auto-badge').classList.add('hidden');
+            }
+        }
+
+        // Stats panel
+        document.getElementById('stat-total-km').textContent = totalKm.toFixed(2);
+        document.getElementById('stat-duration').textContent = selectedPlaces.length ? fmtMinutes(totalMin) : '—';
+        document.getElementById('stat-stops').textContent    = selectedPlaces.length;
+        document.getElementById('speed-label').textContent   = `${speedKmh} km/h`;
+
+        // Segment breakdown
+        const bd = document.getElementById('segment-breakdown');
+        if (segs.length <= 1) {
+            bd.innerHTML = '<p class="text-xs text-gray-400 italic">Add at least 2 places to see segment distances.</p>';
+            return;
+        }
+        let rows = '';
+        segs.forEach((seg, i) => {
+            if (i === 0) {
+                rows += `<div class="flex items-center gap-2 text-xs py-1 border-b border-gray-100">
+                    <span class="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold flex-shrink-0">${i+1}</span>
+                    <span class="flex-1 text-gray-700 font-medium truncate">${seg.name}</span>
+                    <span class="text-gray-400 italic">Start</span></div>`;
+            } else {
+                const legMin = (seg.segKm / speedKmh) * 60;
+                const col = seg.segKm < 10 ? 'text-green-600' : seg.segKm < 30 ? 'text-yellow-600' : 'text-red-500';
+                rows += `<div class="pl-2 flex items-center gap-1 text-xs text-gray-400 py-0.5">
+                    <div class="w-px h-4 bg-gray-300 ml-2 mr-1"></div>
+                    <i class="fas fa-arrow-down text-gray-300"></i>
+                    <span class="${col} font-semibold">${seg.segKm.toFixed(1)} km</span>
+                    <span class="text-gray-300 mx-0.5">·</span>
+                    <span>~${fmtMinutes(legMin)} travel</span></div>
+                  <div class="flex items-center gap-2 text-xs py-1 ${i < segs.length-1 ? 'border-b border-gray-100' : ''}">
+                    <span class="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold flex-shrink-0">${i+1}</span>
+                    <span class="flex-1 text-gray-700 font-medium truncate">${seg.name}</span>
+                    <span class="text-gray-400">~${stopMin}m stop</span></div>`;
+            }
+        });
+        rows += `<div class="mt-2 pt-2 border-t border-gray-200 flex justify-between text-xs font-semibold text-gray-700">
+            <span><i class="fas fa-flag-checkered mr-1 text-purple-500"></i>Total route</span>
+            <span class="text-purple-700">${totalKm.toFixed(2)} km · ${fmtMinutes(totalMin)}</span></div>`;
+        bd.innerHTML = rows;
+    }
+
+    function unlockDistField() {
+        const f = document.getElementById('id_distance');
+        if (!f) return;
+        f.readOnly = false;
+        f.classList.remove('bg-purple-50','border-purple-300');
+        document.getElementById('dist-auto-badge').classList.add('hidden');
+        document.getElementById('dist-hint').textContent = 'Enter a custom distance or re-select places to auto-fill.';
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Map + OSRM routing engine
+    // ─────────────────────────────────────────────────────
+    const OSRM_BASE    = 'https://router.project-osrm.org/route/v1/driving';
+    const ROUTE_MODES  = { driving: 'driving', walking: 'foot', cycling: 'bike' };
+
+    // Routing layers — kept separate so we can clear only routes without touching markers
+    let markerLayer = null;
+    let routeLayer  = null;
+    let routingBusy = false;
+    let pendingRoute = false;  // debounce rapid toggles
+
+    // Last resolved road distances per segment, keyed "prevId→curId"
+    const roadDistCache = {};
+
+    function initRouteMap() {
+        if (routeMap) return;
+        routeMap = L.map('route-map').setView([7.8731, 80.7718], 8);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(routeMap);
+
+        markerLayer = L.layerGroup().addTo(routeMap);
+        routeLayer  = L.layerGroup().addTo(routeMap);
+    }
+
+    // ── Custom numbered marker ──────────────────────────
+    function makeStopIcon(n, isFirst, isLast) {
+        const bg = isFirst ? '#16a34a' : isLast ? '#dc2626' : '#7c3aed';
+        return L.divIcon({
+            className: '',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -16],
+            html: `<div style=" width:30px;height:30px;border-radius:50%; background:${bg};color:#fff; display:flex;align-items:center;justify-content:center; font-weight:700;font-size:13px; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.35);">${n}</div>`
+        });
+    }
+
+    // ── Place markers (instant, no network) ────────────
+    function redrawMarkers() {
+        if (!markerLayer) return;
+        markerLayer.clearLayers();
+        if (!selectedPlaces.length) return;
+
+        const bounds = L.latLngBounds();
+        selectedPlaces.forEach((id, i) => {
+            const el   = document.querySelector(`[data-place-id="${id}"]`);
+            const lat  = parseFloat(el.dataset.lat);
+            const lng  = parseFloat(el.dataset.lng);
+            const name = el.querySelector('h4').textContent.trim();
+            const n    = i + 1;
+            const isFirst = i === 0;
+            const isLast  = i === selectedPlaces.length - 1;
+
+            const marker = L.marker([lat, lng], { icon: makeStopIcon(n, isFirst, isLast) })
+                .bindPopup(`<b>Stop ${n}: ${name}</b>`);
+            markerLayer.addLayer(marker);
+            bounds.extend([lat, lng]);
+        });
+
+        if (selectedPlaces.length === 1) {
+            routeMap.setView(
+                [parseFloat(document.querySelector(`[data-place-id="${selectedPlaces[0]}"]`).dataset.lat),
+                 parseFloat(document.querySelector(`[data-place-id="${selectedPlaces[0]}"]`).dataset.lng)], 13);
+        } else {
+            routeMap.fitBounds(bounds, { padding: [30, 30] });
+        }
+    }
+
+    // ── OSRM routing ────────────────────────────────────
+    async function fetchOSRMRoute(waypoints) {
+        // waypoints: [{lat, lng, name}, ...]
+        const coords = waypoints.map(w => `${w.lng},${w.lat}`).join(';');
+        const url    = `${OSRM_BASE}/${coords}?overview=full&geometries=geojson&steps=true`;
+
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`OSRM ${resp.status}`);
+        const json = await resp.json();
+        if (json.code !== 'Ok' || !json.routes.length) throw new Error('No route found');
+        return json.routes[0];
+    }
+
+    // ── Decode OSRM step summaries into per-leg data ────
+    function extractLegs(route) {
+        return route.legs.map(leg => ({
+            roadKm:    leg.distance / 1000,
+            durationS: leg.duration,
+            summary:   leg.summary || ''
+        }));
+    }
+
+    // ── Show a loading spinner on the map ───────────────
+    function showRouteLoading(show) {
+        let el = document.getElementById('route-loading-overlay');
+        if (show) {
+            if (!el) {
+                el = document.createElement('div');
+                el.id = 'route-loading-overlay';
+                el.style.cssText = `
+                    position:absolute;top:0;left:0;right:0;bottom:0;
+                    background:rgba(255,255,255,.65);
+                    display:flex;align-items:center;justify-content:center;
+                    z-index:1000;border-radius:inherit;pointer-events:none;`;
+                el.innerHTML = `<div style="text-align:center;">
+                    <div style="width:32px;height:32px;border:3px solid #7c3aed33; border-top-color:#7c3aed;border-radius:50%; animation:spin .8s linear infinite;margin:0 auto 6px;"></div>
+                    <span style="font-size:11px;color:#7c3aed;font-weight:600;">Getting road route…</span>
+                </div>`;
+                // Add spin keyframe once
+                if (!document.getElementById('spin-style')) {
+                    const s = document.createElement('style');
+                    s.id = 'spin-style';
+                    s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+                    document.head.appendChild(s);
+                }
+                document.getElementById('route-map').parentElement.style.position = 'relative';
+                document.getElementById('route-map').parentElement.appendChild(el);
+            }
+            el.style.display = 'flex';
+        } else if (el) {
+            el.style.display = 'none';
+        }
+    }
+
+    // ── Main routing call — updates map + stats ─────────
+    async function updateRouteMap() {
+        if (!routeMap) return;
+        routeLayer.clearLayers();
+        redrawMarkers();
+
+        if (selectedPlaces.length < 2) return;
+
+        // Debounce: if a fetch is already in flight, queue one retry
+        if (routingBusy) { pendingRoute = true; return; }
+
+        const waypoints = selectedPlaces.map(id => {
+            const el = document.querySelector(`[data-place-id="${id}"]`);
+            return {
+                lat:  parseFloat(el.dataset.lat),
+                lng:  parseFloat(el.dataset.lng),
+                name: el.querySelector('h4').textContent.trim(),
+                id
+            };
+        });
+
+        routingBusy = true;
+        showRouteLoading(true);
+
+        try {
+            const route = await fetchOSRMRoute(waypoints);
+            const legs  = extractLegs(route);
+
+            // ── Draw real road geometry ──────────────────
+            const geojson = route.geometry;
+            const roadLine = L.geoJSON(geojson, {
+                style: { color: '#7c3aed', weight: 4, opacity: 0.85 }
+            });
+            routeLayer.addLayer(roadLine);
+
+            // ── Animated dashes for direction cue ───────
+            const dashLine = L.geoJSON(geojson, {
+                style: {
+                    color: '#fff', weight: 2, opacity: 0.6,
+                    dashArray: '6 10', dashOffset: '0'
+                }
+            });
+            routeLayer.addLayer(dashLine);
+
+            // ── Cache road distances + update segment UI ─
+            let totalRoadKm = 0;
+            legs.forEach((leg, i) => {
+                const key = `${waypoints[i].id}→${waypoints[i+1].id}`;
+                roadDistCache[key] = leg.roadKm;
+                totalRoadKm += leg.roadKm;
+            });
+
+            // ── Update stats panel with road distances ───
+            updateStatsFromRoad(legs, totalRoadKm);
+
+            // ── Update distance field with road km ───────
+            const df = document.getElementById('id_distance');
+            if (df && df.readOnly) {
+                df.value = totalRoadKm.toFixed(2);
+            }
+
+            // ── Annotate popups with road data ───────────
+            markerLayer.eachLayer((marker, idx) => {
+                const i = Array.from(markerLayer.getLayers()).indexOf(marker);
+                if (i > 0 && legs[i-1]) {
+                    const leg = legs[i-1];
+                    const name = waypoints[i].name;
+                    marker.setPopupContent(
+                        `<b>Stop ${i+1}: ${name}</b><br>
+                         <small style="color:#7c3aed">
+                             🛣 ${leg.roadKm.toFixed(1)} km by road &nbsp;·&nbsp;
+                             ⏱ ${fmtMinutes(leg.durationS / 60)} drive
+                             ${leg.summary ? `<br>via ${leg.summary}` : ''}
+                         </small>`
+                    );
+                }
+            });
+
+        } catch (err) {
+            console.warn('OSRM routing failed, falling back to straight lines:', err);
+            // ── Graceful fallback: straight polyline ─────
+            const coords = waypoints.map(w => [w.lat, w.lng]);
+            routeLayer.addLayer(
+                L.polyline(coords, {
+                    color: '#7c3aed', weight: 3, opacity: 0.5,
+                    dashArray: '8 6'
+                })
+            );
+            showRouteError();
+        } finally {
+            routingBusy = false;
+            showRouteLoading(false);
+            if (pendingRoute) {
+                pendingRoute = false;
+                updateRouteMap();   // run the queued call
+            }
+        }
+    }
+
+    function showRouteError() {
+        let el = document.getElementById('route-error-note');
+        if (!el) {
+            el = document.createElement('p');
+            el.id = 'route-error-note';
+            el.className = 'text-xs text-amber-600 mt-1';
+            el.innerHTML = '<i class="fas fa-exclamation-triangle mr-1"></i>Road routing unavailable — showing straight lines. Distances are approximate.';
+            document.getElementById('route-map').parentElement.appendChild(el);
+        }
+        el.style.display = '';
+        setTimeout(() => { if (el) el.style.display = 'none'; }, 6000);
+    }
+
+    // ── Update stats panel using real road legs ─────────
+    function updateStatsFromRoad(legs, totalRoadKm) {
+        const diff    = getDifficulty();
+        const stopMin = STOP_MIN[diff] || 30;
+
+        // Sum actual drive time from OSRM + stop time
+        const driveMin = legs.reduce((s, l) => s + l.durationS / 60, 0);
+        const totalMin = driveMin + selectedPlaces.length * stopMin;
+
+        document.getElementById('stat-total-km').textContent = totalRoadKm.toFixed(2);
+        document.getElementById('stat-duration').textContent = fmtMinutes(totalMin);
+        document.getElementById('stat-stops').textContent    = selectedPlaces.length;
+
+        // Update speed note to reflect road data
+        const speedNote = document.getElementById('speed-note');
+        if (speedNote) {
+            speedNote.innerHTML = `
+                <i class="fas fa-road mr-1 text-purple-400"></i>
+                Road distances via <strong>OSRM</strong> (OpenStreetMap).
+                Drive time from routing engine + ~${stopMin}min per stop.`;
+        }
+
+        // Update duration field
+        const durf = document.getElementById('id_estimated_duration');
+        if (durf && durf.readOnly) {
+            durf.value = fmtDjangoDuration(totalMin);
+        }
+
+        // Rebuild segment breakdown with road data
+        rebuildBreakdownFromLegs(legs, stopMin, totalRoadKm, totalMin);
+    }
+
+    function rebuildBreakdownFromLegs(legs, stopMin, totalRoadKm, totalMin) {
+        const bd = document.getElementById('segment-breakdown');
+        if (!bd || selectedPlaces.length < 2) return;
+
+        let rows = '';
+        selectedPlaces.forEach((id, i) => {
+            const el   = document.querySelector(`[data-place-id="${id}"]`);
+            const name = el.querySelector('h4').textContent.trim();
+
+            if (i === 0) {
+                rows += `<div class="flex items-center gap-2 text-xs py-1 border-b border-gray-100">
+                    <span class="w-5 h-5 rounded-full bg-green-600 text-white flex items-center justify-center font-bold flex-shrink-0">1</span>
+                    <span class="flex-1 text-gray-700 font-medium truncate">${name}</span>
+                    <span class="text-green-600 text-xs font-semibold">START</span></div>`;
+            } else {
+                const leg  = legs[i - 1];
+                const km   = leg ? leg.roadKm : 0;
+                const driveMin = leg ? leg.durationS / 60 : 0;
+                const summary  = leg ? leg.summary : '';
+                const col  = km < 10 ? 'text-green-600' : km < 50 ? 'text-yellow-600' : 'text-red-500';
+                const isLast = i === selectedPlaces.length - 1;
+
+                rows += `
+                <div class="pl-2 flex items-center gap-1 text-xs text-gray-400 py-0.5">
+                    <div class="w-px h-4 bg-gray-300 ml-2 mr-1"></div>
+                    <i class="fas fa-road text-purple-300 mr-0.5"></i>
+                    <span class="${col} font-semibold">${km.toFixed(1)} km</span>
+                    <span class="text-gray-300 mx-0.5">·</span>
+                    <span>~${fmtMinutes(driveMin)} drive</span>
+                    ${summary ? `<span class="text-gray-300 mx-0.5">·</span><span class="truncate max-w-[120px]">via ${summary}</span>` : ''}
+                </div>
+                <div class="flex items-center gap-2 text-xs py-1 ${!isLast ? 'border-b border-gray-100' : ''}">
+                    <span class="w-5 h-5 rounded-full ${isLast ? 'bg-red-500' : 'bg-purple-600'} text-white flex items-center justify-center font-bold flex-shrink-0">${i+1}</span>
+                    <span class="flex-1 text-gray-700 font-medium truncate">${name}</span>
+                    <span class="text-gray-400 flex-shrink-0">~${stopMin}m stop</span>
+                </div>`;
+            }
+        });
+
+        rows += `
+        <div class="mt-2 pt-2 border-t border-gray-200 flex justify-between text-xs font-semibold text-gray-700">
+            <span><i class="fas fa-flag-checkered mr-1 text-purple-500"></i>Total road route</span>
+            <span class="text-purple-700">${totalRoadKm.toFixed(2)} km · ${fmtMinutes(totalMin)}</span>
+        </div>
+        <div class="text-xs text-gray-400 mt-1 flex items-center gap-1">
+            <i class="fas fa-info-circle text-purple-300"></i>
+            Road distances via OSRM · straight-line shown while loading
+        </div>`;
+
+        bd.innerHTML = rows;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Drag reorder via SortableJS
+    // ─────────────────────────────────────────────────────
+    function initSortable() {
+        const listEl = document.getElementById('selected-places');
+        if (sortableInstance) { sortableInstance.destroy(); }
+        sortableInstance = Sortable.create(listEl, {
+            animation: 150,
+            handle: '.drag-handle',
+            ghostClass: 'bg-purple-50',
+            onEnd(evt) {
+                // Sync selectedPlaces array to new DOM order
+                const items = listEl.querySelectorAll('[data-sortable-id]');
+                selectedPlaces = Array.from(items).map(el => el.dataset.sortableId);
+                document.getElementById('selected-places-input').value = selectedPlaces.join(',');
+                // Rebuild UI badges + recalc (no full re-render so drag state is preserved)
+                updateDistanceBadges();
+                updateRouteMap();
+                recalcDistance();
+            }
+        });
+    }
+
+    // Only refresh the distance badges on each card (lightweight, no DOM rebuild)
+    function updateDistanceBadges() {
+        const items = document.querySelectorAll('[data-sortable-id]');
+        items.forEach((el, i) => {
+            const badge = el.querySelector('.seg-dist-badge');
+            if (i === 0) {
+                if (badge) badge.remove();
+                return;
+            }
+            const prevId = selectedPlaces[i - 1];
+            const prevEl = document.querySelector(`[data-place-id="${prevId}"]`);
+            const curEl  = document.querySelector(`[data-place-id="${selectedPlaces[i]}"]`);
+            const km = haversineKm(
+                parseFloat(prevEl.dataset.lat), parseFloat(prevEl.dataset.lng),
+                parseFloat(curEl.dataset.lat),  parseFloat(curEl.dataset.lng)
+            );
+            const orderBubble = el.querySelector('.order-bubble');
+            if (orderBubble) orderBubble.textContent = i + 1;
+
+            if (badge) {
+                badge.innerHTML = `<i class="fas fa-route mr-0.5"></i>${km.toFixed(1)} km`;
+            } else {
+                const btnWrap = el.querySelector('.remove-btn-wrap');
+                const newBadge = document.createElement('span');
+                newBadge.className = 'seg-dist-badge text-xs text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-full mr-2';
+                newBadge.innerHTML = `<i class="fas fa-route mr-0.5"></i>${km.toFixed(1)} km`;
+                btnWrap.insertBefore(newBadge, btnWrap.firstChild);
+            }
+        });
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Place toggle
+    // ─────────────────────────────────────────────────────
+    function togglePlace(placeId) {
+        placeId = String(placeId);
+        const placeItem = document.querySelector(`[data-place-id="${placeId}"]`);
+        const checkbox  = placeItem.querySelector('.place-checkbox i');
+
+        if (selectedPlaces.includes(placeId)) {
+            selectedPlaces = selectedPlaces.filter(id => id !== placeId);
+            checkbox.className = 'fas fa-plus text-gray-400';
+            placeItem.classList.remove('border-purple-500','bg-purple-50');
+        } else {
+            if (selectedPlaces.length >= MAX_PLACES) {
+                document.getElementById('max-places-warning').classList.remove('hidden');
+                return;
+            }
+            selectedPlaces.push(placeId);
+            checkbox.className = 'fas fa-check text-purple-600';
+            placeItem.classList.add('border-purple-500','bg-purple-50');
+            document.getElementById('max-places-warning').classList.add('hidden');
+        }
+
+        updateSelectedPlacesUI();
+        updateRouteMap();
+        recalcDistance();
+        validatePlaceCount();
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Selected places list — full render + init Sortable
+    // ─────────────────────────────────────────────────────
+    function updateSelectedPlacesUI() {
+        const container   = document.getElementById('selected-places-container');
+        const listDiv     = document.getElementById('selected-places');
+        const countSpan   = document.getElementById('selected-count');
+        const hiddenInput = document.getElementById('selected-places-input');
+
+        countSpan.textContent = selectedPlaces.length;
+        hiddenInput.value     = selectedPlaces.join(',');
+
+        if (selectedPlaces.length > 0) {
+            container.classList.remove('hidden');
+
+            let html = '';
+            selectedPlaces.forEach((id, i) => {
+                const item     = document.querySelector(`[data-place-id="${id}"]`);
+                const name     = item.querySelector('h4').textContent.trim();
+                const category = item.querySelector('p').textContent.trim();
+
+                let distBadge = '';
+                if (i > 0) {
+                    const prev = document.querySelector(`[data-place-id="${selectedPlaces[i-1]}"]`);
+                    const km = haversineKm(
+                        parseFloat(prev.dataset.lat), parseFloat(prev.dataset.lng),
+                        parseFloat(item.dataset.lat),  parseFloat(item.dataset.lng)
+                    );
+                    distBadge = `<span class="seg-dist-badge text-xs text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-full mr-2">
+                                    <i class="fas fa-route mr-0.5"></i>${km.toFixed(1)} km</span>`;
+                }
+
+                html += `
+                <div class="flex items-center gap-2 bg-white rounded-lg p-3 border border-gray-200 cursor-default select-none" data-sortable-id="${id}">
+                    <!-- Drag handle -->
+                    <span class="drag-handle cursor-grab active:cursor-grabbing text-gray-300 hover:text-gray-500 flex-shrink-0 px-1" title="Drag to reorder">
+                        <i class="fas fa-grip-vertical"></i>
+                    </span>
+                    <!-- Order number -->
+                    <span class="order-bubble w-6 h-6 bg-purple-600 text-white rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                        ${i+1}
+                    </span>
+                    <!-- Place info -->
+                    <div class="flex-1 min-w-0">
+                        <div class="font-medium text-gray-900 text-sm truncate">${name}</div>
+                        <div class="text-xs text-gray-500 truncate">${category}</div>
+                    </div>
+                    <!-- Right side: dist badge + remove -->
+                    <div class="remove-btn-wrap flex items-center flex-shrink-0 ml-1">
+                        ${distBadge}
+                        <button type="button" onclick="togglePlace('${id}')" class="text-red-400 hover:text-red-600 transition-colors p-1" title="Remove">
+                            <i class="fas fa-times text-xs"></i>
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            listDiv.innerHTML = html;
+
+            // Init/reinit SortableJS after DOM update
+            setTimeout(() => {
+                initRouteMap();
+                updateRouteMap();   // async — OSRM fetch inside
+                initSortable();
+            }, 100);
+        } else {
+            container.classList.add('hidden');
+            if (sortableInstance) { sortableInstance.destroy(); sortableInstance = null; }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Min-place validation
+    // ─────────────────────────────────────────────────────
+    function validatePlaceCount() {
+        const banner = document.getElementById('min-places-warning');
+        if (!banner) return;
+        if (selectedPlaces.length > 0 && selectedPlaces.length < MIN_PLACES) {
+            banner.classList.remove('hidden');
+        } else {
+            banner.classList.add('hidden');
+        }
+    }
+
+    // Gate submission
+    function validateBeforeSubmit(isDraft) {
+        if (isDraft) return true;  // drafts bypass min-places
+        if (selectedPlaces.length < MIN_PLACES) {
+            document.getElementById('min-places-warning').classList.remove('hidden');
+            document.getElementById('selected-places-container').scrollIntoView({ behavior:'smooth', block:'center' });
+            return false;
+        }
+        return true;
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Cover image preview
+    // ─────────────────────────────────────────────────────
+    function handleCoverDrop(event) {
+        event.preventDefault();
+        document.getElementById('cover-dropzone').classList.remove('border-pink-400','bg-pink-50');
+        const file = event.dataTransfer.files[0];
+        if (file && file.type.startsWith('image/')) {
+            applyCoverPreview(file);
+            // Transfer to real input
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            document.getElementById('{{ form.cover_image.id_for_label }}').files = dt.files;
+        }
+    }
+
+    function applyCoverPreview(file) {
+        const reader = new FileReader();
+        reader.onload = e => {
+            document.getElementById('cover-preview-img').src = e.target.result;
+            document.getElementById('cover-filename').textContent = file.name;
+            document.getElementById('cover-placeholder').classList.add('hidden');
+            document.getElementById('cover-preview-wrap').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function removeCoverPreview() {
+        document.getElementById('cover-preview-img').src = '';
+        document.getElementById('cover-filename').textContent = '';
+        document.getElementById('cover-placeholder').classList.remove('hidden');
+        document.getElementById('cover-preview-wrap').classList.add('hidden');
+        // Clear the real input
+        const fi = document.getElementById('{{ form.cover_image.id_for_label }}');
+        fi.value = '';
+        // If editing, warn that the existing cover will be kept unless a new one is uploaded
+        const existingCover = document.getElementById('existing-cover-url');
+        if (existingCover) {
+            const hint = document.createElement('p');
+            hint.className = 'text-xs text-amber-600 mt-1';
+            hint.id = 'cover-keep-hint';
+            hint.innerHTML = '<i class="fas fa-info-circle mr-1"></i>Existing cover will be kept unless you upload a new one.';
+            const placeholder = document.getElementById('cover-placeholder');
+            if (!document.getElementById('cover-keep-hint')) {
+                placeholder.after(hint);
+            }
+        }
+    }
+
+    // ─────────────────────────────────────────────────────
+    // Live search filter
+    // ─────────────────────────────────────────────────────
+    document.getElementById('place-search').addEventListener('input', function () {
+        const term = this.value.toLowerCase();
+        document.querySelectorAll('.place-item').forEach(item => {
+            const n = item.querySelector('h4').textContent.toLowerCase();
+            const c = item.querySelector('p').textContent.toLowerCase();
+            item.style.display = (n.includes(term) || c.includes(term)) ? '' : 'none';
+        });
+    });
+
+    function saveDraft() {
+        if (!validateBeforeSubmit(true)) return;
+        const form = document.getElementById('trail-form');
+        const inp  = document.createElement('input');
+        inp.type = 'hidden'; inp.name = 'save_as_draft'; inp.value = 'true';
+        form.appendChild(inp);
+        form.submit();
+    }
+
+    // ─────────────────────────────────────────────────────
+    // DOMContentLoaded — wire up everything
+    // ─────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // Difficulty → recalc
+        const diffSel = document.getElementById('id_difficulty');
+        if (diffSel) diffSel.addEventListener('change', recalcDistance);
+
+        // Load existing cover image in edit mode
+        const existingCover = document.getElementById('existing-cover-url');
+        if (existingCover) {
+            const url  = existingCover.dataset.url;
+            const name = existingCover.dataset.name;
+            document.getElementById('cover-preview-img').src = url;
+            document.getElementById('cover-filename').textContent = name + ' (current — upload to replace)';
+            document.getElementById('cover-placeholder').classList.add('hidden');
+            document.getElementById('cover-preview-wrap').classList.remove('hidden');
+        }
+
+        // Cover image file input → preview
+        const coverInput = document.getElementById('{{ form.cover_image.id_for_label }}');
+        if (coverInput) {
+            coverInput.addEventListener('change', function () {
+                if (this.files && this.files[0]) applyCoverPreview(this.files[0]);
+            });
+        }
+
+        // Form submit gate
+        document.getElementById('trail-form').addEventListener('submit', function (e) {
+            const isDraft = this.querySelector('[name="save_as_draft"]') !== null;
+            if (!validateBeforeSubmit(isDraft)) e.preventDefault();
+        });
+
+        // Pre-select places (edit mode or ?places= param)
+        {% if preselected_places %}
+            {% for place in preselected_places %}togglePlace({{ place.id }});{% endfor %}
+        {% endif %}
+        {% if is_editing and current_places %}
+            {% for place in current_places %}togglePlace({{ place.id }});{% endfor %}
+        {% endif %}
+    });
+    </script>
+{% endblock %}

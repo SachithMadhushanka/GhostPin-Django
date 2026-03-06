@@ -1,9 +1,9 @@
-const CACHE_NAME = 'ghostpin-v1';
+const CACHE_NAME = 'roamlk-v1';
 const urlsToCache = [
   '/',
   '/static/manifest.json',
-  '/static/icons/icon-192x192.png',
-  '/static/icons/icon-512x512.png',
+  '/static/icons/web-app-manifest-192x192.png',
+  '/static/icons/web-app-manifest-512x512.png',
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',
   'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js',
@@ -90,8 +90,8 @@ function doBackgroundSync() {
 self.addEventListener('push', function(event) {
   const options = {
     body: event.data ? event.data.text() : 'New historical place added!',
-    icon: '/static/icons/icon-192x192.png',
-    badge: '/static/icons/icon-192x192.png',
+    icon: '/static/icons/web-app-manifest-192x192.png',
+    badge: '/static/icons/web-app-manifest-192x192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
@@ -101,18 +101,18 @@ self.addEventListener('push', function(event) {
       {
         action: 'explore',
         title: 'Explore',
-        icon: '/static/icons/icon-192x192.png'
+        icon: '/static/icons/web-app-manifest-192x192.png'
       },
       {
         action: 'close',
         title: 'Close',
-        icon: '/static/icons/icon-192x192.png'
+        icon: '/static/icons/web-app-manifest-192x192.png'
       }
     ]
   };
 
   event.waitUntil(
-    self.registration.showNotification('GhostPin', options)
+    self.registration.showNotification('RoamLk', options)
   );
 });
 

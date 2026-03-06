@@ -1,276 +1,234 @@
 {% extends 'base.html' %}
-
-{% block title %}Challenges - GhostPin{% endblock %}
-
+{% block title %}Challenges - RoamLk{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto">
+  <div class="max-w-6xl mx-auto">
     <!-- Header -->
-    <div class="text-center mb-12">
-        <h1 class="text-4xl font-bold text-gray-900 mb-4">
-            <i class="fas fa-tasks text-blue-600 mr-3"></i>
-            Community Challenges
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-10 gap-4">
+      <div>
+        <h1 class="text-4xl font-bold text-gray-900 mb-2">
+          <i class="fas fa-tasks text-blue-600 mr-3"></i>Community Challenges
         </h1>
-        <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-            Take on exciting challenges to earn extra points, discover new places, and compete with fellow explorers. 
-            New challenges are added regularly!
+        <p class="text-gray-600 max-w-xl">
+          Check in at places to automatically make progress. Earn bonus points the moment you complete a challenge.
         </p>
+      </div>
+      {% if user.is_staff or user.is_superuser %}
+        <a href="{% url 'places:create_challenge' %}"
+           class="flex-shrink-0 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition-colors shadow-sm flex items-center gap-2">
+          <i class="fas fa-plus"></i> New Challenge
+        </a>
+      {% endif %}
     </div>
-    
-    <!-- Active Challenges -->
+    <!-- ── Active Challenges ─────────────────────────────────────── -->
     {% if active_challenges %}
-        <div class="mb-12">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                <i class="fas fa-fire text-red-500 mr-2"></i>
-                Active Challenges
-            </h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for challenge in active_challenges %}
-                    <div class="bg-white rounded-lg shadow-lg overflow-hidden card-hover border-t-4 border-green-500">
-                        <!-- Challenge Header -->
-                        <div class="p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase">
-                                    {{ challenge.get_challenge_type_display }}
-                                </span>
-                                <span class="text-2xl font-bold text-green-600">+{{ challenge.reward_points }}</span>
-                            </div>
-                            
-                            <h3 class="text-xl font-bold text-gray-900 mb-3">{{ challenge.title }}</h3>
-                            <p class="text-gray-600 mb-4">{{ challenge.description }}</p>
-                            
-                            <!-- Challenge Progress -->
-                            <div class="mb-4">
-                                <div class="flex justify-between text-sm text-gray-600 mb-1">
-                                    <span>Progress</span>
-                                    <span>0/5 completed</span>
-                                </div>
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="bg-green-600 h-2 rounded-full" style="width: 0%"></div>
-                                </div>
-                            </div>
-                            
-                            <!-- Time Remaining -->
-                            <div class="flex items-center justify-between text-sm text-gray-500 mb-4">
-                                <span class="flex items-center">
-                                    <i class="fas fa-calendar mr-1"></i>
-                                    Ends {{ challenge.end_date|date:"M d, Y" }}
-                                </span>
-                                <span class="flex items-center">
-                                    <i class="fas fa-clock mr-1"></i>
-                                    <span class="countdown" data-end="{{ challenge.end_date|date:'c' }}">
-                                        Calculating...
-                                    </span>
-                                </span>
-                            </div>
-                            
-                            <!-- Challenge Requirements -->
-                            <div class="bg-gray-50 rounded-lg p-3 mb-4">
-                                <h4 class="text-sm font-semibold text-gray-700 mb-2">Requirements:</h4>
-                                <ul class="text-sm text-gray-600 space-y-1">
-                                    <li class="flex items-center">
-                                        <i class="fas fa-check-circle text-green-500 mr-2"></i>
-                                        Visit 5 historical places
-                                    </li>
-                                    <li class="flex items-center">
-                                        <i class="fas fa-circle text-gray-300 mr-2"></i>
-                                        Check in with photo proof
-                                    </li>
-                                    <li class="flex items-center">
-                                        <i class="fas fa-circle text-gray-300 mr-2"></i>
-                                        Leave a review for each place
-                                    </li>
-                                </ul>
-                            </div>
-                            
-                            <!-- Action Button -->
-                            {% if user.is_authenticated %}
-                                <button class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors">
-                                    <i class="fas fa-play mr-2"></i>
-                                    Join Challenge
-                                </button>
-                            {% else %}
-                                <a href="{% url 'login' %}" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-center block">
-                                    <i class="fas fa-sign-in-alt mr-2"></i>
-                                    Login to Join
-                                </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-    {% endif %}
-    
-    <!-- Past Challenges -->
-    {% if past_challenges %}
-        <div class="mb-12">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                <i class="fas fa-history text-gray-600 mr-2"></i>
-                Past Challenges
-            </h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {% for challenge in past_challenges %}
-                    <div class="bg-white rounded-lg shadow-lg overflow-hidden opacity-75 border-t-4 border-gray-400">
-                        <div class="p-6">
-                            <div class="flex items-center justify-between mb-4">
-                                <span class="bg-gray-100 text-gray-600 text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase">
-                                    {{ challenge.get_challenge_type_display }}
-                                </span>
-                                <span class="text-lg font-bold text-gray-500">+{{ challenge.reward_points }}</span>
-                            </div>
-                            
-                            <h3 class="text-lg font-bold text-gray-700 mb-3">{{ challenge.title }}</h3>
-                            <p class="text-gray-500 mb-4">{{ challenge.description|truncatewords:15 }}</p>
-                            
-                            <div class="flex items-center justify-between text-sm text-gray-400">
-                                <span class="flex items-center">
-                                    <i class="fas fa-calendar mr-1"></i>
-                                    Ended {{ challenge.end_date|date:"M d, Y" }}
-                                </span>
-                                <span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
-                                    <i class="fas fa-check mr-1"></i>
-                                    Completed
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-    {% endif %}
-    
-    <!-- No Challenges State -->
-    {% if not active_challenges and not past_challenges %}
-        <div class="text-center py-16">
-            <div class="max-w-md mx-auto">
-                <i class="fas fa-tasks text-8xl text-gray-300 mb-6"></i>
-                <h3 class="text-2xl font-bold text-gray-900 mb-4">No Challenges Available</h3>
-                <p class="text-gray-600 mb-8">
-                    Challenges are coming soon! Check back regularly for exciting new ways to explore and earn points.
-                </p>
-                <a href="{% url 'places:home' %}" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    <i class="fas fa-map-marker-alt mr-2"></i> Explore Places Instead
-                </a>
-            </div>
-        </div>
-    {% endif %}
-    
-    <!-- Challenge Types Info -->
-    <div class="bg-white rounded-lg shadow-lg p-8">
+      <section class="mb-12">
         <h2 class="text-2xl font-bold text-gray-900 mb-6">
-            <i class="fas fa-info-circle text-blue-600 mr-2"></i>
-            Challenge Types
+          <i class="fas fa-fire text-red-500 mr-2"></i>Active Challenges
         </h2>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div class="text-center p-6 bg-green-50 rounded-lg">
-                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-calendar-week text-green-600 text-2xl"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {% for challenge in active_challenges %}
+            {% with p=challenge.user_progress %}
+              <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col border-t-4 {% if challenge.user_completed %}border-green-500 {% elif p and p.completed > 0 %}border-blue-400 {% else %}border-gray-200{% endif %}">
+                <div class="p-6 flex-1 flex flex-col">
+                  <!-- Top row: type badge + reward -->
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wide">
+                      {{ challenge.get_challenge_type_display }}
+                    </span>
+                    <span class="text-lg font-bold text-green-600">+{{ challenge.reward_points }} pts</span>
+                  </div>
+                  <!-- Completed ribbon -->
+                  {% if challenge.user_completed %}
+                    <div class="flex items-center gap-1.5 text-green-600 font-semibold text-sm mb-2">
+                      <i class="fas fa-check-circle"></i> Completed — reward granted!
+                    </div>
+                  {% endif %}
+                  <h3 class="text-lg font-bold text-gray-900 mb-1">{{ challenge.title }}</h3>
+                  <p class="text-gray-500 text-sm mb-4 flex-1">{{ challenge.description }}</p>
+                  <!-- Criteria pills -->
+                  <div class="flex flex-wrap gap-2 mb-4">
+                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                      <i class="fas fa-map-marker-alt mr-1"></i>
+                      {{ challenge.criteria.visit_count|default:1 }}
+                      place{{ challenge.criteria.visit_count|default:1|pluralize }}
+                    </span>
+                    {% if challenge.criteria.category %}
+                      <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-tag mr-1"></i>{{ challenge.criteria.category }} only
+                      </span>
+                    {% endif %}
+                    {% if challenge.criteria.require_photo %}
+                      <span class="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-camera mr-1"></i>Photo required
+                      </span>
+                    {% endif %}
+                    {% if challenge.criteria.require_review %}
+                      <span class="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-pen mr-1"></i>Review required
+                      </span>
+                    {% endif %}
+                  </div>
+                  <!-- Progress bar -->
+                  {% if user.is_authenticated and p %}
+                    <div class="mb-4">
+                      <div class="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>Your progress</span>
+                        <span class="font-medium">{{ p.completed }}/{{ p.required }}</span>
+                      </div>
+                      <div class="w-full bg-gray-100 rounded-full h-2.5">
+                        <div class="h-2.5 rounded-full transition-all duration-500 {% if challenge.user_completed %}bg-green-500 {% elif p.completed > 0 %}bg-blue-500 {% else %}bg-gray-300{% endif %}"
+                             style="width: {{ p.percent }}%"></div>
+                      </div>
+                      {% if not challenge.user_completed and p.completed == 0 %}
+                        <p class="text-xs text-gray-400 mt-1">
+                          Check in at
+                          {% if challenge.criteria.category %}
+                            <span class="font-medium">{{ challenge.criteria.category }}</span> places
+                          {% else %}
+                            any places
+                          {% endif %}
+                          to start your progress.
+                        </p>
+                      {% endif %}
+                    </div>
+                  {% elif not user.is_authenticated %}
+                    <div class="mb-4 bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-500">
+                      <a href="{% url 'login' %}"
+                         class="text-blue-600 hover:underline font-medium">Log in</a>
+                      to track your progress.
+                    </div>
+                  {% endif %}
+                  <!-- Countdown -->
+                  <div class="text-xs text-gray-400 flex items-center gap-1 mt-auto pt-2 border-t border-gray-100">
+                    <i class="fas fa-clock"></i>
+                    <span class="countdown text-orange-500 font-medium"
+                          data-end="{{ challenge.end_date|date:'c' }}">Calculating…</span>
+                    <span class="ml-auto"><i class="fas fa-calendar mr-1"></i>{{ challenge.end_date|date:"M d, Y" }}</span>
+                  </div>
                 </div>
-                <h3 class="font-semibold text-lg mb-2">Weekly Challenges</h3>
-                <p class="text-gray-600 text-sm">
-                    Short-term challenges that refresh every week. Perfect for quick exploration goals and regular engagement.
-                </p>
-            </div>
-            
-            <div class="text-center p-6 bg-blue-50 rounded-lg">
-                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-calendar-alt text-blue-600 text-2xl"></i>
-                </div>
-                <h3 class="font-semibold text-lg mb-2">Monthly Challenges</h3>
-                <p class="text-gray-600 text-sm">
-                    Longer challenges with bigger rewards. These require more commitment but offer substantial point bonuses.
-                </p>
-            </div>
-            
-            <div class="text-center p-6 bg-purple-50 rounded-lg">
-                <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <i class="fas fa-snowflake text-purple-600 text-2xl"></i>
-                </div>
-                <h3 class="font-semibold text-lg mb-2">Seasonal Challenges</h3>
-                <p class="text-gray-600 text-sm">
-                    Special themed challenges tied to seasons, holidays, or historical events. Limited time, exclusive rewards.
-                </p>
-            </div>
+                <!-- Staff controls -->
+                {% if user.is_staff or user.is_superuser %}
+                  <div class="border-t border-gray-100 px-4 py-2 bg-gray-50 flex justify-end gap-3">
+                    <a href="{% url 'places:edit_challenge' challenge.pk %}"
+                       class="text-xs text-blue-500 hover:underline">
+                      <i class="fas fa-edit mr-1"></i>Edit
+                    </a>
+                    <form method="POST"
+                          action="{% url 'places:delete_challenge' challenge.pk %}"
+                          onsubmit="return confirm('Delete this challenge?')">
+                      {% csrf_token %}
+                      <button type="submit" class="text-xs text-red-400 hover:underline">
+                        <i class="fas fa-trash mr-1"></i>Delete
+                      </button>
+                    </form>
+                  </div>
+                {% endif %}
+              </div>
+            {% endwith %}
+          {% endfor %}
         </div>
-    </div>
-    
-    <!-- Tips for Success -->
-    <div class="mt-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-6 text-white">
-        <h3 class="text-xl font-bold mb-4">
-            <i class="fas fa-lightbulb mr-2"></i>
-            Tips for Challenge Success
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            <div class="flex items-start space-x-2">
-                <i class="fas fa-check-circle mt-1"></i>
-                <span>Plan your route in advance to visit multiple places efficiently</span>
+      </section>
+    {% endif %}
+    <!-- ── Past Challenges ───────────────────────────────────────── -->
+    {% if past_challenges %}
+      <section class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">
+          <i class="fas fa-history text-gray-500 mr-2"></i>Past Challenges
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {% for challenge in past_challenges %}
+            <div class="bg-white rounded-xl shadow-sm overflow-hidden opacity-60 border-t-4 border-gray-300 flex flex-col">
+              <div class="p-6 flex-1 flex flex-col">
+                <div class="flex items-center justify-between mb-3">
+                  <span class="bg-gray-100 text-gray-500 text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase">
+                    {{ challenge.get_challenge_type_display }}
+                  </span>
+                  <span class="font-bold text-gray-400">+{{ challenge.reward_points }} pts</span>
+                </div>
+                <h3 class="text-base font-bold text-gray-600 mb-2">{{ challenge.title }}</h3>
+                <p class="text-gray-400 text-sm flex-1">{{ challenge.description|truncatewords:15 }}</p>
+                <div class="flex items-center justify-between text-xs text-gray-400 mt-4">
+                  <span><i class="fas fa-calendar mr-1"></i>Ended {{ challenge.end_date|date:"M d, Y" }}</span>
+                  {% if user.is_staff or user.is_superuser %}
+                    <a href="{% url 'places:edit_challenge' challenge.pk %}"
+                       class="text-blue-400 hover:underline">Edit</a>
+                  {% endif %}
+                </div>
+              </div>
             </div>
-            <div class="flex items-start space-x-2">
-                <i class="fas fa-check-circle mt-1"></i>
-                <span>Take quality photos for check-ins to get verification faster</span>
-            </div>
-            <div class="flex items-start space-x-2">
-                <i class="fas fa-check-circle mt-1"></i>
-                <span>Write detailed reviews to help other explorers</span>
-            </div>
-            <div class="flex items-start space-x-2">
-                <i class="fas fa-check-circle mt-1"></i>
-                <span>Join early - some challenges have limited participants</span>
-            </div>
+          {% endfor %}
         </div>
-    </div>
-</div>
+      </section>
+    {% endif %}
+    <!-- ── Empty state ───────────────────────────────────────────── -->
+    {% if not active_challenges and not past_challenges %}
+      <div class="text-center py-20">
+        <i class="fas fa-tasks text-8xl text-gray-200 mb-6"></i>
+        <h3 class="text-2xl font-bold text-gray-800 mb-3">No Challenges Yet</h3>
+        <p class="text-gray-500 mb-8">Challenges are coming soon! Check back regularly.</p>
+        {% if user.is_staff or user.is_superuser %}
+          <a href="{% url 'places:create_challenge' %}"
+             class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+            <i class="fas fa-plus mr-2"></i>Create the First Challenge
+          </a>
+        {% else %}
+          <a href="{% url 'places:home' %}"
+             class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+            <i class="fas fa-map-marker-alt mr-2"></i>Explore Places
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+    <!-- ── How It Works ──────────────────────────────────────────── -->
+    {% if active_challenges or past_challenges %}
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mt-4">
+        <h2 class="text-xl font-bold text-gray-900 mb-6">
+          <i class="fas fa-info-circle text-blue-500 mr-2"></i>How Challenges Work
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+          <div class="p-4">
+            <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <i class="fas fa-map-marker-alt text-blue-600"></i>
+            </div>
+            <h3 class="font-semibold mb-1">Check In</h3>
+            <p class="text-gray-500 text-sm">
+              Visit places and check in. Your progress updates automatically — no sign-up needed.
+            </p>
+          </div>
+          <div class="p-4">
+            <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <i class="fas fa-tasks text-orange-500"></i>
+            </div>
+            <h3 class="font-semibold mb-1">Meet the Criteria</h3>
+            <p class="text-gray-500 text-sm">Some challenges need photos or reviews. Check the pills on each card.</p>
+          </div>
+          <div class="p-4">
+            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <i class="fas fa-trophy text-green-600"></i>
+            </div>
+            <h3 class="font-semibold mb-1">Earn Reward</h3>
+            <p class="text-gray-500 text-sm">
+              Points are awarded instantly and automatically the moment you complete a challenge.
+            </p>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
 {% endblock %}
-
 {% block extra_js %}
-<script>
-    // Countdown timer for active challenges
-    function updateCountdowns() {
-        document.querySelectorAll('.countdown').forEach(element => {
-            const endDate = new Date(element.getAttribute('data-end'));
-            const now = new Date();
-            const timeLeft = endDate - now;
-            
-            if (timeLeft > 0) {
-                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-                
-                if (days > 0) {
-                    element.textContent = `${days}d ${hours}h left`;
-                } else if (hours > 0) {
-                    element.textContent = `${hours}h ${minutes}m left`;
-                } else {
-                    element.textContent = `${minutes}m left`;
-                }
-            } else {
-                element.textContent = 'Expired';
-                element.parentElement.parentElement.parentElement.style.opacity = '0.5';
-            }
-        });
-    }
-    
-    // Update countdowns every minute
-    updateCountdowns();
-    setInterval(updateCountdowns, 60000);
-    
-    // Animate cards on load
-    document.addEventListener('DOMContentLoaded', function() {
-        const cards = document.querySelectorAll('.card-hover');
-        cards.forEach((card, index) => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            
-            setTimeout(() => {
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, index * 100);
-        });
-    });
-</script>
+  <script>
+function updateCountdowns() {
+  document.querySelectorAll('.countdown').forEach(el => {
+    const diff = new Date(el.dataset.end) - Date.now();
+    if (diff <= 0) { el.textContent = 'Ended'; return; }
+    const d = Math.floor(diff / 86400000);
+    const h = Math.floor((diff % 86400000) / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    el.textContent = d > 0 ? `${d}d ${h}h left` : h > 0 ? `${h}h ${m}m left` : `${m}m left`;
+  });
+}
+updateCountdowns();
+setInterval(updateCountdowns, 60000);
+  </script>
 {% endblock %}
-

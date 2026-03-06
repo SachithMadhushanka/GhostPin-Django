@@ -1,394 +1,611 @@
 {% extends 'base.html' %}
-
-{% block title %}{{ place.name }} - GhostPin{% endblock %}
-
+{% block title %}{{ place.name }} - RoamLk{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto">
-    <!-- Back Button -->
-    <div class="mb-6 flex items-center justify-between">
-    <!-- Left side: Back button -->
-    <a href="{% url 'places:home' %}" class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-        </svg>
-        Back to Places
-    </a>
-
-    <!-- Route Planning Button -->
-    <a href="{% url 'places:route_planner' %}?destination={{ place.id }}" 
-        class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
-        <i class="fas fa-route mr-2"></i>
-        Plan Route
-    </a>
-
-    <!-- View Check-ins button -->
-        <a href="{% url 'places:place_checkins' place.pk %}" 
-        class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
-            <svg xmlns="http://www.w3.org/2000/svg" 
-                class="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            View Check-ins
-        </a>
-
-
-    <!-- Right side: Edit button (only for owner or staff) -->
-        {% if user == place.created_by or user.is_staff %}
-            <a href="{% url 'places:edit_place' place.pk %}" 
-            class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
-                <i class="fas fa-edit text-green-800 mr-2"></i>
-                Edit Place
+    <div class="max-w-4xl mx-auto">
+        <!-- Back Button -->
+        <div class="mb-6 flex items-center justify-between">
+            <!-- Left side: Back button -->
+            <a href="{% url 'places:home' %}"
+               class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
+                <svg class="w-5 h-5 mr-2"
+                     fill="none"
+                     stroke="currentColor"
+                     viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Back to Places
             </a>
-        {% endif %}
-    </div>
-
-    <!-- Place Header -->
-    <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-        {% if place.image %}
-            <img src="{{ place.image.url }}" alt="{{ place.name }}" class="w-full h-64 md:h-96 object-cover">
-        {% else %}
-            <div class="w-full h-64 md:h-96 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                <span class="text-white text-8xl">🏛️</span>
-            </div>
-        {% endif %}
-        
-        <div class="p-6 md:p-8">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-0">
-                    {{ place.name }}
-                </h1>
-                <div class="flex items-center space-x-3">
-                    {% if user.is_authenticated %}
-                        <form method="post" action="{% url 'places:toggle_favorite' place.pk %}">
-                            {% csrf_token %}
-                            <button type="submit" class="focus:outline-none">
-                                {% if is_favorited %}
-                                    <!-- Filled heart -->
-                                    <svg xmlns="http://www.w3.org/2000/svg" 
-                                        class="h-8 w-8 text-red-800 hover:text-red-900 transition-colors" 
-                                        fill="currentColor" viewBox="0 0 20 20">
-                                        <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 
-                                                4 0 115.656 5.656L10 17.657l-6.828-6.829a4 
-                                                4 0 010-5.656z"/>
-                                    </svg>
-                                {% else %}
-                                    <!-- Outline heart -->
-                                    <svg xmlns="http://www.w3.org/2000/svg" 
-                                        class="h-8 w-8 text-gray-800 hover:text-red-800 transition-colors" 
-                                        fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 
-                                                20.364l7.682-7.682a4.5 4.5 0 
-                                                00-6.364-6.364L12 7.636l-1.318-1.318a4.5 
-                                                4.5 0 00-6.364 0z"/>
-                                    </svg>
-                                {% endif %}
-                            </button>
-                        </form>
-                        <!-- Check-in Button -->
-                            <a href="{% url 'places:check_in' place.pk %}" 
-                            class="inline-flex items-center text-green-800 hover:text-green-900 font-medium">
-                                <svg xmlns="http://www.w3.org/2000/svg" 
-                                    class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                        d="M5 13l4 4L19 7" />
+            <!-- Route Planning Button -->
+            <a href="{% url 'places:route_planner' %}?destination={{ place.slug }}"
+               class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
+                <i class="fas fa-route mr-2"></i>
+                Plan Route
+            </a>
+            <!-- View Check-ins button -->
+            <a href="{% url 'places:place_checkins' place.slug %}"
+               class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="w-5 h-5 mr-2"
+                     fill="none"
+                     viewBox="0 0 24 24"
+                     stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                View Check-ins
+            </a>
+            <!-- Right side: Edit button (only for owner or staff) -->
+            {% if user == place.created_by or user.is_staff %}
+                <a href="{% url 'places:edit_place' place.slug %}"
+                   class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
+                    <i class="fas fa-edit text-green-800 mr-2"></i>
+                    Edit Place
+                </a>
+            {% endif %}
+        </div>
+        <!-- Place Header -->
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
+            {% if place.image %}
+                <img src="{{ place.image.url }}"
+                     alt="{{ place.name }}"
+                     class="w-full h-64 md:h-96 object-cover cursor-pointer"
+                     onclick="openPhotoModal(this.src)">
+            {% else %}
+                <div class="w-full h-64 md:h-96 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                    <span class="text-white text-8xl">🏛️</span>
+                </div>
+            {% endif %}
+            <div class="p-6 md:p-8">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
+                    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-0">{{ place.name }}</h1>
+                    <div class="flex items-center space-x-3">
+                        {% if user.is_authenticated %}
+                            <form method="post" action="{% url 'places:toggle_favorite' place.slug %}">
+                                {% csrf_token %}
+                                <button type="submit" class="focus:outline-none">
+                                    {% if is_favorited %}
+                                        <!-- Filled heart -->
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-8 w-8 text-red-800 hover:text-red-900 transition-colors"
+                                             fill="currentColor"
+                                             viewBox="0 0 20 20">
+                                            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
+                                        </svg>
+                                    {% else %}
+                                        <!-- Outline heart -->
+                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                             class="h-8 w-8 text-gray-800 hover:text-red-800 transition-colors"
+                                             fill="none"
+                                             viewBox="0 0 24 24"
+                                             stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                                        </svg>
+                                    {% endif %}
+                                </button>
+                            </form>
+                            <!-- Check-in Button -->
+                            <a href="{% url 'places:check_in' place.slug %}"
+                               class="inline-flex items-center text-green-800 hover:text-green-900 font-medium">
+                                <svg xmlns="http://www.w3.org/2000/svg"
+                                     class="h-5 w-5"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                                 </svg>
                                 <span>Check In</span>
                             </a>
-                    {% endif %}
-
-                    {% if place.status != 'approved' %}
-                        <span class="inline-block px-3 py-1 rounded-full text-sm font-medium
-                            {% if place.status == 'pending' %}bg-yellow-200 text-yellow-900
-                            {% elif place.status == 'rejected' %}bg-red-200 text-red-900{% endif %}">
-                            {{ place.get_status_display }}
-                        </span>
-                    {% endif %}
-                </div>
-            </div>
-
-
-            <div class="flex items-center text-gray-800 mb-4">
-                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                </svg>
-                <span>{{ place.latitude|floatformat:6 }}, {{ place.longitude|floatformat:6 }}</span>
-                <span class="mx-2">•</span>
-                <span>Added {{ place.created_at|date:"M d, Y" }} by {{ place.created_by.username }}</span>
-            </div>
-            
-            <p class="text-gray-800 text-lg leading-relaxed">
-                {{ place.description|linebreaks }}
-            </p>
-
-            <!-- Enhanced Additional Details -->
-            <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                {% if place.category %}
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Category</h2>
-                    <div class="text-lg font-medium text-gray-800 flex items-center">
-                        <span class="text-xl mr-2">🏷️</span>{{ place.get_category_display }}
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                            <button onclick="document.getElementById('video-modal').classList.remove('hidden')"
+                                    class="inline-flex items-center text-green-800 hover:text-green-900 font-medium">
+                                <i class="fas fa-video mr-2"></i>
+                                Add Video
+                            </button>
+                        {% endif %}
+                        {% if user.is_authenticated %}
+                            <button onclick="document.getElementById('image-upload-modal').classList.remove('hidden')"
+                                    class="inline-flex items-center text-green-800 hover:text-green-900 font-medium">
+                                <i class="fas fa-camera mr-2"></i>
+                                Add Photo
+                            </button>
+                        {% endif %}
+                        {% if place.status != 'approved' %}
+                            <span class="inline-block px-3 py-1 rounded-full text-sm font-medium {% if place.status == 'pending' %}bg-yellow-200 text-yellow-900 {% elif place.status == 'rejected' %}bg-red-200 text-red-900{% endif %}">
+                                {{ place.get_status_display }}
+                            </span>
+                        {% endif %}
                     </div>
                 </div>
-                {% endif %}
-
-                {% if place.difficulty %}
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Difficulty</h2>
-                    <div class="text-lg font-medium text-gray-800 flex items-center">
-                        <span class="text-xl mr-2">🧭</span>{{ place.difficulty }}
-                    </div>
+                <div class="flex items-center text-gray-800 mb-4">
+                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd">
+                        </path>
+                    </svg>
+                    <span>{{ place.latitude|floatformat:6 }}, {{ place.longitude|floatformat:6 }}</span>
+                    <span class="mx-2">•</span>
+                    <span>Added {{ place.created_at|date:"M d, Y" }} by {{ place.created_by.username }}</span>
                 </div>
-                {% endif %}
-
-                {% if place.safety_rating %}
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Safety Rating</h2>
-                    <div class="text-lg font-medium text-gray-800 flex items-center">
-                        <div>
-                            <div class="flex text-base leading-none">
-                                {% for i in "12345" %}
-                                    {% if forloop.counter <= place.safety_rating %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-yellow-600" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" title="Safety Level {{ forloop.counter }}">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 6v6c0 5.25 3.75 10 9 10s9-4.75 9-10V6l-9-4z" />
-                                        </svg>
-                                    {% else %}
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-800" fill="currentColor" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" title="No Shield">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 6v6c0 5.25 3.75 10 9 10s9-4.75 9-10V6l-9-4z" />
-                                        </svg>
-                                    {% endif %}
+                <p class="text-gray-800 text-lg leading-relaxed">{{ place.description|linebreaks }}</p>
+                <!-- Enhanced Additional Details -->
+                <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {% if place.category.exists %}
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Category</h2>
+                            <div class="text-lg font-medium text-gray-800 flex items-center">
+                                <span class="text-xl mr-2">🏷️</span>
+                                {% for cat in place.category.all %}
+                                    {{ cat.name }}
+                                    {% if not forloop.last %},{% endif %}
                                 {% endfor %}
                             </div>
                         </div>
-                    </div>
+                    {% endif %}
+                    {% if place.difficulty %}
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Difficulty</h2>
+                            <div class="text-lg font-medium text-gray-800 flex items-center">
+                                <span class="text-xl mr-2">🧭</span>{{ place.difficulty }}
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if place.safety_rating %}
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Safety Rating</h2>
+                            <div class="text-lg font-medium text-gray-800 flex items-center">
+                                <div>
+                                    <div class="flex text-base leading-none">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= place.safety_rating %}
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="h-6 w-6 text-yellow-600"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor"
+                                                     stroke-width="2"
+                                                     title="Safety Level {{ forloop.counter }}">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 6v6c0 5.25 3.75 10 9 10s9-4.75 9-10V6l-9-4z" />
+                                                </svg>
+                                            {% else %}
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     class="h-6 w-6 text-gray-800"
+                                                     fill="currentColor"
+                                                     viewBox="0 0 24 24"
+                                                     stroke="currentColor"
+                                                     stroke-width="2"
+                                                     title="No Shield">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 6v6c0 5.25 3.75 10 9 10s9-4.75 9-10V6l-9-4z" />
+                                                </svg>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if place.best_time_to_visit %}
+                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                            <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Best Time to Visit</h2>
+                            <div class="text-lg font-medium text-gray-800 flex items-center">
+                                <span class="text-xl mr-2">📅</span>{{ place.best_time_to_visit }}
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if place.accessibility_info %}
+                        <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-2">Accessibility & Visitor Information</h2>
+                            <p class="text-gray-800 leading-relaxed text-base">{{ place.accessibility_info|linebreaks }}</p>
+                        </div>
+                    {% endif %}
+                    {% if place.legends_stories %}
+                        <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-2">📖 Legends & Stories</h2>
+                            <p class="text-gray-800 leading-relaxed text-base whitespace-pre-line">{{ place.legends_stories|linebreaks }}</p>
+                        </div>
+                    {% endif %}
                 </div>
-                {% endif %}
-
-
-
-                {% if place.best_time_to_visit %}
-                <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Best Time to Visit</h2>
-                    <div class="text-lg font-medium text-gray-800 flex items-center">
-                        <span class="text-xl mr-2">📅</span>{{ place.best_time_to_visit }}
-                    </div>
-                </div>
-                {% endif %}
-
-                {% if place.accessibility_info %}
-                <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
-                        Accessibility & Visitor Information
-                    </h2>
-                    <p class="text-gray-800 leading-relaxed text-base">
-                        {{ place.accessibility_info|linebreaks }}
-                    </p>
-                </div>
-                {% endif %}
-
-                {% if place.legends_stories %}
-                <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-2">
-                        📖 Legends & Stories
-                    </h2>
-                    <p class="text-gray-800 leading-relaxed text-base whitespace-pre-line">
-                        {{ place.legends_stories|linebreaks }}
-                    </p>
-                </div>
-                {% endif %}
-
             </div>
-
-
         </div>
-    </div>
-
-    <!-- Map -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">📍 Location</h2>
-        <div id="map" class="w-full h-64 md:h-96 rounded-lg"></div>
-    </div>
-
-    <!-- Comments Section -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-        <h2 class="text-xl font-semibold text-gray-900 mb-6">
-            <i class="fas fa-comments text-blue-700 mr-2"></i>
-            Visitor Comments
-            <span class="text-sm font-normal text-gray-800 ml-2">({{ comments.count|default:0 }})</span>
-        </h2>
-
-        {% if comments %}
-            <div class="space-y-6" id="comments-list">
-                {% for comment in comments %}
-                    <div class="comment-item border-b border-gray-100 pb-6 last:border-b-0" data-comment-id="{{ comment.id }}">
-                        <div class="flex items-start space-x-4">
-                            <!-- Clickable User Avatar -->
-                            <a href="{% url 'places:profile' comment.user.username %}" class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 hover:opacity-90 transition">
-                                {{ comment.user.username|first|upper }}
-                            </a>
-                            <!-- Comment Content -->
-                            <div class="flex-1">
-                                <div class="flex items-center space-x-2 mb-2">
-                                    <span class="font-semibold text-gray-900">{{ comment.user.username }}</span>
-                                    <span class="text-gray-800 text-sm">{{ comment.created_at|timesince }} ago</span>
-                                    {% if comment.rating %}
-                                        <div class="flex items-center space-x-1">
-                                            {% for i in "12345" %}
-                                                {% if forloop.counter <= comment.rating %}
-                                                    <i class="fas fa-star text-yellow-600 text-xs"></i>
-                                                {% else %}
-                                                    <i class="far fa-star text-gray-800 text-xs"></i>
-                                                {% endif %}
+        <!-- Map -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">📍 Location</h2>
+            <div id="map" class="w-full h-64 md:h-96 rounded-lg"></div>
+        </div>
+        {% if place_images %}
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-images text-green-700 mr-2"></i>
+                    Photos
+                    <span class="text-sm font-normal text-gray-600 ml-2">({{ place_images.count }})</span>
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {% for img in place_images %}
+                        <div class="relative group rounded-lg overflow-hidden border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
+                             onclick="openPhotoModal('{{ img.image.url }}')">
+                            <img src="{{ img.image.url }}"
+                                 alt="Place photo"
+                                 class="w-full h-32 object-cover group-hover:opacity-90 transition-opacity">
+                            <!-- Hover overlay -->
+                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition flex items-center justify-center">
+                                <i class="fas fa-expand text-white opacity-0 group-hover:opacity-100 transition text-lg"></i>
+                            </div>
+                            <!-- Uploader info -->
+                            <div class="p-2 bg-white">
+                                <p class="text-xs text-gray-500 truncate">by {{ img.uploaded_by.username }} · {{ img.created_at|timesince }} ago</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        {% if place_videos %}
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-film text-purple-700 mr-2"></i>
+                    Videos
+                    <span class="text-sm font-normal text-gray-600 ml-2">({{ place_videos.count }})</span>
+                </h2>
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {% for video in place_videos %}
+                        <a href="{{ video.url }}"
+                           target="_blank"
+                           rel="noopener"
+                           class="block relative group rounded-lg overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
+                            <img src="{{ video.thumbnail_url }}"
+                                 alt="Video thumbnail"
+                                 class="w-full h-28 object-cover group-hover:opacity-80 transition-opacity">
+                            <!-- Play overlay -->
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="bg-black bg-opacity-40 rounded-full w-10 h-10 flex items-center justify-center group-hover:bg-opacity-60 transition">
+                                    <i class="fas fa-play text-white text-sm ml-1"></i>
+                                </div>
+                            </div>
+                            <!-- Platform badge -->
+                            <div class="absolute top-2 left-2">
+                                {% if video.platform == 'youtube' %}
+                                    <span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded font-medium">
+                                        <i class="fab fa-youtube mr-1"></i>YouTube
+                                    </span>
+                                {% elif video.platform == 'tiktok' %}
+                                    <span class="bg-black text-white text-xs px-2 py-0.5 rounded font-medium">
+                                        <i class="fab fa-tiktok mr-1"></i>TikTok
+                                    </span>
+                                {% elif video.platform == 'instagram' %}
+                                    <span class="bg-pink-600 text-white text-xs px-2 py-0.5 rounded font-medium">
+                                        <i class="fab fa-instagram mr-1"></i>Instagram
+                                    </span>
+                                {% elif video.platform == 'facebook' %}
+                                    <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded font-medium">
+                                        <i class="fab fa-facebook mr-1"></i>Facebook
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <!-- Uploader -->
+                            <div class="p-2 bg-white">
+                                <p class="text-xs text-gray-500 truncate">
+                                    by {{ video.uploaded_by.username }} · {{ video.created_at|timesince }} ago
+                                </p>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        {% if related_places %}
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-map-marked-alt text-green-700 mr-2"></i>
+                    Related Places
+                </h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {% for related in related_places %}
+                        <a href="{% url 'places:place_detail' related.slug %}"
+                           class="block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                            {% if related.image %}
+                                <img src="{{ related.image.url }}"
+                                     alt="{{ related.name }}"
+                                     class="w-full h-32 object-cover">
+                            {% else %}
+                                <div class="w-full h-32 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
+                                    <span class="text-4xl">🏛️</span>
+                                </div>
+                            {% endif %}
+                            <div class="p-3">
+                                <h3 class="font-semibold text-gray-900 text-sm mb-1 truncate">{{ related.name }}</h3>
+                                <p class="text-xs text-gray-600 mb-1">
+                                    {% for cat in related.category.all %}
+                                        {{ cat.name }}
+                                        {% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                </p>
+                                <p class="text-xs text-gray-500 line-clamp-2">{{ related.description|truncatewords:12 }}</p>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+        <!-- Comments Section -->
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">
+                <i class="fas fa-comments text-blue-700 mr-2"></i>
+                Visitor Comments
+                <span class="text-sm font-normal text-gray-800 ml-2">({{ comments.count|default:0 }})</span>
+            </h2>
+            {% if comments %}
+                <div class="space-y-6" id="comments-list">
+                    {% for comment in comments %}
+                        <div class="comment-item border-b border-gray-100 pb-6 last:border-b-0"
+                             data-comment-id="{{ comment.id }}">
+                            <div class="flex items-start space-x-4">
+                                <!-- Clickable User Avatar -->
+                                <a href="{% url 'places:profile' comment.user.username %}"
+                                   class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 hover:opacity-90 transition">
+                                    {{ comment.user.username|first|upper }}
+                                </a>
+                                <!-- Comment Content -->
+                                <div class="flex-1">
+                                    <div class="flex items-center space-x-2 mb-2">
+                                        <span class="font-semibold text-gray-900">{{ comment.user.username }}</span>
+                                        <span class="text-gray-800 text-sm">{{ comment.created_at|timesince }} ago</span>
+                                        {% if comment.rating %}
+                                            <div class="flex items-center space-x-1">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= comment.rating %}
+                                                        <i class="fas fa-star text-yellow-600 text-xs"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star text-gray-800 text-xs"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <!-- Comment Text -->
+                                    <p class="text-gray-800 mb-3">{{ comment.text }}</p>
+                                    <!-- YouTube Thumbnail (if exists) -->
+                                    {% if comment.youtube_id %}
+                                        <div class="mb-3">
+                                            <a href="https://www.youtube.com/watch?v={{ comment.youtube_id }}"
+                                               target="_blank"
+                                               rel="noopener">
+                                                <img src="https://img.youtube.com/vi/{{ comment.youtube_id }}/0.jpg"
+                                                     alt="YouTube thumbnail"
+                                                     class="rounded-lg shadow-md hover:opacity-80 transition w-full max-w-xs">
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                    <!-- Voting Controls -->
+                                    <div class="flex items-center space-x-4">
+                                        <div class="flex items-center space-x-2">
+                                            <button class="vote-btn"
+                                                    aria-label="Upvote comment"
+                                                    data-comment-id="{{ comment.id }}"
+                                                    data-vote-type="up"
+                                                    onclick="voteComment('{{ comment.id }}', 'up')">
+                                                <i class="fas fa-thumbs-up text-green-800 hover:text-green-900 cursor-pointer transition-colors"></i>
+                                            </button>
+                                            <span class="text-sm text-gray-800 vote-count-up">{{ comment.upvotes|default:0 }}</span>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <button class="vote-btn"
+                                                    aria-label="Downvote comment"
+                                                    data-comment-id="{{ comment.id }}"
+                                                    data-vote-type="down"
+                                                    onclick="voteComment('{{ comment.id }}', 'down')">
+                                                <i class="fas fa-thumbs-down text-red-800 hover:text-red-900 cursor-pointer transition-colors"></i>
+                                            </button>
+                                            <span class="text-sm text-gray-800 vote-count-down">{{ comment.downvotes|default:0 }}</span>
+                                        </div>
+                                        <button class="text-sm text-blue-700 hover:text-blue-800 cursor-pointer"
+                                                aria-label="Reply to comment"
+                                                onclick="toggleReplyForm('{{ comment.id }}')">
+                                            <i class="fas fa-reply mr-1"></i>
+                                            Reply
+                                        </button>
+                                    </div>
+                                    <!-- Reply Form (Hidden by default) -->
+                                    <div id="reply-form-{{ comment.id }}"
+                                         class="hidden mt-4 ml-4 p-4 bg-gray-50 rounded-lg">
+                                        <form onsubmit="submitReply(event, '{{ comment.id }}')">
+                                            {% csrf_token %}
+                                            <textarea name="reply_text"
+                                                      rows="2"
+                                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                                      placeholder="Write your reply..."></textarea>
+                                            <div class="flex justify-end space-x-2 mt-2">
+                                                <button type="button"
+                                                        onclick="toggleReplyForm('{{ comment.id }}')"
+                                                        class="px-3 py-1 text-sm text-gray-800 hover:text-gray-600">
+                                                    Cancel
+                                                </button>
+                                                <button type="submit"
+                                                        class="px-4 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                                                    Reply
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <!-- Replies -->
+                                    {% if comment.replies.all %}
+                                        <div class="mt-4 ml-4 space-y-4">
+                                            {% for reply in comment.replies.all %}
+                                                <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                                                    <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+                                                        {{ reply.user.username|first|upper }}
+                                                    </div>
+                                                    <div class="flex-1">
+                                                        <div class="flex items-center space-x-2 mb-1">
+                                                            <span class="font-medium text-gray-900 text-sm">{{ reply.user.username }}</span>
+                                                            <span class="text-gray-800 text-xs">{{ reply.created_at|timesince }} ago</span>
+                                                        </div>
+                                                        <p class="text-gray-800 text-sm">{{ reply.text }}</p>
+                                                    </div>
+                                                </div>
                                             {% endfor %}
                                         </div>
                                     {% endif %}
                                 </div>
-                                
-                                <!-- Comment Text -->
-                                <p class="text-gray-800 mb-3">{{ comment.text }}</p>
-
-                                <!-- YouTube Thumbnail (if exists) -->
-                                {% if comment.youtube_id %}
-                                    <div class="mb-3">
-                                        <a href="https://www.youtube.com/watch?v={{ comment.youtube_id }}" target="_blank" rel="noopener">
-                                            <img src="https://img.youtube.com/vi/{{ comment.youtube_id }}/0.jpg"
-                                                alt="YouTube thumbnail"
-                                                class="rounded-lg shadow-md hover:opacity-80 transition w-full max-w-xs">
-                                        </a>
-                                    </div>
-                                {% endif %}
-
-
-                                <!-- Voting Controls -->
-                                <div class="flex items-center space-x-4">
-                                    <div class="flex items-center space-x-2">
-                                        <button class="vote-btn" aria-label="Upvote comment" data-comment-id="{{ comment.id }}" data-vote-type="up" onclick="voteComment('{{ comment.id }}', 'up')">
-                                            <i class="fas fa-thumbs-up text-green-800 hover:text-green-900 cursor-pointer transition-colors"></i>
-                                        </button>
-                                        <span class="text-sm text-gray-800 vote-count-up">{{ comment.upvotes|default:0 }}</span>
-                                    </div>
-                                    
-                                    <div class="flex items-center space-x-2">
-                                        <button class="vote-btn" aria-label="Downvote comment" data-comment-id="{{ comment.id }}" data-vote-type="down" onclick="voteComment('{{ comment.id }}', 'down')">
-                                            <i class="fas fa-thumbs-down text-red-800 hover:text-red-900 cursor-pointer transition-colors"></i>
-                                        </button>
-                                        <span class="text-sm text-gray-800 vote-count-down">{{ comment.downvotes|default:0 }}</span>
-                                    </div>
-                                    
-                                    <button class="text-sm text-blue-700 hover:text-blue-800 cursor-pointer" aria-label="Reply to comment" onclick="toggleReplyForm('{{ comment.id }}')">
-                                        <i class="fas fa-reply mr-1"></i>
-                                        Reply
-                                    </button>
-                                </div>
-                                
-                                <!-- Reply Form (Hidden by default) -->
-                                <div id="reply-form-{{ comment.id }}" class="hidden mt-4 ml-4 p-4 bg-gray-50 rounded-lg">
-                                    <form onsubmit="submitReply(event, '{{ comment.id }}')">
-                                        {% csrf_token %}
-                                        <textarea name="reply_text" rows="2" 
-                                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                                                  placeholder="Write your reply..."></textarea>
-                                        <div class="flex justify-end space-x-2 mt-2">
-                                            <button type="button" onclick="toggleReplyForm('{{ comment.id }}')" 
-                                                    class="px-3 py-1 text-sm text-gray-800 hover:text-gray-600">
-                                                Cancel
-                                            </button>
-                                            <button type="submit" class="px-4 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
-                                                Reply
-                                            </button>
-                                        </div>
-                                    </form>
-                                </div>
-                                
-                                <!-- Replies -->
-                                {% if comment.replies.all %}
-                                    <div class="mt-4 ml-4 space-y-4">
-                                        {% for reply in comment.replies.all %}
-                                            <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                                                <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                                                    {{ reply.user.username|first|upper }}
-                                                </div>
-                                                <div class="flex-1">
-                                                    <div class="flex items-center space-x-2 mb-1">
-                                                        <span class="font-medium text-gray-900 text-sm">{{ reply.user.username }}</span>
-                                                        <span class="text-gray-800 text-xs">{{ reply.created_at|timesince }} ago</span>
-                                                    </div>
-                                                    <p class="text-gray-800 text-sm">{{ reply.text }}</p>
-                                                </div>
-                                            </div>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
                             </div>
                         </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <!-- Empty State -->
-            <div class="text-center py-12">
-                <i class="fas fa-comments text-6xl text-gray-800 mb-4"></i>
-                <h4 class="text-xl font-semibold text-gray-900 mb-2">No comments yet</h4>
-                <p class="text-gray-800 mb-6">Be the first to share your thoughts about this check-in!</p>
-            </div>
-        {% endif %}
-    </div>
-
-    <!-- Comment Form -->
-    {% if user.is_authenticated %}
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                <i class="fas fa-pen text-green-800 mr-2"></i>
-                Leave a Comment
-            </h2>
-
-            <form method="post" id="comment-form" class="space-y-4">
-                {% csrf_token %}
-                <input type="hidden" name="checkin_id" value="{{ checkin.id }}">
-                
-                <!-- Comment Text -->
-                <div>
-                    <label for="comment-text" class="block text-sm font-medium text-gray-800 mb-2">
-                        Your Comment
-                    </label>
-                    <textarea name="text" id="comment-text" rows="4" required
-                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                              placeholder="Write something about this check-in..."></textarea>
+                    {% endfor %}
                 </div>
-                
-                <!-- Rating (Optional) -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-800 mb-2">
-                        Rating (Optional)
-                    </label>
-                    <div class="flex items-center space-x-1" id="rating-stars">
-                        {% for i in "12345" %}
-                            <i class="far fa-star text-gray-800 text-xl cursor-pointer hover:text-yellow-600 transition-colors" 
-                               data-rating="{{ forloop.counter }}" onclick="setRating('{{ forloop.counter }}')"></i>
-                        {% endfor %}
-                    </div>
-                    <input type="hidden" name="rating" id="rating-input" value="">
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-12">
+                    <i class="fas fa-comments text-6xl text-gray-800 mb-4"></i>
+                    <h4 class="text-xl font-semibold text-gray-900 mb-2">No comments yet</h4>
+                    <p class="text-gray-800 mb-6">Be the first to share your thoughts about this check-in!</p>
                 </div>
-                
-                <!-- Submit Button -->
-                <div class="flex justify-end">
-                    <button type="submit" name="comment_submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-                        <i class="fas fa-paper-plane mr-2"></i>
-                        Post Comment
-                    </button>
-                </div>
-            </form>
+            {% endif %}
         </div>
+        <!-- Comment Form -->
+        {% if user.is_authenticated %}
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-pen text-green-800 mr-2"></i>
+                    Leave a Comment
+                </h2>
+                <form method="post" id="comment-form" class="space-y-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="checkin_id" value="{{ checkin.id }}">
+                    <!-- Comment Text -->
+                    <div>
+                        <label for="comment-text"
+                               class="block text-sm font-medium text-gray-800 mb-2">Your Comment</label>
+                        <textarea name="text"
+                                  id="comment-text"
+                                  rows="4"
+                                  required
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                  placeholder="Write something about this check-in..."></textarea>
+                    </div>
+                    <!-- Rating (Optional) -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-800 mb-2">Rating (Optional)</label>
+                        <div class="flex items-center space-x-1" id="rating-stars">
+                            {% for i in "12345" %}
+                                <i class="far fa-star text-gray-800 text-xl cursor-pointer hover:text-yellow-600 transition-colors"
+                                   data-rating="{{ forloop.counter }}"
+                                   onclick="setRating('{{ forloop.counter }}')"></i>
+                            {% endfor %}
+                        </div>
+                        <input type="hidden" name="rating" id="rating-input" value="">
+                    </div>
+                    <!-- Submit Button -->
+                    <div class="flex justify-end">
+                        <button type="submit"
+                                name="comment_submit"
+                                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Post Comment
+                        </button>
+                    </div>
+                </form>
+            </div>
         {% endif %}
-{% endblock %}
-
-{% block extra_js %}
-<script>
+        <!-- Photo Modal -->
+        <div id="photo-modal"
+             class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+            <div class="max-w-4xl max-h-full p-4 relative">
+                <img id="modal-photo"
+                     src=""
+                     alt="Full-size photo"
+                     class="max-w-full max-h-full rounded-lg shadow-lg">
+                <button class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300"
+                        onclick="closePhotoModal()">&times;</button>
+            </div>
+        </div>
+        <!-- Image Upload Modal -->
+        <div id="image-upload-modal"
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-camera text-green-700 mr-2"></i>
+                        Upload a Photo
+                    </h3>
+                    <button onclick="document.getElementById('image-upload-modal').classList.add('hidden')"
+                            class="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
+                </div>
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Image:</label>
+                        <input type="file"
+                               name="image"
+                               accept="image/*"
+                               required
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                               onchange="previewImage(event)">
+                    </div>
+                    <!-- Image Preview -->
+                    <div id="image-preview-container" class="mb-4 hidden">
+                        <img id="image-preview"
+                             src=""
+                             alt="Preview"
+                             class="w-full h-48 object-cover rounded-lg border border-gray-200">
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button"
+                                onclick="document.getElementById('image-upload-modal').classList.add('hidden')"
+                                class="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                name="image_submit"
+                                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
+                            <i class="fas fa-upload mr-2"></i>Upload
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- Video Upload Modal -->
+        <div id="video-modal"
+             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        <i class="fas fa-video text-green-700 mr-2"></i>
+                        Add a Video
+                    </h3>
+                    <button onclick="document.getElementById('video-modal').classList.add('hidden')"
+                            class="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Paste your video link:</label>
+                        <input type="url"
+                               name="video_url"
+                               required
+                               placeholder="https://youtube.com/watch?v=... or TikTok, Instagram, Facebook"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
+                        <p class="text-xs text-gray-500 mt-1">Supports: YouTube, TikTok, Instagram, Facebook</p>
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button"
+                                onclick="document.getElementById('video-modal').classList.add('hidden')"
+                                class="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                                name="video_submit"
+                                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
+                            <i class="fas fa-upload mr-2"></i>Add Video
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    {% endblock %}
+    {% block extra_js %}
+        <script>
     // Initialize map
-    const map = L.map('map').setView(['{{ place.latitude }}', '{{ place.longitude }}'], 15);
+    const latitude = parseFloat("{{ place.latitude|escapejs }}");
+    const longitude = parseFloat("{{ place.longitude|escapejs }}");
+
+    const map = L.map('map').setView([latitude, longitude], 15);
+
     
     // Add tile layer
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -396,7 +613,7 @@
     }).addTo(map);
     
     // Add marker
-    const marker = L.marker(['{{ place.latitude }}', '{{ place.longitude }}']).addTo(map);
+    const marker = L.marker([latitude, longitude]).addTo(map);
     marker.bindPopup('<b>{{ place.name|escapejs }}</b><br>{{ place.description|truncatewords:10|escapejs }}');
     
     // Open popup by default
@@ -433,7 +650,7 @@
             })
         })
         .then(response => response.json())
-        .then(data => {
+        .then (data => {
             if (data.success) {
                 // Update vote counts
                 const comment = document.querySelector(`[data-comment-id="${commentId}"]`);
@@ -576,6 +793,49 @@
             }
         }
     });
-</script>
-{% endblock %}
 
+    function openPhotoModal(src) {
+        const modal = document.getElementById('photo-modal');
+        const modalPhoto = document.getElementById('modal-photo');
+        modalPhoto.src = src;       // Set the clicked image
+        modal.classList.remove('hidden'); // Show modal
+    }
+
+    function closePhotoModal() {
+        const modal = document.getElementById('photo-modal');
+        modal.classList.add('hidden'); // Hide modal
+    }
+
+    function previewImage(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('image-preview').src = e.target.result;
+                document.getElementById('image-preview-container').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // Optional: close modal when clicking outside the image
+    document.addEventListener('DOMContentLoaded', () => {
+        const photoModal = document.getElementById('photo-modal');
+        if (photoModal) {
+            photoModal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closePhotoModal();
+                }
+            });
+        }
+    });
+
+    // Close modal with Escape key
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closePhotoModal();
+        }
+    });
+
+        </script>
+    {% endblock %}

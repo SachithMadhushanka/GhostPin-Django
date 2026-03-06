@@ -1,34 +1,50 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}GhostPin - Explore Historical Places{% endblock %}</title>
-    
-    <!-- PWA Meta Tags -->
-    <meta name="theme-color" content="#4CAF50">
-    <meta name="description" content="Discover and explore historical places around the world">
-    <link rel="manifest" href="{% url 'places:manifest' %}">
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Leaflet Routing Machine CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.css" />
-
-    <link rel="icon" type="image/x-icon" href="{% static 'icons/favicon.ico' %}">
-
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4643014248630493"
-     crossorigin="anonymous"></script>
-
-    <!-- Custom CSS -->
-    <style>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>
+            {% block title %}RoamLk - Explore Places{% endblock %}
+        </title>
+        <!-- PWA Meta Tags -->
+        <meta name="theme-color" content="#4CAF50">
+        <meta name="description"
+              content="Discover and explore places around the world">
+        <link rel="manifest" href="{% static 'manifest.json' %}">
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Tom Select CSS -->
+        <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css"
+              rel="stylesheet">
+        <!-- Tom Select JS -->
+        <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+              rel="stylesheet">
+        <!-- Leaflet CSS -->
+        <link rel="stylesheet"
+              href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <link rel="stylesheet"
+              href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+        <!-- <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script> -->
+        <!-- Leaflet Routing Machine CSS -->
+        <link rel="stylesheet"
+              href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.css" />
+        <link rel="apple-touch-icon"
+              sizes="180x180"
+              href="{% static 'icons/apple-touch-icon.png' %}">
+        <link rel="icon"
+              type="image/png"
+              sizes="96x96"
+              href="{% static 'icons/favicon-96x96.png' %}">
+        <link rel="icon"
+              type="image/x-icon"
+              href="{% static 'icons/favicon.ico' %}">
+        <script async
+                src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4643014248630493"
+                crossorigin="anonymous"></script>
+        <!-- Custom CSS -->
+        <style>
         .gradient-bg {
             background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
         }
@@ -77,93 +93,157 @@
             cursor: pointer;
         }
 
-    </style>
-</head>
-<body class="bg-gray-100 min-h-screen">
-    <!-- Navigation -->
-    <nav class="gradient-bg shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center">
-                    <a href="{% url 'places:home' %}" class="text-white text-xl font-bold">
-                        👻 GhostPin
-                    </a>
-                </div>
-                
-                <div class="hidden md:block">
-                    <div class="ml-10 flex items-baseline space-x-4">
-                        <a href="{% url 'places:home' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                            🏠 Home
+        .ts-control {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #D1D5DB; /* gray-300 */
+            border-radius: 0.375rem;    /* rounded-md */
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(34,197,94,0.5); /* focus:ring-green-500 */
+            background-color: white;
+            color: #111827; /* text-gray-900 */
+            min-height: 2.5rem;
+        }
+
+        .ts-control input {
+            padding: 0;
+        }
+
+        .ts-control .item {
+            background-color: #DCFCE7; /* bg-green-100 */
+            color: #166534; /* text-green-800 */
+            border-radius: 0.25rem;
+            padding: 0.125rem 0.5rem;
+            margin-right: 0.25rem;
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem; /* text-sm */
+        }
+
+        .ts-dropdown {
+            border: 1px solid #D1D5DB;
+            border-radius: 0.375rem;
+            background-color: white;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            z-index: 50;
+        }
+
+        .ts-dropdown .active {
+            background-color: #22C55E; /* green-500 */
+            color: white;
+        }
+
+        #map, #route-map, #edit-map,#trail-map, #checkins-map {
+            z-index: 1;
+        }
+        .leaflet-pane,
+        .leaflet-top,
+        .leaflet-bottom {
+            z-index: 1 !important;
+        }
+
+
+        </style>
+    </head>
+    <body class="bg-gray-100 min-h-screen">
+        <!-- Navigation -->
+        <nav class="gradient-bg shadow-lg sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-16">
+                    <div class="flex items-center">
+                        <a href="{% url 'places:home' %}"
+                           class="flex items-center text-white text-xl font-bold">
+                            <img src="{% static 'icons/web-app-manifest-512x512.png' %}"
+                                 alt="RoamLk Logo"
+                                 class="h-8 w-8 mr-2 rounded-full bg-white p-1 shadow"
+                                 style="object-fit:cover">
+                            RoamLk
                         </a>
-                        {% if user.is_authenticated %}
-                            <a href="{% url 'places:add_place' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                ➕ Add Place
-                            </a>
-                            
-                                <!-- Dropdown menu for Collections/Favorites/Check-ins -->
+                    </div>
+                    <div class="hidden md:block">
+                        <div class="ml-10 flex items-baseline space-x-4">
+                            <!-- <a href="{% url 'places:home' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                            <i class="fas fa-home"></i> Home
+                        </a> -->
+                            {% if user.is_authenticated %}
+                                <a href="{% url 'places:add_place' %}"
+                                   class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-plus-circle"></i> Add Place
+                                </a>
+                                <!-- Search Form (Desktop) -->
+                                <div class="hidden md:block mx-4">{% include 'places/_search_form.html' %}</div>
+                                <!-- Dropdown menu for Trails/Favorites/Check-ins -->
                                 <div class="relative group">
                                     <button class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
-                                        🌍 Explore 
+                                        <i class="fas fa-compass"></i>  Explore
                                     </button>
-                                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-200 z-50">
-                                        
-                                        <a href="{% url 'places:collections' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
-                                            📁 Collections
+                                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 invisible group-hover:visible transition-all duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
+                                        <a href="{% url 'places:trails' %}"
+                                           class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <i class="fas fa-hiking"></i> Trails
                                         </a>
-                                        <a href="{% url 'places:favorites' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
-                                            ❤️ Favorites
+                                        <a href="{% url 'places:tour_list' %}"
+                                           class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <i class="fas fa-route"></i> Tours
                                         </a>
-                                        <a href="{% url 'places:check_ins' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
-                                            🗺️ Check-ins
+                                        <a href="{% url 'places:favorites' %}"
+                                           class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <i class="fas fa-heart"></i> Favorites
                                         </a>
-                                        <a href="{% url 'places:review_places' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
-                                            🗺️ Reviewed Places
+                                        <a href="{% url 'places:check_ins' %}"
+                                           class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <i class="fas fa-map-marker-alt"></i> Check-ins
                                         </a>
+                                        <!-- <a href="{% url 'places:review_places' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <i class="fas fa-star"></i> Reviewed Places
+                                        </a> -->
                                     </div>
                                 </div>
-                                
                                 <!-- Dropdown menu for Challenges/Badges/Leaderboard -->
                                 <div class="relative group">
                                     <button class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
-                                        🏆 Achievements
+                                        <i class="fas fa-trophy"></i> Achievements
                                     </button>
-                                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                                        <a href="{% url 'places:challenges' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
-                                           🧩 Challenges
+                                    <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
+                                        <a href="{% url 'places:challenges' %}"
+                                           class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <i class="fas fa-puzzle-piece"></i> Challenges
                                         </a>
-                                        <a href="{% url 'places:badges' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
-                                            🏅 Badges
+                                        <a href="{% url 'places:badges' %}"
+                                           class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <i class="fas fa-medal"></i> Badges
                                         </a>
-                                        <a href="{% url 'places:leaderboard' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
-                                            🏆 Leaderboard
+                                        <a href="{% url 'places:leaderboard' %}"
+                                           class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
+                                            <i class="fas fa-trophy"></i> Leaderboard
                                         </a>
                                     </div>
                                 </div>
-
                                 <!-- Dropdown menu for Search -->
-                                <div class="relative group">
+                                <!-- <div class="relative group">
                                     <button class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
-                                        🔍 Search
+                                        <i class="fas fa-search"></i> Search
                                     </button>
                                     <div class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
                                         <a href="{% url 'places:search_results' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
-                                            🔍 Search Results
+                                            <i class="fas fa-search"></i> Search Results
                                         </a>
                                         <a href="{% url 'places:nearby_places' %}" class="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-100">
-                                            🗺️ Nearby Places
+                                            <i class="fas fa-map-marker-alt"></i> Nearby Places
                                         </a>
                                     </div>
-                                </div>
-
-                                <a href="{% url 'places:notifications' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                     🔔 Notifications
+</div> -->
+                                <a href="{% url 'places:notifications' %}"
+                                   class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-bell"></i>
                                 </a>
-
                                 <!-- Dropdown menu for profile/logout -->
                                 <div class="relative group">
                                     <button class="flex items-center space-x-2 text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium focus:outline-none">
                                         {% if user.profile.avatar %}
-                                            <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="w-8 h-8 rounded-full object-cover border-2 border-white" title="{{ user.username }}">
+                                            <img src="{{ user.profile.avatar.url }}"
+                                                 alt="{{ user.username }}"
+                                                 class="w-8 h-8 rounded-full object-cover border-2 border-white"
+                                                 title="{{ user.username }}">
                                         {% else %}
                                             <div class="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center text-white font-bold">
                                                 {{ user.username|first|upper }}
@@ -171,180 +251,273 @@
                                         {% endif %}
                                         <span class="hidden sm:inline">{{ user.username }}</span>
                                     </button>
-
-                                    <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                                        <a href="{% url 'places:profile' user.username %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            👤 Profile
+                                    <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
+                                        <a href="{% url 'places:profile' user.username %}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-user"></i> Profile
                                         </a>
-                                        <a href="{% url 'places:about' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            📖 About GhostPin
+                                        {% if user.is_staff %}
+                                            <a href="{% url 'places:review_places' %}"
+                                               class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                <i class="fas fa-question-circle"></i> Review Places
+                                            </a>
+                                        {% endif %}
+                                        <a href="{% url 'places:about' %}"
+                                           class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                            <i class="fas fa-info-circle"></i> About RoamLk
                                         </a>
                                         <form method="POST" action="{% url 'logout' %}">
                                             {% csrf_token %}
-                                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                                🔒 Logout
+                                            <button type="submit"
+                                                    class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                                <i class="fas fa-sign-out-alt"></i> Logout
                                             </button>
                                         </form>
                                     </div>
                                 </div>
-                                <!-- {% if user.is_staff %}
-                                {% endif %} -->
-                        {% else %}
-                            <a href="{% url 'places:about' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                    📖 About GhostPin
-                            </a>
-                            <a href="{% url 'login' %}" class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                🔑 Login
-                            </a>
-                        {% endif %}
-                        
+                                <!-- {% if user.is_staff %}{% endif %} -->
+                            {% else %}
+                                <a href="{% url 'places:about' %}"
+                                   class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-info-circle"></i> About RoamLk
+                                </a>
+                                <a href="{% url 'login' %}"
+                                   class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
+                                    <i class="fas fa-sign-in-alt"></i> Login
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
-                </div>
-
-                
-                <!-- Mobile menu button -->
-                <div class="md:hidden">
-                    <button id="mobile-menu-button" class="text-white hover:bg-green-800 p-2 rounded-md" aria-label="Toggle mobile menu">
-                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    </button>
+                    <!-- Mobile menu button -->
+                    <div class="md:hidden">
+                        <button id="mobile-menu-button"
+                                class="text-white hover:bg-green-800 p-2 rounded-md"
+                                aria-label="Toggle mobile menu">
+                            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Mobile menu -->
-        <div id="mobile-menu" class="md:hidden mobile-menu hidden bg-green-800">
-            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-                <a href="{% url 'places:home' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🏠 Home</a>
-                
-                {% if user.is_authenticated %}
-                    <a href="{% url 'places:add_place' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">➕ Add Place</a>
-                    
-                    <!-- Explore Submenu -->
-                    <div class="px-3 py-2">
-                        <button class="flex items-center justify-between w-full text-white text-base font-medium" onclick="toggleSubmenu('explore-submenu')">
-                            <span>🌍 Explore</span>
-                            <svg id="explore-arrow" class="h-5 w-5 transform rotate-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div id="explore-submenu" class="mobile-submenu max-h-0">
-                            <div class="pl-4 mt-2 space-y-2">
-                                <a href="{% url 'places:collections' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">📁 Collections</a>
-                                <a href="{% url 'places:favorites' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">❤️ Favorites</a>
-                                <a href="{% url 'places:check_ins' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🗺️ Check-ins</a>
-                                <a href="{% url 'places:review_places' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🗺️ Reviewed Places</a>
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="md:hidden mobile-menu hidden bg-green-800">
+                <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                    <a href="{% url 'places:home' %}"
+                       class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-home"></i> Home</a>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'places:add_place' %}"
+                           class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-plus"></i> Add Place</a>
+                        <!-- Explore Submenu -->
+                        <div class="px-3 py-2">
+                            <button class="flex items-center justify-between w-full text-white text-base font-medium"
+                                    onclick="toggleSubmenu('explore-submenu')">
+                                <span><i class="fas fa-compass"></i> Explore</span>
+                                <svg id="explore-arrow"
+                                     class="h-5 w-5 transform rotate-0"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="explore-submenu" class="mobile-submenu max-h-0">
+                                <div class="pl-4 mt-2 space-y-2">
+                                    <a href="{% url 'places:trails' %}"
+                                       class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-hiking"></i> Trails</a>
+                                    <a href="{% url 'places:tour_list' %}"
+                                       class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-route"></i> Tours</a>
+                                    <a href="{% url 'places:favorites' %}"
+                                       class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-heart"></i> Favorites</a>
+                                    <a href="{% url 'places:check_ins' %}"
+                                       class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-map-marker-alt"></i> Check-ins</a>
+                                    <a href="{% url 'places:review_places' %}"
+                                       class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-star"></i> Reviewed Places</a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Achievements Submenu -->
-                    <div class="px-3 py-2">
-                        <button class="flex items-center justify-between w-full text-white text-base font-medium" onclick="toggleSubmenu('achievements-submenu')">
-                            <span>🏆 Achievements</span>
-                            <svg id="achievements-arrow" class="h-5 w-5 transform rotate-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div id="achievements-submenu" class="mobile-submenu max-h-0">
-                            <div class="pl-4 mt-2 space-y-2">
-                                <a href="{% url 'places:challenges' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🧩 Challenges</a>
-                                <a href="{% url 'places:badges' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🏅 Badges</a>
-                                <a href="{% url 'places:leaderboard' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🏆 Leaderboard</a>
+                        <!-- Achievements Submenu -->
+                        <div class="px-3 py-2">
+                            <button class="flex items-center justify-between w-full text-white text-base font-medium"
+                                    onclick="toggleSubmenu('achievements-submenu')">
+                                <span><i class="fas fa-trophy"></i> Achievements</span>
+                                <svg id="achievements-arrow"
+                                     class="h-5 w-5 transform rotate-0"
+                                     fill="none"
+                                     viewBox="0 0 24 24"
+                                     stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="achievements-submenu" class="mobile-submenu max-h-0">
+                                <div class="pl-4 mt-2 space-y-2">
+                                    <a href="{% url 'places:challenges' %}"
+                                       class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-puzzle-piece"></i> Challenges</a>
+                                    <a href="{% url 'places:badges' %}"
+                                       class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-medal"></i> Badges</a>
+                                    <a href="{% url 'places:leaderboard' %}"
+                                       class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-trophy"></i> Leaderboard</a>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Search Submenu -->
-                    <div class="px-3 py-2">
-                        <button class="flex items-center justify-between w-full text-white text-base font-medium" onclick="toggleSubmenu('search-submenu')">
-                            <span>🔍 Search</span>
+                        <!-- Search Submenu -->
+                        <div class="px-3 py-2">
+                            <!-- <button class="flex items-center justify-between w-full text-white text-base font-medium" onclick="toggleSubmenu('search-submenu')">
+                            <span><i class="fas fa-search"></i> Search</span>
                             <svg id="search-arrow" class="h-5 w-5 transform rotate-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                             </svg>
                         </button>
                         <div id="search-submenu" class="mobile-submenu max-h-0">
                             <div class="pl-4 mt-2 space-y-2">
-                                <a href="{% url 'places:search_results' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🔍 Search Results</a>
-                                <a href="{% url 'places:nearby_places' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🗺️ Nearby Places</a>
+                                <a href="{% url 'places:search_results' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-search"></i> Search Results</a>
+                                <a href="{% url 'places:nearby_places' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-map-marker-alt"></i> Nearby Places</a>
                             </div>
+                        </div> -->
                         </div>
-                    </div>
-                    
-                    <a href="{% url 'places:notifications' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🔔 Notifications</a>
-                    <a href="{% url 'places:profile' user.username %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">👤 Profile</a>
-                    <a href="{% url 'places:about' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">📖 About GhostPin</a>
-                    
-                    {% if user.is_staff %}
-                        <a href="{% url 'places:review_places' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">👨‍💼 Admin: Review Places</a>
+                        <a href="{% url 'places:notifications' %}"
+                           class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-bell"></i> Notifications</a>
+                        <a href="{% url 'places:profile' user.username %}"
+                           class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-user"></i> Profile</a>
+                        <a href="{% url 'places:about' %}"
+                           class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-info-circle"></i> About RoamLk</a>
+                        {% if user.is_staff %}
+                            <a href="{% url 'places:review_places' %}"
+                               class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-user-shield"></i> Admin: Review Places</a>
+                        {% endif %}
+                        <form method="POST" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="text-white block w-full text-left px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-sign-out-alt"></i> Logout ({{ user.username }})
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'login' %}"
+                           class="text-white block px-3 py-2 rounded-md text-base font-medium">🔑 Login</a>
                     {% endif %}
-                    
-                    <form method="POST" action="{% url 'logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="text-white block w-full text-left px-3 py-2 rounded-md text-base font-medium">
-                            🔒 Logout ({{ user.username }})
-                        </button>
-                    </form>
-                {% else %}
-                    <a href="{% url 'login' %}" class="text-white block px-3 py-2 rounded-md text-base font-medium">🔑 Login</a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
-
-    <!-- Messages -->
-    {% if messages %}
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} bg-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-100 border border-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-400 text-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-700 px-4 py-3 rounded mb-4">
-                    {{ message }}
                 </div>
-            {% endfor %}
-        </div>
-    {% endif %}
-
-    <!-- Universal Install Banner -->
-    <div id="install-banner" class="fixed bottom-0 left-0 right-0 bg-green-800 text-white p-4 z-50 hidden"
-     role="region" 
-     aria-label="App Installation Prompt">
-        <div id="install-message" class="mb-2 text-center" 
-         role="status" 
-         aria-live="polite"></div>
-        <div class="flex justify-center gap-3">
-            <button id="install-button" class="bg-white text-green-800 px-4 py-2 rounded hidden" 
-                aria-label="Install the GhostPin app">Install App</button>
-            <button onclick="hideBanner()" class="bg-green-900 px-4 py-2 rounded" 
-                aria-label="Dismiss installation prompt">Dismiss</button>
-        </div>
-    </div>
-
-
-
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {% block content %}
-        {% endblock %}
-    </main>
-
-    <!-- Footer -->
-    <footer class="bg-gray-800 text-white mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="text-center">
-                <p>&copy; 2025 GhostPin— A travel guide to Sri Lanka’s hidden treasures.</p>
-                <p class="mt-2 text-gray-400">Built with Django & Tailwind CSS</p>
+            </div>
+        </nav>
+        <!-- Messages -->
+        {% if messages %}
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} bg-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-100 border border-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-400 text-{% if message.tags == 'error' %}red{% elif message.tags == 'success' %}green{% else %}blue{% endif %}-700 px-4 py-3 rounded mb-4">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <!-- Universal Install Banner -->
+        <div id="install-banner"
+             class="fixed bottom-0 left-0 right-0 bg-green-800 text-white p-4 z-50 hidden"
+             role="region"
+             aria-label="App Installation Prompt">
+            <div id="install-message"
+                 class="mb-2 text-center"
+                 role="status"
+                 aria-live="polite"></div>
+            <div class="flex justify-center gap-3">
+                <button id="install-button"
+                        class="bg-white text-green-800 px-4 py-2 rounded hidden"
+                        aria-label="Install the RoamLk app">Install App</button>
+                <button onclick="hideBanner()"
+                        class="bg-green-900 px-4 py-2 rounded"
+                        aria-label="Dismiss installation prompt">Dismiss</button>
             </div>
         </div>
-    </footer>
-
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <!-- Leaflet Routing Machine JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.js"></script>
-    
-    <!-- Mobile menu toggle -->
-    <script>
+        <!-- Main Content -->
+        <main id="page-main" class="{% block main_class %}max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8{% endblock %}">
+            {% block content %}{% endblock %}
+        </main>
+        <footer class="bg-gray-900 text-gray-200 mt-16" role="contentinfo">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <!-- Branding -->
+                    <div class="space-y-4">
+                        <h2 class="text-white text-2xl font-bold">RoamLk</h2>
+                        <p class="text-gray-400 text-sm">Discover Sri Lanka’s hidden treasures with us.</p>
+                        <p class="text-gray-500 text-xs">&copy; 2025 RoamLk. Built with Django & Tailwind CSS</p>
+                    </div>
+                    <!-- Explore Links -->
+                    <div>
+                        <h3 class="text-white font-semibold mb-4">Explore</h3>
+                        <ul class="space-y-2 text-gray-400 text-sm">
+                            <li>
+                                <a href="{% url 'places:home' %}" class="hover:text-white">Home</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'places:about' %}" class="hover:text-white">About</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'places:trails' %}" class="hover:text-white">Trails</a>
+                            </li>
+                            <li>
+                                <a href="{% url 'places:nearby_places' %}" class="hover:text-white">Nearby Places</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Support Links -->
+                    <div>
+                        <h3 class="text-white font-semibold mb-4">Support</h3>
+                        <ul class="space-y-2 text-gray-400 text-sm">
+                            <li>
+                                {% if user.is_authenticated %}
+                                <a href="{% url 'places:profile' username=request.user.username %}"
+                                   class="hover:text-white">Profile</a>
+                                   {% endif %}
+                            </li>
+                            <li>
+                                {% if user.is_authenticated %}
+                                <a href="{% url 'places:notifications' %}" class="hover:text-white">Notifications</a>
+                                {% endif %}
+                            </li>
+                            <li>
+                                {% if user.is_authenticated %}
+                                <a href="{% url 'places:check_ins' %}" class="hover:text-white">Check-Ins</a>
+                                {% endif %}
+                            </li>
+                            <!-- <li><a href="#" class="hover:text-white">Contact</a></li> -->
+                            <li>
+                                <a href="{% url 'places:about' %}" class="hover:text-white">Privacy Policy</a>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Social & Newsletter -->
+                    <div class="space-y-4">
+                        <h3 class="text-white font-semibold mb-4">Connect</h3>
+                        <div class="flex space-x-4">
+                            <a href="#" class="hover:text-white"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="hover:text-white"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="hover:text-white"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="hover:text-white"><i class="fab fa-youtube"></i></a>
+                        </div>
+                        <!-- Newsletter -->
+                        <!-- <form class="flex flex-col sm:flex-row gap-2 mt-2">
+                    <input type="email" placeholder="Your email" class="px-3 py-2 rounded bg-gray-800 text-gray-200 focus:outline-none w-full sm:w-auto">
+                    <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white font-semibold">Subscribe</button>
+                    </form> -->
+                    </div>
+                </div>
+            </div>
+        </footer>
+        <!-- <script>
+    function promptPWAInstall() {
+        if (window.deferredPrompt) {
+        window.deferredPrompt.prompt();
+        window.deferredPrompt.userChoice.then(() => window.deferredPrompt = null);
+        } else {
+        alert('App install prompt not available.');
+        }
+    }
+        </script> -->
+        <!-- Leaflet JS -->
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <!-- Leaflet Routing Machine JS -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.js"></script>
+        <!-- Mobile menu toggle -->
+        <script>
         // Toggle main mobile menu
         document.getElementById('mobile-menu-button').addEventListener('click', function() {
             const menu = document.getElementById('mobile-menu');
@@ -361,8 +534,9 @@
         function toggleSubmenu(submenuId) {
             const submenu = document.getElementById(submenuId);
             const arrow = document.getElementById(submenuId.replace('-submenu', '-arrow'));
-            
-            if (submenu.style.maxHeight && submenu.style.maxHeight !== '0px') {
+            const isOpen = submenu.style.maxHeight && submenu.style.maxHeight !== '0px';
+
+            if (isOpen) {
                 submenu.style.maxHeight = '0';
                 arrow.classList.remove('rotate-180');
                 arrow.classList.add('rotate-0');
@@ -372,9 +546,8 @@
                 arrow.classList.add('rotate-180');
             }
         }
-    </script>
-
-    <script>
+        </script>
+        <script>
         (function () {
             let deferredPrompt = null;
             const banner = document.getElementById('install-banner');
@@ -395,7 +568,7 @@
                 e.preventDefault();
                 deferredPrompt = e;
 
-                installMessage.innerText = 'Install GhostPin for offline access and better performance.';
+                installMessage.innerText = 'Install RoamLk for offline access and better performance.';
                 installBtn.classList.remove('hidden');
                 banner.classList.remove('hidden');
 
@@ -411,13 +584,13 @@
 
             // 2. iOS Safari
             if (isIOS && !isStandalone) {
-                installMessage.innerHTML = `To install GhostPin on iOS, tap the <i class="fas fa-share-square"></i> Share button and then "Add to Home Screen".`;
+                installMessage.innerHTML = `To install RoamLk on iOS, tap the <i class="fas fa-share-square"></i> Share button and then "Add to Home Screen".`;
                 banner.classList.remove('hidden');
             }
 
             // 3. Firefox
             if (isFirefox && !isStandalone) {
-                installMessage.innerText = 'To install GhostPin, tap the browser menu and choose "Add to Home Screen" or "Install App".';
+                installMessage.innerText = 'To install RoamLk, tap the browser menu and choose "Add to Home Screen" or "Install App".';
                 banner.classList.remove('hidden');
             }
 
@@ -435,8 +608,7 @@
             }
         })();
         </script>
-    {% block extra_js %}
-    {% endblock %}
-</body>
+        {% block extra_js %}
+        {% endblock %}
+    </body>
 </html>
-

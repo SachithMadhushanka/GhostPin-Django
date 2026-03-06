@@ -79,8 +79,12 @@ WSGI_APPLICATION = 'ghostpin.wsgi.application'  # WSGI application path
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # Using SQLite for simplicity
-        'NAME': BASE_DIR / 'db.sqlite3', # Database file location
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'roamlk',
+        'USER': 'roamuser',
+        'PASSWORD': 'Sm123456789',
+        'HOST': 'localhost',
+        'PORT': '5432',
     }
 }
 
@@ -129,6 +133,8 @@ STATIC_ROOT = BASE_DIR / 'staticfiles' # Directory where static files will be co
 MEDIA_URL = '/media/'   # URL to access media files
 MEDIA_ROOT = BASE_DIR / 'media' # Directory where media files are stored
 
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
@@ -140,8 +146,8 @@ LOGIN_REDIRECT_URL = '/'    # Redirect URL after successful login
 LOGOUT_REDIRECT_URL = '/'   # Redirect URL after logout
 
 # PWA Configuration
-PWA_APP_NAME = 'GhostPin - Explore Historical Places'   # App name
-PWA_APP_DESCRIPTION = 'Discover and explore historical places around the world' # App description
+PWA_APP_NAME = 'RoamLk - Where Explorers Belong'   # App name
+PWA_APP_DESCRIPTION = 'Explore. Check In. Level Up.' # App description
 PWA_APP_THEME_COLOR = '#4CAF50'  # Green theme color for the app
 PWA_APP_BACKGROUND_COLOR = '#ffffff'  # White background
 PWA_APP_ICONS = {
@@ -179,7 +185,7 @@ PWA_APP_SHORTCUTS = [
     {
         'name': 'Add New Place',    # Shortcut name
         'short_name': 'Add Place', # Short name for the shortcut
-        'description': 'Submit a new historical place', # Description
+        'description': 'Submit a new place', # Description
         'url': '/place/add/',   # URL to navigate to
         'icons': [{'src': '/static/icons/icon-192x192.png', 'sizes': '192x192'}],   # Icon for the shortcut
     }

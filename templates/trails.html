@@ -1,0 +1,283 @@
+{% extends 'base.html' %}
+{% load trail_tags %}
+{% block title %}Trails - RoamLk{% endblock %}
+{% block content %}
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-hiking text-green-600 mr-3"></i>
+                Place Trails
+            </h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                Discover curated trails of places created by our community.
+                Follow these routes to explore multiple connected locations.
+            </p>
+        </div>
+        <!-- Action Bar -->
+        <div class="mb-8 space-y-4">
+            <form method="get">
+                <div class="flex flex-col sm:flex-row gap-3 mb-3">
+                    <div class="relative flex-1">
+                        <input type="text"
+                               name="search"
+                               value="{{ search_query }}"
+                               placeholder="Search trails..."
+                               class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                        <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
+                    </div>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'places:create_trail' %}"
+                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap text-center">
+                            <i class="fas fa-plus mr-2"></i> Create Trail
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="flex flex-wrap gap-3 items-center">
+                    <select name="difficulty"
+                            class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 text-sm">
+                        <option value="">All Difficulties</option>
+                        <option value="easy"
+                                {% if selected_difficulty == 'easy' %}selected{% endif %}>Easy</option>
+                        <option value="moderate"
+                                {% if selected_difficulty == 'moderate' %}selected{% endif %}>Moderate</option>
+                        <option value="challenging"
+                                {% if selected_difficulty == 'challenging' %}selected{% endif %}>Challenging</option>
+                    </select>
+                    <select name="category"
+                            class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 text-sm">
+                        <option value="">All Categories</option>
+                        {% for cat in category_choices %}
+                            <option value="{{ cat.slug }}"
+                                    {% if selected_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="sort"
+                            class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 text-sm">
+                        <option value="created_at"
+                                {% if selected_sort == 'created_at' %}selected{% endif %}>Newest First</option>
+                        <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>Name A–Z</option>
+                        <option value="places" {% if selected_sort == 'places' %}selected{% endif %}>Most Places</option>
+                        <option value="difficulty"
+                                {% if selected_sort == 'difficulty' %}selected{% endif %}>Difficulty</option>
+                        <option value="popularity"
+                                {% if selected_sort == 'popularity' %}selected{% endif %}>Most Popular</option>
+                    </select>
+                    <button type="submit"
+                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm">
+                        <i class="fas fa-filter mr-1"></i> Filter
+                    </button>
+                    {% if search_query or selected_difficulty or selected_category %}
+                        <a href="{% url 'places:trails' %}"
+                           class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors text-sm">
+                            <i class="fas fa-times mr-1"></i> Clear
+                        </a>
+                    {% endif %}
+                    {# ✅ FIX: use paginator count, not |length on a page object #}
+                    <span class="ml-auto text-sm text-gray-500">
+                        {{ trails.paginator.count }} trail{{ trails.paginator.count|pluralize }} found
+                    </span>
+                </div>
+            </form>
+        </div>
+        <!-- Trails Grid -->
+        {% if trails %}
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {% for trail in trails %}
+                    <div class="bg-white rounded-lg shadow-lg overflow-hidden card-hover">
+                        <!-- Trail Header: cover image or gradient fallback -->
+                        <div class="relative h-40 overflow-hidden">
+                            {% if trail.cover_image %}
+                                <img src="{{ trail.cover_image.url }}"
+                                     alt="{{ trail.name }}"
+                                     class="w-full h-full object-cover">
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
+                            {% else %}
+                                <div class="gradient-bg w-full h-full"></div>
+                            {% endif %}
+                            <div class="absolute inset-0 p-4 flex flex-col justify-end text-white">
+                                <div class="flex items-start justify-between">
+                                    <h3 class="text-lg font-bold leading-tight drop-shadow">{{ trail.name }}</h3>
+                                    {% if trail.required_points > 0 %}
+                                        <span class="text-xs bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full whitespace-nowrap ml-2 flex-shrink-0">
+                                            <i class="fas fa-lock mr-1"></i>{{ trail.required_points }} pts
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center space-x-3 text-xs opacity-90 mt-1">
+                                    <span><i class="fas fa-map-marker-alt mr-1"></i>{{ trail.place_count }} places</span>
+                                    <span><i class="fas fa-user mr-1"></i>{{ trail.created_by.username }}</span>
+                                    {% if trail.distance %}<span><i class="fas fa-road mr-1"></i>{{ trail.distance|floatformat:0 }} km</span>{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Trail Content -->
+                        <div class="p-6">
+                            <p class="text-gray-600 mb-4 line-clamp-3">{{ trail.description }}</p>
+                            <!-- Trail Stats -->
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                                    <span class="flex items-center">
+                                        <i class="fas fa-clock mr-1 text-blue-500"></i>
+                                        {% if trail.estimated_duration %}
+                                            {{ trail.estimated_duration }}
+                                        {% else %}
+                                            Varies
+                                        {% endif %}
+                                    </span>
+                                    <span class="flex items-center">
+                                        <i class="fas fa-signal mr-1 {% if trail.difficulty == 'easy' %}text-green-500 {% elif trail.difficulty == 'moderate' %}text-yellow-500 {% else %}text-red-500{% endif %}"></i>
+                                        {{ trail.get_difficulty_display }}
+                                    </span>
+                                    {# ✅ NEW: popularity stat #}
+                                    {% if trail.checkin_count %}
+                                        <span class="flex items-center">
+                                            <i class="fas fa-shoe-prints mr-1 text-purple-500"></i>
+                                            {{ trail.checkin_count }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <!-- Sample Places Preview -->
+                            <div class="mb-4">
+                                <h4 class="text-sm font-semibold text-gray-700 mb-2">Places:</h4>
+                                <div class="flex flex-wrap gap-2">
+                                    {% for place in trail.places.all|slice:":3" %}
+                                        <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">{{ place.name|truncatechars:20 }}</span>
+                                    {% endfor %}
+                                    {% if trail.place_count > 3 %}
+                                        <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">+{{ trail.place_count|add:"-3" }} more</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {# ✅ FIX: progress is now attached in the view, not via a broken template tag #}
+                            {% if user.is_authenticated and trail.user_progress and trail.user_progress.completed > 0 %}
+                                <div class="mb-4">
+                                    <div class="flex justify-between text-xs text-gray-500 mb-1">
+                                        <span>Your Progress</span>
+                                        <span>{{ trail.user_progress.completed }}/{{ trail.user_progress.total }}
+                                            {% if trail.user_progress.percent == 100 %}✅{% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="w-full bg-gray-200 rounded-full h-2">
+                                        <div class="{% if trail.user_progress.percent == 100 %}bg-green-500{% else %}bg-blue-400{% endif %} h-2 rounded-full transition-all"
+                                             style="width: {{ trail.user_progress.percent }}%"></div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <!-- Action Button -->
+                            <a href="{% url 'places:trail_detail' trail.pk %}"
+                               class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center block">
+                                <i class="fas fa-route mr-2"></i>
+                                {% if trail.user_progress and trail.user_progress.percent == 100 %}
+                                    View Trail
+                                {% elif trail.user_progress and trail.user_progress.completed > 0 %}
+                                    Continue Trail
+                                {% else %}
+                                    Explore Trail
+                                {% endif %}
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {# ✅ FIX: Pagination controls — was completely missing #}
+            {% if is_paginated %}
+                <div class="mt-10 flex items-center justify-center gap-2">
+                    {% if trails.has_previous %}
+                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}&{% endif %}page={{ trails.previous_page_number }}"
+                           class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-chevron-left mr-1"></i> Previous
+                        </a>
+                    {% endif %}
+                    <span class="px-4 py-2 text-sm text-gray-600">Page {{ trails.number }} of {{ trails.paginator.num_pages }}</span>
+                    {% if trails.has_next %}
+                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}&{% endif %}page={{ trails.next_page_number }}"
+                           class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                            Next <i class="fas fa-chevron-right ml-1"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        {% else %}
+            <!-- Empty State -->
+            <div class="text-center py-16">
+                <div class="max-w-md mx-auto">
+                    <i class="fas fa-hiking text-8xl text-gray-300 mb-6"></i>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4">No Trails Found</h3>
+                    <p class="text-gray-600 mb-8">
+                        {% if search_query or selected_difficulty or selected_category %}
+                            No trails match your filters. Try adjusting your search.
+                        {% else %}
+                            Be the first to create a trail!
+                        {% endif %}
+                    </p>
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'places:create_trail' %}"
+                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-2"></i> Create First Trail
+                        </a>
+                    {% else %}
+                        <a href="{% url 'login' %}"
+                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            <i class="fas fa-sign-in-alt mr-2"></i> Login to Create Trails
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+        <!-- Why Use Trails? -->
+        {% if trails %}
+            <div class="mt-16 bg-white rounded-lg shadow-lg p-8">
+                <h2 class="text-2xl font-bold text-gray-900 mb-6">
+                    <i class="fas fa-star text-yellow-500 mr-2"></i>
+                    Why Use Trails?
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-route text-green-600 text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Planned Routes</h3>
+                        <p class="text-gray-600">Follow carefully planned trails that connect related places for a complete experience.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-users text-blue-600 text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Community Curated</h3>
+                        <p class="text-gray-600">Discover trails created by local experts and fellow explorers.</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-clock text-purple-600 text-2xl"></i>
+                        </div>
+                        <h3 class="font-semibold text-lg mb-2">Time Efficient</h3>
+                        <p class="text-gray-600">Save time planning with pre-organised routes that optimise your exploration.</p>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+{% block extra_js %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const cards = document.querySelectorAll('.card-hover');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        });
+        cards.forEach(card => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+            observer.observe(card);
+        });
+    });
+    </script>
+{% endblock %}

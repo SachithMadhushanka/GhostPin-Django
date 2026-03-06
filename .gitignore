@@ -1,7 +1,18 @@
+# mac
+.DS_Store
+
+# python
 __pycache__/
 *.pyc
+venv/
+
+# node
+node_modules/
+
+# django
+staticfiles/
+
 *.pyo
 *.pyd
 db.sqlite3
 media/
-venv/

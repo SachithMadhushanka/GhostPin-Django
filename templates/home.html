@@ -1,131 +1,1274 @@
 {% extends 'base.html' %}
+{% block title %}RoamLk — Discover Sri Lanka{% endblock %}
+{% block main_class %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* ═══════════════════════════════════════════════════════
+     FIX #1 — Break out of base.html's constrained <main>
+     Must be in <head> (extra_css block) so it applies
+     BEFORE the browser paints — JS-based override was
+     running too late, causing the blank hero.
+  ═══════════════════════════════════════════════════════ */
+  #page-main,
+  main {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+  html, body {
+    background-color: #faf7f2 !important;
+  }
 
-{% block title %}GhostPin - Discover Historical Places{% endblock %}
+  /* ── Design tokens ──────────────────────────────────── */
+  :root {
+    --forest: #1a3a2a;
+    --moss:   #2d5a3d;
+    --fern:   #3d7a52;
+    --leaf:   #52a96e;
+    --mint:   #a8d5b5;
+    --amber:  #e8a030;
+    --cream:  #faf7f2;
+    --bark:   #6b4c2a;
+  }
 
+  body { font-family: 'DM Sans', sans-serif; }
+  .font-display { font-family: 'Playfair Display', serif; }
+
+  /* ── All sections full-width ────────────────────────── */
+  section { width: 100%; box-sizing: border-box; }
+
+  /* ── Hero ───────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    width: 100%;
+    background: var(--forest);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+  }
+  .hero-bg-pattern {
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(ellipse 80% 50% at 70% 40%, rgba(61,122,82,.35) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 20% 70%, rgba(82,169,110,.15) 0%, transparent 50%);
+  }
+  .hero-grid {
+    position: absolute; inset: 0; opacity: .04;
+    background-image:
+      linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+  .hero-leaf {
+    position: absolute;
+    border-radius: 50% 0 50% 0;
+    opacity: .06;
+  }
+
+  /* ── Stat pills ─────────────────────────────────────── */
+  .stat-pill {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,.10);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 100px;
+    padding: 8px 18px;
+    color: white;
+    font-size: .82rem;
+    font-weight: 500;
+  }
+
+  /* ── Animations ─────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(32px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes float {
+    0%,100% { transform: translateY(0) rotate(0deg); }
+    50%      { transform: translateY(-18px) rotate(3deg); }
+  }
+
+  .anim-1 { animation: fadeUp .7s ease both; }
+  .anim-2 { animation: fadeUp .7s .15s ease both; }
+  .anim-3 { animation: fadeUp .7s .3s  ease both; }
+  .anim-4 { animation: fadeUp .7s .45s ease both; }
+  .anim-5 { animation: fadeUp .7s .6s  ease both; }
+
+  .float-1 { animation: float 8s ease-in-out infinite; }
+  .float-2 { animation: float 11s 2s ease-in-out infinite; }
+  .float-3 { animation: float 9s 1s ease-in-out infinite; }
+
+  /* ── Feature cards ──────────────────────────────────── */
+  .feature-card {
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s ease;
+  }
+  .feature-card:hover { transform: translateY(-6px); box-shadow: 0 24px 60px rgba(0,0,0,.18); }
+
+  /* ── Place cards ────────────────────────────────────── */
+  .place-card {
+    border-radius: 18px; overflow: hidden; background: white;
+    transition: transform .3s ease, box-shadow .3s ease;
+    box-shadow: 0 2px 16px rgba(0,0,0,.07);
+  }
+  .place-card:hover { transform: translateY(-5px); box-shadow: 0 16px 48px rgba(0,0,0,.14); }
+
+  /* ── Section labels ─────────────────────────────────── */
+  .section-label {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: .72rem; font-weight: 700;
+    letter-spacing: .12em; text-transform: uppercase;
+    color: var(--fern);
+  }
+  .section-label::before {
+    content: ''; display: block;
+    width: 24px; height: 2px;
+    background: var(--fern); border-radius: 2px;
+  }
+
+  /* ── Scroll reveal ──────────────────────────────────── */
+  .reveal {
+    opacity: 0; transform: translateY(24px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  /* ── Gradient text ──────────────────────────────────── */
+  .text-gradient {
+    background: linear-gradient(135deg, #52a96e 0%, #e8a030 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Achievement cards ──────────────────────────────── */
+  .achievement-card {
+    background: white;
+    border: 2px solid transparent;
+    border-radius: 16px;
+    transition: all .3s ease;
+  }
+  .achievement-card:hover {
+    border-color: var(--leaf);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(82,169,110,.18);
+  }
+
+  /* ── Tour card ──────────────────────────────────────── */
+  .tour-card {
+    border-radius: 20px; overflow: hidden; background: white;
+    transition: all .35s cubic-bezier(.22,1,.36,1);
+    box-shadow: 0 2px 16px rgba(0,0,0,.06);
+  }
+  .tour-card:hover { transform: translateY(-6px); box-shadow: 0 20px 52px rgba(0,0,0,.15); }
+
+  /* ── Leaderboard rows ───────────────────────────────── */
+  .lb-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 12px 16px; border-radius: 14px;
+    transition: background .2s ease;
+  }
+  .lb-row:hover { background: rgba(82,169,110,.07); }
+  .lb-rank { font-family: 'Playfair Display', serif; font-weight: 900; }
+
+  /* ── CTA strip ──────────────────────────────────────── */
+  .cta-strip {
+    background: linear-gradient(135deg, var(--forest) 0%, var(--moss) 50%, var(--bark) 100%);
+    position: relative; overflow: hidden;
+  }
+  .cta-strip::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: radial-gradient(ellipse 60% 80% at 80% 50%, rgba(232,160,48,.15) 0%, transparent 60%);
+  }
+
+  /* ── PWA prompt ─────────────────────────────────────── */
+  #roamlk-install-prompt {
+    background: var(--forest);
+    border: 1px solid rgba(255,255,255,.12);
+  }
+
+  /* ── Scrollbar ──────────────────────────────────────── */
+  .thin-scroll::-webkit-scrollbar { width: 4px; }
+  .thin-scroll::-webkit-scrollbar-track { background: transparent; }
+  .thin-scroll::-webkit-scrollbar-thumb { background: var(--mint); border-radius: 4px; }
+</style>
+{% endblock %}
+{% endblock %}
 {% block content %}
-<div class="text-center mb-12">
-    <h1 class="text-4xl md:text-6xl font-bold text-gray-800 mb-4">
-        Discover Sri Lanka Like Never Before
-    </h1>
-    <p class="text-xl text-gray-600 max-w-3xl mx-auto mb-8">
-        From ancient cities to hidden waterfalls and camping spots — explore Sri Lanka’s beauty with trusted tips from the GhostPin community.
-    </p>
-    
-    {% if user.is_authenticated %}
-        <a href="{% url 'places:add_place' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
-            📍 Add New Place
-        </a>
-    {% else %}
-        <a href="{% url 'login' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
-            🔐 Login to Add Places
-        </a>
-    {% endif %}
-</div>
+<!-- ════════════════════════════════════════════════════════
+     HERO
+════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-bg-pattern"></div>
+  <div class="hero-grid"></div>
 
-{% if places %}
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {% for place in places %}
-            <div class="bg-white rounded-lg shadow-md overflow-hidden card-hover">
-                {% if place.image %}
-                    <img src="{{ place.image.url }}" alt="{{ place.name }}" class="w-full h-48 object-cover">
-                {% else %}
-                    <div class="w-full h-48 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                        <span class="text-white text-6xl">🏛️</span>
-                    </div>
-                {% endif %}
-                
-                <div class="p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">{{ place.name }}</h3>
-                    <p class="text-gray-600 mb-4 line-clamp-3">
-                        {{ place.description|truncatewords:20 }}
-                    </p>
-                    
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center text-sm text-gray-500">
-                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
-                            </svg>
-                            {{ place.latitude|floatformat:4 }}, {{ place.longitude|floatformat:4 }}
-                        </div>
-                        <span class="text-xs text-gray-600">
-                            {{ place.created_at|date:"M d, Y" }}
-                        </span>
-                    </div>
-                    
-                    <div class="mt-4">
-                        <a href="{% url 'places:place_detail' place.pk %}" class="w-full bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors inline-block text-center">
-                            View Details
-                        </a>
-                    </div>
-                </div>
+  <!-- Floating decorative leaves -->
+  <div class="hero-leaf float-1" style="width:320px;height:320px;background:var(--fern);top:-60px;right:8%;"></div>
+  <div class="hero-leaf float-2" style="width:200px;height:200px;background:var(--leaf);bottom:10%;right:22%;"></div>
+  <div class="hero-leaf float-3" style="width:140px;height:140px;background:var(--amber);bottom:25%;right:6%;opacity:.08;"></div>
+
+  <div class="max-w-7xl mx-auto px-6 py-24 w-full relative z-10">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+
+      <!-- Left: copy -->
+      <div>
+        <div class="anim-1 mb-6">
+          <span class="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20
+                       text-white/80 text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full">
+            <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
+            Sri Lanka's Explorer Community
+          </span>
+        </div>
+
+        <h1 class="font-display text-white leading-[1.05] mb-6 anim-2"
+            style="font-size:clamp(2.8rem,6vw,5rem);">
+          Discover the<br>
+          <em class="text-gradient not-italic">Wild Heart</em><br>
+          of Sri Lanka
+        </h1>
+
+        <p class="text-white/65 text-lg leading-relaxed mb-8 max-w-lg anim-3">
+          Community-curated places, expert-led trails, and handcrafted tour packages —
+          every hidden gem, waterfall, and mountain path in one place.
+        </p>
+
+        <!-- CTAs -->
+        <div class="flex flex-wrap gap-3 mb-10 anim-4">
+          <a href="{% url 'places:home' %}"
+             class="inline-flex items-center gap-2 bg-white text-[var(--forest)] font-semibold
+                    px-6 py-3.5 rounded-xl hover:bg-[var(--cream)] transition-all active:scale-95 shadow-lg">
+            <i class="fas fa-compass text-[var(--fern)]"></i> Explore Places
+          </a>
+          <a href="{% url 'places:trails' %}"
+             class="inline-flex items-center gap-2 border border-white/30 text-white font-semibold
+                    px-6 py-3.5 rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm">
+            <i class="fas fa-route text-green-300"></i> View Trails
+          </a>
+          {% if not user.is_authenticated %}
+          <a href="{% url 'login' %}"
+             class="inline-flex items-center gap-2 border border-white/30 text-white font-semibold
+                    px-6 py-3.5 rounded-xl hover:bg-white/10 transition-all backdrop-blur-sm">
+            <i class="fas fa-sign-in-alt text-amber-300"></i> Sign In
+          </a>
+          {% endif %}
+        </div>
+
+        <!-- Live stats pills -->
+        <div class="flex flex-wrap gap-3 anim-5">
+          <div class="stat-pill">
+            <i class="fas fa-map-marker-alt text-green-400"></i>
+            <span><strong class="text-white">{{ total_places|default:"0" }}</strong> <span class="text-white/60">places</span></span>
+          </div>
+          <div class="stat-pill">
+            <i class="fas fa-route text-green-300"></i>
+            <span><strong class="text-white">{{ total_trails|default:"0" }}</strong> <span class="text-white/60">trails</span></span>
+          </div>
+          <div class="stat-pill">
+            <i class="fas fa-users text-amber-300"></i>
+            <span><strong class="text-white">{{ total_users|default:"0" }}</strong> <span class="text-white/60">explorers</span></span>
+          </div>
+          <div class="stat-pill">
+            <i class="fas fa-map-signs" style="color:var(--mint);"></i>
+            <span><strong class="text-white">{{ total_tours|default:"0" }}</strong> <span class="text-white/60">tours</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: feature tiles -->
+      <div class="hidden lg:grid grid-cols-2 gap-4 anim-3">
+
+        <a href="{% url 'places:trails' %}"
+           class="feature-card bg-gradient-to-br from-[#2d5a3d] to-[#1a3a2a] border border-white/10
+                  p-6 col-span-2 cursor-pointer text-white">
+          <div class="relative z-10">
+            <div class="text-3xl mb-3">🥾</div>
+            <div class="font-display text-xl font-bold mb-1">Curated Trails</div>
+            <div class="text-white/55 text-sm">Multi-stop hiking routes crafted by experts</div>
+            <div class="mt-4 flex items-center gap-2 text-green-300 text-xs font-semibold">
+              Browse all trails <i class="fas fa-arrow-right"></i>
             </div>
-        {% endfor %}
+          </div>
+        </a>
+
+        <a href="{% url 'places:tour_list' %}"
+           class="feature-card p-5 cursor-pointer text-white"
+           style="background:linear-gradient(135deg,#3d5a2a,#2a4a1a);">
+          <div class="relative z-10">
+            <div class="text-2xl mb-2">🗺️</div>
+            <div class="font-display font-bold text-lg leading-snug">Tour Packages</div>
+            <div class="text-white/50 text-xs mt-1">Book guided adventures</div>
+          </div>
+        </a>
+
+        <a href="{% url 'places:challenges' %}"
+           class="feature-card p-5 cursor-pointer text-white"
+           style="background:linear-gradient(135deg,#4a3a1a,#5a4a2a);">
+          <div class="relative z-10">
+            <div class="text-2xl mb-2">⚡</div>
+            <div class="font-display font-bold text-lg leading-snug">Challenges</div>
+            <div class="text-white/50 text-xs mt-1">Earn points & badges</div>
+          </div>
+        </a>
+
+        <a href="{% url 'places:leaderboard' %}"
+           class="feature-card p-5 cursor-pointer text-white col-span-2"
+           style="background:linear-gradient(135deg,#2a3a5a,#1a2a4a);">
+          <div class="relative z-10 flex items-center justify-between">
+            <div>
+              <div class="text-2xl mb-1">🏆</div>
+              <div class="font-display font-bold text-lg">Leaderboard</div>
+              <div class="text-white/50 text-xs mt-0.5">See top explorers</div>
+            </div>
+            <div class="text-4xl font-display font-black text-white/10">#1</div>
+          </div>
+        </a>
+
+      </div>
     </div>
-{% else %}
-    <div class="text-center py-16">
-        <div class="text-6xl mb-4">🏛️</div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">No Places Yet</h2>
-        <p class="text-gray-600 mb-8">Be the first to add a historical place to our collection!</p>
-        {% if user.is_authenticated %}
-            <a href="{% url 'places:add_place' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
-                Add the First Place
+
+    <!-- Scroll cue -->
+    <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/30 text-xs
+                flex flex-col items-center gap-2 animate-bounce">
+      <span style="writing-mode:vertical-rl;letter-spacing:.15em;text-transform:uppercase;font-size:.65rem;">Scroll</span>
+      <i class="fas fa-chevron-down"></i>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     FEATURE STRIP — 6 quick links
+════════════════════════════════════════════════════════ -->
+<section style="background:#fff;border-bottom:1px solid #f0ede8;">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid grid-cols-3 md:grid-cols-6 divide-x divide-gray-100">
+
+      <a href="{% url 'places:home' %}"
+         class="flex flex-col items-center gap-2 py-5 px-3 hover:bg-[var(--cream)] transition-colors group text-center">
+        <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center group-hover:bg-green-100 transition-colors">
+          <i class="fas fa-map-marker-alt text-[var(--fern)] text-sm"></i>
+        </div>
+        <span class="text-xs font-semibold text-gray-600 group-hover:text-[var(--fern)] transition-colors">Places</span>
+      </a>
+      <a href="{% url 'places:trails' %}"
+         class="flex flex-col items-center gap-2 py-5 px-3 hover:bg-[var(--cream)] transition-colors group text-center">
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+          <i class="fas fa-route text-emerald-600 text-sm"></i>
+        </div>
+        <span class="text-xs font-semibold text-gray-600 group-hover:text-emerald-600 transition-colors">Trails</span>
+      </a>
+      <a href="{% url 'places:tour_list' %}"
+         class="flex flex-col items-center gap-2 py-5 px-3 hover:bg-[var(--cream)] transition-colors group text-center">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 transition-colors">
+          <i class="fas fa-map-signs text-amber-600 text-sm"></i>
+        </div>
+        <span class="text-xs font-semibold text-gray-600 group-hover:text-amber-600 transition-colors">Tours</span>
+      </a>
+      <a href="{% url 'places:challenges' %}"
+         class="flex flex-col items-center gap-2 py-5 px-3 hover:bg-[var(--cream)] transition-colors group text-center">
+        <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-100 transition-colors">
+          <i class="fas fa-bolt text-orange-500 text-sm"></i>
+        </div>
+        <span class="text-xs font-semibold text-gray-600 group-hover:text-orange-500 transition-colors">Challenges</span>
+      </a>
+      <a href="{% url 'places:badges' %}"
+         class="flex flex-col items-center gap-2 py-5 px-3 hover:bg-[var(--cream)] transition-colors group text-center">
+        <div class="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center group-hover:bg-yellow-100 transition-colors">
+          <i class="fas fa-medal text-yellow-500 text-sm"></i>
+        </div>
+        <span class="text-xs font-semibold text-gray-600 group-hover:text-yellow-500 transition-colors">Badges</span>
+      </a>
+      <a href="{% url 'places:leaderboard' %}"
+         class="flex flex-col items-center gap-2 py-5 px-3 hover:bg-[var(--cream)] transition-colors group text-center">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+          <i class="fas fa-trophy text-blue-500 text-sm"></i>
+        </div>
+        <span class="text-xs font-semibold text-gray-600 group-hover:text-blue-500 transition-colors">Leaderboard</span>
+      </a>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     TRENDING PLACES
+════════════════════════════════════════════════════════ -->
+<section class="py-20 px-6" style="background:var(--cream);">
+  <div class="max-w-7xl mx-auto">
+
+    <div class="flex items-end justify-between mb-10 reveal">
+      <div>
+        <div class="section-label mb-3">Trending Now</div>
+        <h2 class="font-display text-4xl font-bold text-[var(--forest)]">Popular Places</h2>
+        <p class="text-gray-500 mt-2 text-sm max-w-md">
+          The most visited, loved, and talked-about spots across the island right now.
+        </p>
+      </div>
+      <a href="{% url 'places:home' %}"
+         class="hidden md:inline-flex items-center gap-2 text-sm font-semibold text-[var(--fern)]
+                hover:text-[var(--forest)] transition-colors border-b-2 border-transparent
+                hover:border-[var(--fern)] pb-0.5">
+        All Places <i class="fas fa-arrow-right text-xs"></i>
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for place in trending_places %}
+      <article class="place-card reveal group"
+               style="transition-delay:{{ forloop.counter0 }}00ms;">
+        <div class="relative h-52 overflow-hidden">
+          {% if place.image %}
+            <img src="{{ place.image.url }}" alt="{{ place.name }}"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+          {% else %}
+            <div class="w-full h-full bg-gradient-to-br from-[var(--fern)] to-[var(--forest)]
+                        flex items-center justify-center">
+              <i class="fas fa-mountain text-white text-4xl opacity-40"></i>
+            </div>
+          {% endif %}
+
+          <!-- FIX #2: category is M2M — use .all and grab first -->
+          {% with cats=place.category.all %}
+          {% if cats %}
+          <div class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[var(--forest)]
+                      text-xs font-semibold px-2.5 py-1 rounded-full">
+            {{ cats.0.name }}
+          </div>
+          {% endif %}
+          {% endwith %}
+
+          {% if place.vote_count %}
+          <div class="absolute top-3 right-3 bg-black/40 backdrop-blur-sm text-white text-xs
+                      font-semibold px-2 py-1 rounded-full flex items-center gap-1">
+            <i class="fas fa-arrow-up text-green-400" style="font-size:.65rem;"></i>
+            {{ place.vote_count }}
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="p-5">
+          <h3 class="font-semibold text-gray-900 text-base mb-1.5 group-hover:text-[var(--fern)]
+                     transition-colors leading-snug">
+            {{ place.name }}
+          </h3>
+          <p class="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
+            {{ place.description|truncatewords:18 }}
+          </p>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3 text-xs text-gray-400">
+              {% if place.check_in_count %}
+              <span class="flex items-center gap-1">
+                <i class="fas fa-check-circle text-green-400"></i>
+                {{ place.check_in_count }} check-ins
+              </span>
+              {% endif %}
+              {% if place.comment_count %}
+              <span class="flex items-center gap-1">
+                <i class="fas fa-comment text-blue-400"></i>
+                {{ place.comment_count }}
+              </span>
+              {% endif %}
+            </div>
+            <a href="{% url 'places:place_detail' place.slug %}"
+               class="text-xs font-semibold text-[var(--fern)] hover:text-[var(--forest)]
+                      transition-colors flex items-center gap-1">
+              Explore <i class="fas fa-arrow-right" style="font-size:.6rem;"></i>
             </a>
+          </div>
+        </div>
+      </article>
+      {% empty %}
+      {% for place in places %}
+      <article class="place-card reveal group"
+               style="transition-delay:{{ forloop.counter0 }}00ms;">
+        <div class="relative h-52 overflow-hidden">
+          {% if place.image %}
+            <img src="{{ place.image.url }}" alt="{{ place.name }}"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+          {% else %}
+            <div class="w-full h-full bg-gradient-to-br from-[var(--fern)] to-[var(--forest)]
+                        flex items-center justify-center">
+              <i class="fas fa-mountain text-white text-4xl opacity-40"></i>
+            </div>
+          {% endif %}
+
+          {% with cats=place.category.all %}
+          {% if cats %}
+          <div class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm text-[var(--forest)]
+                      text-xs font-semibold px-2.5 py-1 rounded-full">
+            {{ cats.0.name }}
+          </div>
+          {% endif %}
+          {% endwith %}
+        </div>
+        <div class="p-5">
+          <h3 class="font-semibold text-gray-900 text-base mb-1.5 group-hover:text-[var(--fern)]
+                     transition-colors">
+            {{ place.name }}
+          </h3>
+          <p class="text-gray-500 text-sm leading-relaxed mb-3 line-clamp-2">
+            {{ place.description|truncatewords:15 }}
+          </p>
+          <a href="{% url 'places:place_detail' place.slug %}"
+             class="text-xs font-semibold text-[var(--fern)] hover:text-[var(--forest)]
+                    transition-colors flex items-center gap-1">
+            Explore <i class="fas fa-arrow-right" style="font-size:.6rem;"></i>
+          </a>
+        </div>
+      </article>
+      {% endfor %}
+      {% endfor %}
+    </div>
+
+    <div class="text-center mt-10 reveal">
+      <a href="{% url 'places:home' %}"
+         class="inline-flex items-center gap-2 border-2 border-[var(--fern)] text-[var(--fern)]
+                font-semibold px-7 py-3 rounded-xl hover:bg-[var(--fern)] hover:text-white transition-all">
+        View All Places <i class="fas fa-arrow-right text-xs"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     FEATURED TRAILS
+════════════════════════════════════════════════════════ -->
+<section class="py-20 px-6" style="background:var(--forest);">
+  <div class="max-w-7xl mx-auto">
+
+    <div class="flex items-end justify-between mb-10 reveal">
+      <div>
+        <div class="section-label mb-3" style="color:var(--mint);">
+          <span style="display:block;width:24px;height:2px;background:var(--mint);border-radius:2px;"></span>
+          Curated Routes
+        </div>
+        <h2 class="font-display text-4xl font-bold text-white">Featured Trails</h2>
+        <p class="text-white/50 mt-2 text-sm max-w-md">
+          Expert-assembled journeys connecting the island's finest natural landmarks.
+        </p>
+      </div>
+      <a href="{% url 'places:trails' %}"
+         class="hidden md:inline-flex items-center gap-2 text-sm font-semibold text-[var(--mint)]
+                hover:text-white transition-colors border-b-2 border-transparent
+                hover:border-[var(--mint)] pb-0.5">
+        All Trails <i class="fas fa-arrow-right text-xs"></i>
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {% for trail in featured_trails %}
+      <a href="{% url 'places:trail_detail' trail.pk %}"
+         class="group relative rounded-2xl overflow-hidden cursor-pointer reveal"
+         style="height:340px;transition-delay:{{ forloop.counter0 }}20ms;">
+
+        {% if trail.cover_image %}
+        <img src="{{ trail.cover_image.url }}" alt="{{ trail.name }}"
+            class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
         {% else %}
-            <a href="{% url 'login' %}" class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">
-                Login to Get Started
-            </a>
+        <div class="absolute inset-0
+          {% if forloop.counter == 1 %}bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900
+          {% elif forloop.counter == 2 %}bg-gradient-to-br from-green-800 via-emerald-700 to-green-900
+          {% else %}bg-gradient-to-br from-teal-900 via-green-900 to-emerald-800{% endif %}">
+        </div>
         {% endif %}
+
+        <div class="absolute inset-0 opacity-20"
+             style="background-image:url('data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%23fff\' fill-opacity=\'.4\'%3E%3Cpath d=\'M0 40L40 0H20L0 20M40 40V20L20 40\'/%3E%3C/g%3E%3C/svg%3E');"></div>
+
+        <div class="absolute inset-0 bg-white opacity-0 group-hover:opacity-5 transition-opacity duration-500"></div>
+
+        <div class="absolute inset-0 p-6 flex flex-col justify-between">
+          <div>
+            {% if trail.difficulty %}
+            <span class="inline-block text-xs font-bold px-3 py-1 rounded-full mb-3
+              {% if trail.difficulty == 'easy' %}bg-green-400/20 text-green-300 border border-green-400/30
+              {% elif trail.difficulty == 'moderate' %}bg-yellow-400/20 text-yellow-300 border border-yellow-400/30
+              {% else %}bg-red-400/20 text-red-300 border border-red-400/30{% endif %}">
+              {{ trail.get_difficulty_display|default:trail.difficulty|title }}
+            </span>
+            {% endif %}
+          </div>
+
+          <div>
+            <h3 class="font-display text-2xl font-bold text-white leading-tight mb-2
+                       group-hover:text-[var(--mint)] transition-colors">
+              {{ trail.name }}
+            </h3>
+            {% if trail.description %}
+            <p class="text-white/50 text-sm leading-relaxed mb-4 line-clamp-2">
+              {{ trail.description|truncatewords:15 }}
+            </p>
+            {% endif %}
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4 text-xs text-white/50">
+                <!-- FIX #3: use trailplace_set for through-model count -->
+                {% with place_count=trail.trailplace_set.count %}
+                {% if place_count %}
+                <span class="flex items-center gap-1.5">
+                  <i class="fas fa-map-marker-alt text-[var(--mint)]"></i>
+                  {{ place_count }} place{% if place_count != 1 %}s{% endif %}
+                </span>
+                {% endif %}
+                {% endwith %}
+                {% if trail.estimated_duration %}
+                <span class="flex items-center gap-1.5">
+                  <i class="fas fa-clock text-amber-400"></i>
+                  {{ trail.estimated_duration }}
+                </span>
+                {% endif %}
+              </div>
+              <div class="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center
+                          group-hover:bg-[var(--leaf)] group-hover:scale-110 transition-all">
+                <i class="fas fa-arrow-right text-white text-xs"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% empty %}
+      <div class="col-span-3 text-center py-16">
+        <i class="fas fa-route text-white/20 text-5xl mb-4 block"></i>
+        <p class="text-white/40">No trails yet.</p>
+        {% if user.is_authenticated %}
+        <a href="{% url 'places:create_trail' %}"
+           class="inline-flex items-center gap-2 mt-4 bg-[var(--fern)] text-white px-5 py-2.5
+                  rounded-xl text-sm font-semibold hover:bg-[var(--leaf)] transition-colors">
+          <i class="fas fa-plus"></i> Create First Trail
+        </a>
+        {% endif %}
+      </div>
+      {% endfor %}
     </div>
+
+    <div class="text-center mt-10 reveal">
+      <a href="{% url 'places:trails' %}"
+         class="inline-flex items-center gap-2 border-2 border-white/20 text-white/80
+                font-semibold px-7 py-3 rounded-xl hover:bg-white/10 hover:text-white
+                transition-all backdrop-blur-sm">
+        All Trails <i class="fas fa-arrow-right text-xs"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     TOUR PACKAGES
+════════════════════════════════════════════════════════ -->
+{% if featured_tours %}
+<section class="py-20 px-6" style="background:#f5f0e8;">
+  <div class="max-w-7xl mx-auto">
+
+    <div class="flex items-end justify-between mb-10 reveal">
+      <div>
+        <div class="section-label mb-3">Guided Experiences</div>
+        <h2 class="font-display text-4xl font-bold text-[var(--forest)]">Tour Packages</h2>
+        <p class="text-gray-500 mt-2 text-sm max-w-md">
+          All-inclusive adventures led by locals. Pick up, drop off, and every meal handled.
+        </p>
+      </div>
+      <a href="{% url 'places:tour_list' %}"
+         class="hidden md:inline-flex items-center gap-2 text-sm font-semibold text-[var(--bark)]
+                hover:text-[var(--forest)] transition-colors border-b-2 border-transparent
+                hover:border-[var(--bark)] pb-0.5">
+        All Tours <i class="fas fa-arrow-right text-xs"></i>
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for tour in featured_tours %}
+      <article class="tour-card reveal group"
+               style="transition-delay:{{ forloop.counter0 }}10ms;">
+        <div class="relative h-48 overflow-hidden bg-gradient-to-br from-[var(--moss)] to-[var(--forest)]">
+          {% if tour.image %}
+          <img src="{{ tour.image.url }}" alt="{{ tour.name }}"
+               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+          {% else %}
+          <div class="w-full h-full flex items-center justify-center">
+            <i class="fas fa-mountain text-white text-4xl opacity-30"></i>
+          </div>
+          {% endif %}
+          <div class="absolute top-3 right-3 bg-white/95 rounded-xl px-3 py-1.5 shadow">
+            <div class="text-xs text-gray-400">per person</div>
+            <div class="text-sm font-black text-[var(--fern)]">LKR {{ tour.price_lkr|floatformat:0 }}</div>
+          </div>
+          <div class="absolute bottom-3 left-3 bg-black/40 backdrop-blur-sm text-white text-xs
+                      font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5">
+            <i class="fas fa-clock text-[var(--mint)]"></i> {{ tour.duration_display }}
+          </div>
+        </div>
+        <div class="p-5">
+          <h3 class="font-semibold text-gray-900 text-base leading-snug mb-1.5
+                     group-hover:text-[var(--fern)] transition-colors">{{ tour.name }}</h3>
+          <p class="text-gray-400 text-sm line-clamp-2 mb-4">{{ tour.description|truncatewords:14 }}</p>
+          <div class="flex items-center justify-between">
+            <div class="flex flex-wrap gap-1.5">
+              {% for o in tour.offerings.all|slice:":2" %}
+              <span class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{{ o.name }}</span>
+              {% endfor %}
+              {% if tour.offerings.count > 2 %}
+              <span class="text-xs text-gray-400">+{{ tour.offerings.count|add:"-2" }}</span>
+              {% endif %}
+            </div>
+            <a href="{% url 'places:tour_detail' slug=tour.slug %}"
+               class="text-xs font-semibold text-[var(--fern)] hover:text-[var(--forest)]
+                      transition-colors flex items-center gap-1">
+              Details <i class="fas fa-arrow-right" style="font-size:.6rem;"></i>
+            </a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+
+    <div class="text-center mt-10 reveal">
+      <a href="{% url 'places:tour_list' %}"
+         class="inline-flex items-center gap-2 border-2 border-[var(--bark)] text-[var(--bark)]
+                font-semibold px-7 py-3 rounded-xl hover:bg-[var(--bark)] hover:text-white transition-all">
+        Browse All Tours <i class="fas fa-arrow-right text-xs"></i>
+      </a>
+    </div>
+  </div>
+</section>
 {% endif %}
 
-<!-- Install PWA Prompt -->
-<div id="install-prompt" class="fixed bottom-4 right-4 bg-white rounded-lg shadow-lg p-4 hidden">
-    <div class="flex items-center">
-        <div class="mr-3">
-            <span class="text-2xl">📱</span>
-        </div>
-        <div class="flex-1">
-            <p class="text-sm font-medium text-gray-800">Install GhostPin</p>
-            <p class="text-xs text-gray-600">Add to your home screen for quick access</p>
-        </div>
-        <div class="ml-3">
-            <button id="install-button" class="bg-green-500 text-white px-3 py-1 rounded text-xs font-medium">
-                Install
-            </button>
-            <button id="dismiss-button" class="text-gray-400 ml-2 text-xs">
-                ✕
-            </button>
-        </div>
+
+<!-- ════════════════════════════════════════════════════════
+     ACHIEVEMENTS — badges + challenges
+════════════════════════════════════════════════════════ -->
+<section class="py-20 px-6" style="background:var(--cream);">
+  <div class="max-w-7xl mx-auto">
+
+    <div class="text-center mb-12 reveal">
+      <div class="section-label mb-3 justify-center">Gamification</div>
+      <h2 class="font-display text-4xl font-bold text-[var(--forest)]">Earn as You Explore</h2>
+      <p class="text-gray-500 mt-3 max-w-xl mx-auto text-sm leading-relaxed">
+        Every check-in, review, and discovery earns you points, badges, and a spot on the leaderboard.
+      </p>
     </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+      <!-- Badges panel -->
+      <div class="reveal">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7 h-full">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="font-display text-xl font-bold text-[var(--forest)]">Badges</h3>
+              <p class="text-gray-400 text-xs mt-0.5">Collect them all by hitting milestones</p>
+            </div>
+            <a href="{% url 'places:badges' %}"
+               class="text-xs font-semibold text-[var(--fern)] hover:text-[var(--forest)]
+                      flex items-center gap-1 border-b border-transparent hover:border-[var(--fern)]">
+              See all <i class="fas fa-arrow-right" style="font-size:.6rem;"></i>
+            </a>
+          </div>
+
+          {% if featured_badges %}
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {% for badge in featured_badges %}
+            <div class="achievement-card p-4 text-center">
+              <div class="w-12 h-12 mx-auto mb-2.5 rounded-2xl bg-yellow-50 flex items-center justify-center text-2xl">
+                {% if badge.image %}
+                  <img src="{{ badge.image.url }}" class="w-10 h-10 rounded-xl object-cover" alt="{{ badge.name }}">
+                {% else %}
+                  {{ badge.icon|default:"🏅" }}
+                {% endif %}
+              </div>
+              <div class="text-xs font-semibold text-gray-700 leading-snug">{{ badge.name }}</div>
+              {% if badge.points_required %}
+              <div class="text-xs text-[var(--fern)] font-bold mt-1">+{{ badge.points_required }} pts</div>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="grid grid-cols-3 gap-3">
+            <!-- Placeholder badges -->
+            <div class="achievement-card p-4 text-center opacity-60">
+              <div class="w-12 h-12 mx-auto mb-2 rounded-2xl bg-yellow-50 flex items-center justify-center text-xl">🥾</div>
+              <div class="text-xs font-semibold text-gray-500">First Steps</div>
+            </div>
+            <div class="achievement-card p-4 text-center opacity-60">
+              <div class="w-12 h-12 mx-auto mb-2 rounded-2xl bg-yellow-50 flex items-center justify-center text-xl">🗺️</div>
+              <div class="text-xs font-semibold text-gray-500">Trailblazer</div>
+            </div>
+            <div class="achievement-card p-4 text-center opacity-60">
+              <div class="w-12 h-12 mx-auto mb-2 rounded-2xl bg-yellow-50 flex items-center justify-center text-xl">📸</div>
+              <div class="text-xs font-semibold text-gray-500">Photographer</div>
+            </div>
+            <div class="achievement-card p-4 text-center opacity-60">
+              <div class="w-12 h-12 mx-auto mb-2 rounded-2xl bg-yellow-50 flex items-center justify-center text-xl">🏕️</div>
+              <div class="text-xs font-semibold text-gray-500">Camper</div>
+            </div>
+            <div class="achievement-card p-4 text-center opacity-60">
+              <div class="w-12 h-12 mx-auto mb-2 rounded-2xl bg-yellow-50 flex items-center justify-center text-xl">⭐</div>
+              <div class="text-xs font-semibold text-gray-500">Reviewer</div>
+            </div>
+            <div class="achievement-card p-4 text-center opacity-60">
+              <div class="w-12 h-12 mx-auto mb-2 rounded-2xl bg-yellow-50 flex items-center justify-center text-xl">🏆</div>
+              <div class="text-xs font-semibold text-gray-500">Champion</div>
+            </div>
+          </div>
+          {% endif %}
+
+          <a href="{% url 'places:badges' %}"
+             class="mt-6 w-full flex items-center justify-center gap-2 bg-[var(--forest)] text-white
+                    font-semibold text-sm py-3 rounded-xl hover:bg-[var(--moss)] transition-colors">
+            <i class="fas fa-medal"></i> View All Badges
+          </a>
+        </div>
+      </div>
+
+      <!-- Challenges panel -->
+      <div class="reveal" style="transition-delay:.1s;">
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7 h-full">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="font-display text-xl font-bold text-[var(--forest)]">Active Challenges</h3>
+              <p class="text-gray-400 text-xs mt-0.5">Check in to auto-track your progress</p>
+            </div>
+            <a href="{% url 'places:challenges' %}"
+               class="text-xs font-semibold text-orange-500 hover:text-orange-700
+                      flex items-center gap-1 border-b border-transparent hover:border-orange-400">
+              See all <i class="fas fa-arrow-right" style="font-size:.6rem;"></i>
+            </a>
+          </div>
+
+          {% if active_challenges %}
+          <div class="space-y-3">
+            {% for ch in active_challenges %}
+            <!-- FIX #4: use double quotes inside onclick so Django url tag parses correctly -->
+            <div class="flex items-center gap-4 p-4 rounded-xl border border-gray-100
+                        hover:border-orange-200 hover:bg-orange-50 transition-all cursor-pointer"
+                 onclick="window.location.href='{% url 'places:challenges' %}'"
+              <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-lg">
+                ⚡
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-semibold text-gray-800 text-sm truncate">{{ ch.title }}</div>
+                <div class="text-xs text-gray-400 mt-0.5">
+                  {% if ch.end_date %}Ends {{ ch.end_date|date:"M d" }}{% endif %}
+                  · +{{ ch.reward_points }} pts
+                </div>
+                {% if user.is_authenticated and ch.user_progress %}
+                <div class="mt-2 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                  <div class="h-full bg-orange-400 rounded-full transition-all"
+                       style="width:{{ ch.user_progress.percent }}%"></div>
+                </div>
+                {% endif %}
+              </div>
+              <div class="text-orange-500 font-black text-sm flex-shrink-0">
+                +{{ ch.reward_points }}<span class="text-xs font-normal text-gray-400"> pts</span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="flex flex-col items-center justify-center h-40 text-center">
+            <div class="text-4xl mb-3">⚡</div>
+            <p class="text-gray-400 text-sm">No active challenges right now.</p>
+            <p class="text-gray-300 text-xs mt-1">Check back soon!</p>
+          </div>
+          {% endif %}
+
+          <a href="{% url 'places:challenges' %}"
+             class="mt-6 w-full flex items-center justify-center gap-2 bg-orange-500 text-white
+                    font-semibold text-sm py-3 rounded-xl hover:bg-orange-600 transition-colors">
+            <i class="fas fa-bolt"></i> View All Challenges
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     LEADERBOARD PREVIEW
+════════════════════════════════════════════════════════ -->
+<section class="py-20 px-6" style="background:var(--forest);">
+  <div class="max-w-5xl mx-auto">
+
+    <div class="text-center mb-12 reveal">
+      <div class="section-label mb-3 justify-center" style="color:var(--amber);">
+        <span style="display:block;width:24px;height:2px;background:var(--amber);border-radius:2px;"></span>
+        Community Rankings
+      </div>
+      <h2 class="font-display text-4xl font-bold text-white">Top Explorers</h2>
+      <p class="text-white/50 mt-2 text-sm">The most active contributors this month.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
+
+      <!-- Podium top 3 -->
+      {% for entry in top_explorers|slice:":3" %}
+      <div class="reveal {% if forloop.counter == 1 %}md:col-span-2{% else %}md:col-span-1{% endif %}"
+           style="transition-delay:{{ forloop.counter0 }}15ms;">
+        <div class="rounded-2xl p-5 text-center relative overflow-hidden
+             {% if forloop.counter == 1 %}bg-gradient-to-br from-amber-600/30 to-amber-800/20 border border-amber-500/30
+             {% elif forloop.counter == 2 %}bg-white/10 border border-white/10
+             {% else %}bg-white/5 border border-white/5{% endif %}">
+          {% if forloop.counter == 1 %}
+          <div class="absolute -top-2 -right-2 text-5xl opacity-15">🏆</div>
+          {% endif %}
+          <div class="lb-rank text-3xl {% if forloop.counter == 1 %}text-amber-400{% else %}text-white/30{% endif %} mb-2">
+            #{{ entry.rank|default:forloop.counter }}
+          </div>
+          <div class="w-14 h-14 mx-auto mb-2 rounded-full overflow-hidden border-2
+               {% if forloop.counter == 1 %}border-amber-400{% else %}border-white/20{% endif %}">
+            {% if entry.profile.avatar %}
+            <img src="{{ entry.profile.avatar.url }}" class="w-full h-full object-cover" alt="{{ entry.username }}">
+            {% else %}
+            <div class="w-full h-full bg-gradient-to-br from-green-600 to-emerald-800
+                        flex items-center justify-center text-white text-lg font-bold">
+              {{ entry.username|first|upper }}
+            </div>
+            {% endif %}
+          </div>
+          <div class="font-semibold text-white text-sm">{{ entry.username }}</div>
+          <div class="font-black text-xl {% if forloop.counter == 1 %}text-amber-400{% else %}text-white/70{% endif %} mt-1">
+            {{ entry.profile.points|default:0 }}
+          </div>
+          <div class="text-white/30 text-xs">points</div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="md:col-span-5 text-center py-8">
+        <p class="text-white/20 text-sm">Start exploring to rank up!</p>
+      </div>
+      {% endfor %}
+
+      <!-- Remaining 4-8 as list -->
+      {% if top_explorers|length > 3 %}
+      <div class="md:col-span-2 reveal" style="transition-delay:.05s;">
+        <div class="bg-white/5 border border-white/10 rounded-2xl p-4 h-full">
+          {% for entry in top_explorers|slice:"3:8" %}
+          <div class="lb-row">
+            <div class="lb-rank text-white/30 text-sm w-6">#{{ entry.rank }}</div>
+            <div class="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+              {% if entry.profile.avatar %}
+              <img src="{{ entry.profile.avatar.url }}" class="w-full h-full object-cover" alt="{{ entry.username }}">
+              {% else %}
+              <div class="w-full h-full bg-gradient-to-br from-green-700 to-emerald-900
+                          flex items-center justify-center text-white text-xs font-bold">
+                {{ entry.username|first|upper }}
+              </div>
+              {% endif %}
+            </div>
+            <div class="flex-1 text-white/80 text-sm font-medium truncate">{{ entry.username }}</div>
+            <div class="text-white/50 text-sm font-semibold">{{ entry.profile.points|default:0 }}</div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <div class="text-center reveal">
+      <a href="{% url 'places:leaderboard' %}"
+         class="inline-flex items-center gap-2 border-2 border-amber-500/40 text-amber-400
+                font-semibold px-7 py-3 rounded-xl hover:bg-amber-500/10 transition-all">
+        Full Leaderboard <i class="fas fa-arrow-right text-xs"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     HOW IT WORKS — 4 steps
+════════════════════════════════════════════════════════ -->
+<section class="py-20 px-6" style="background:var(--cream);">
+  <div class="max-w-5xl mx-auto">
+
+    <div class="text-center mb-14 reveal">
+      <h2 class="font-display text-4xl font-bold text-[var(--forest)]">How RoamLk Works</h2>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+
+      <div class="reveal" style="transition-delay:0s;">
+        <div class="w-14 h-14 bg-[var(--forest)] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <i class="fas fa-user-plus text-white text-xl"></i>
+        </div>
+        <div class="font-display text-4xl font-black text-[var(--mint)] mb-2 text-center">01</div>
+        <h3 class="font-semibold text-[var(--forest)] text-base text-center mb-2">Sign Up Free</h3>
+        <p class="text-gray-400 text-sm text-center leading-relaxed">
+          Join the community and create your explorer profile in seconds.
+        </p>
+      </div>
+
+      <div class="reveal" style="transition-delay:.1s;">
+        <div class="w-14 h-14 bg-[var(--fern)] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <i class="fas fa-map-marker-alt text-white text-xl"></i>
+        </div>
+        <div class="font-display text-4xl font-black text-[var(--mint)] mb-2 text-center">02</div>
+        <h3 class="font-semibold text-[var(--forest)] text-base text-center mb-2">Discover Places</h3>
+        <p class="text-gray-400 text-sm text-center leading-relaxed">
+          Browse hidden waterfalls, ancient ruins, campgrounds and scenic viewpoints.
+        </p>
+      </div>
+
+      <div class="reveal" style="transition-delay:.2s;">
+        <div class="w-14 h-14 bg-[var(--amber)] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <i class="fas fa-camera text-white text-xl"></i>
+        </div>
+        <div class="font-display text-4xl font-black text-[var(--mint)] mb-2 text-center">03</div>
+        <h3 class="font-semibold text-[var(--forest)] text-base text-center mb-2">Check In & Review</h3>
+        <p class="text-gray-400 text-sm text-center leading-relaxed">
+          Visit places, check in with photos, and share your experience with the community.
+        </p>
+      </div>
+
+      <div class="reveal" style="transition-delay:.3s;">
+        <div class="w-14 h-14 bg-[var(--bark)] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <i class="fas fa-trophy text-white text-xl"></i>
+        </div>
+        <div class="font-display text-4xl font-black text-[var(--mint)] mb-2 text-center">04</div>
+        <h3 class="font-semibold text-[var(--forest)] text-base text-center mb-2">Earn Rewards</h3>
+        <p class="text-gray-400 text-sm text-center leading-relaxed">
+          Collect points, unlock badges, complete challenges and climb the leaderboard.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════
+     CTA STRIP
+════════════════════════════════════════════════════════ -->
+{% if not user.is_authenticated %}
+<section class="cta-strip py-20 px-6">
+  <div class="max-w-3xl mx-auto text-center relative z-10 reveal">
+    <h2 class="font-display text-4xl md:text-5xl font-bold text-white mb-4">
+      Ready to Start Exploring?
+    </h2>
+    <p class="text-white/60 text-lg mb-8 max-w-xl mx-auto">
+      Join thousands of Sri Lankan explorers. It's completely free.
+    </p>
+    <div class="flex flex-wrap gap-4 justify-center">
+      <a href="{% url 'login' %}"
+         class="inline-flex items-center gap-2 bg-[var(--amber)] text-[var(--forest)] font-bold
+                px-8 py-4 rounded-xl hover:brightness-110 transition-all active:scale-95 shadow-lg text-base">
+        <i class="fas fa-user-plus"></i> Create Free Account
+      </a>
+      <a href="{% url 'places:home' %}"
+         class="inline-flex items-center gap-2 border-2 border-white/20 text-white font-semibold
+                px-8 py-4 rounded-xl hover:bg-white/10 transition-all text-base">
+        <i class="fas fa-compass"></i> Explore First
+      </a>
+    </div>
+  </div>
+</section>
+
+{% else %}
+<!-- Logged-in: personal action strip -->
+<section class="cta-strip py-16 px-6">
+  <div class="max-w-4xl mx-auto relative z-10 reveal">
+    <div class="text-center mb-8">
+      <h2 class="font-display text-3xl font-bold text-white mb-2">
+        Welcome back, {{ user.get_full_name|default:user.username }}! 👋
+      </h2>
+      <p class="text-white/50 text-sm">What will you discover today?</p>
+    </div>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <a href="{% url 'places:add_place' %}"
+         class="flex flex-col items-center gap-2 p-4 bg-white/10 border border-white/15
+                rounded-xl hover:bg-white/20 transition-all text-white text-center">
+        <i class="fas fa-map-marker-alt text-green-300 text-xl"></i>
+        <span class="text-sm font-semibold">Add Place</span>
+      </a>
+      <a href="{% url 'places:create_trail' %}"
+         class="flex flex-col items-center gap-2 p-4 bg-white/10 border border-white/15
+                rounded-xl hover:bg-white/20 transition-all text-white text-center">
+        <i class="fas fa-route text-emerald-300 text-xl"></i>
+        <span class="text-sm font-semibold">Create Trail</span>
+      </a>
+      <a href="{% url 'places:challenges' %}"
+         class="flex flex-col items-center gap-2 p-4 bg-white/10 border border-white/15
+                rounded-xl hover:bg-white/20 transition-all text-white text-center">
+        <i class="fas fa-bolt text-amber-300 text-xl"></i>
+        <span class="text-sm font-semibold">Challenges</span>
+      </a>
+      <!-- FIX #5: guard profile URL — only render when username exists -->
+      {% if user.username %}
+      <a href="{% url 'places:profile' username=user.username %}"
+         class="flex flex-col items-center gap-2 p-4 bg-white/10 border border-white/15
+                rounded-xl hover:bg-white/20 transition-all text-white text-center">
+        <i class="fas fa-user text-blue-300 text-xl"></i>
+        <span class="text-sm font-semibold">My Profile</span>
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+
+<!-- ════════════════════════════════════════════════════════
+     RECENTLY ADDED — paginated strip
+════════════════════════════════════════════════════════ -->
+{% if places %}
+<section class="py-16 px-6 bg-white">
+  <div class="max-w-7xl mx-auto">
+
+    <div class="flex items-end justify-between mb-8 reveal">
+      <div>
+        <div class="section-label mb-2">Latest Additions</div>
+        <h2 class="font-display text-3xl font-bold text-[var(--forest)]">Recently Added</h2>
+      </div>
+      {% if places.has_other_pages %}
+      <div class="hidden md:flex items-center gap-2">
+        {% if places.has_previous %}
+        <a href="?page={{ places.previous_page_number }}"
+           class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200
+                  text-gray-600 hover:bg-gray-50 transition-colors text-sm">
+          <i class="fas fa-chevron-left"></i>
+        </a>
+        {% endif %}
+        <span class="text-xs text-gray-400 px-2">{{ places.number }} / {{ places.paginator.num_pages }}</span>
+        {% if places.has_next %}
+        <a href="?page={{ places.next_page_number }}"
+           class="w-9 h-9 flex items-center justify-center rounded-lg border border-gray-200
+                  text-gray-600 hover:bg-gray-50 transition-colors text-sm">
+          <i class="fas fa-chevron-right"></i>
+        </a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+      {% for place in places %}
+      <a href="{% url 'places:place_detail' place.slug %}"
+         class="group reveal" style="transition-delay:{{ forloop.counter0 }}0ms;">
+        <div class="rounded-2xl overflow-hidden bg-white border border-gray-100
+                    hover:border-[var(--mint)] hover:shadow-lg transition-all">
+          <div class="h-32 overflow-hidden bg-gradient-to-br from-[var(--fern)] to-[var(--forest)]">
+            {% if place.image %}
+            <img src="{{ place.image.url }}" alt="{{ place.name }}"
+                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+            {% else %}
+            <div class="w-full h-full flex items-center justify-center">
+              <i class="fas fa-map-marker-alt text-white text-2xl opacity-40"></i>
+            </div>
+            {% endif %}
+          </div>
+          <div class="p-3">
+            <div class="font-semibold text-gray-800 text-xs leading-snug truncate
+                        group-hover:text-[var(--fern)] transition-colors">
+              {{ place.name }}
+            </div>
+            <div class="text-gray-400 text-xs mt-0.5 truncate">{{ place.created_at|date:"M d" }}</div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+
+    {% if places.has_other_pages %}
+    <div class="flex justify-center mt-8 gap-2 md:hidden">
+      {% if places.has_previous %}
+      <a href="?page={{ places.previous_page_number }}"
+         class="px-4 py-2 bg-white rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">
+        ← Prev
+      </a>
+      {% endif %}
+      <span class="px-4 py-2 text-gray-400 text-sm">{{ places.number }} / {{ places.paginator.num_pages }}</span>
+      {% if places.has_next %}
+      <a href="?page={{ places.next_page_number }}"
+         class="px-4 py-2 bg-white rounded-lg border border-gray-200 text-sm text-gray-600 hover:bg-gray-50">
+        Next →
+      </a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endif %}
+
+
+<!-- ════════════════════════════════════════════════════════
+     PWA Install Prompt
+════════════════════════════════════════════════════════ -->
+<div id="roamlk-install-prompt"
+     class="fixed bottom-5 right-5 rounded-2xl shadow-2xl p-4 hidden z-50
+            border border-white/10 backdrop-blur-md"
+     style="max-width:300px;">
+  <div class="flex items-start gap-3">
+    <div class="text-3xl flex-shrink-0">📱</div>
+    <div class="flex-1">
+      <p class="text-sm font-bold text-white mb-0.5">Install RoamLk</p>
+      <p class="text-xs text-white/60">Add to home screen for quick access</p>
+    </div>
+  </div>
+  <div class="flex gap-2 mt-3">
+    <button id="roamlk-install-btn"
+            class="flex-1 bg-[var(--leaf)] text-white text-xs font-bold py-2 rounded-lg
+                   hover:bg-[var(--fern)] transition-colors">
+      Install
+    </button>
+    <button id="roamlk-dismiss-btn"
+            class="text-white/40 hover:text-white/70 text-xs px-2 transition-colors">
+      Dismiss
+    </button>
+  </div>
 </div>
+
 {% endblock %}
+
 
 {% block extra_js %}
 <script>
-    // PWA Install Prompt
-    let deferredPrompt;
-    const installPrompt = document.getElementById('install-prompt');
-    const installButton = document.getElementById('install-button');
-    const dismissButton = document.getElementById('dismiss-button');
+// ── Scroll reveal ──────────────────────────────────────────
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      revealObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-        installPrompt.classList.remove('hidden');
-    });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
-    installButton.addEventListener('click', async () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            const { outcome } = await deferredPrompt.userChoice;
-            deferredPrompt = null;
-            installPrompt.classList.add('hidden');
-        }
-    });
+// ── PWA Install ────────────────────────────────────────────
+let deferredPrompt;
+const installPrompt = document.getElementById('roamlk-install-prompt');
+const installBtn    = document.getElementById('roamlk-install-btn');
+const dismissBtn    = document.getElementById('roamlk-dismiss-btn');
 
-    dismissButton.addEventListener('click', () => {
-        installPrompt.classList.add('hidden');
-    });
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installPrompt.classList.remove('hidden');
+});
+
+installBtn?.addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installPrompt.classList.add('hidden');
+  }
+});
+
+dismissBtn?.addEventListener('click', () => {
+  installPrompt.classList.add('hidden');
+});
 </script>
 {% endblock %}
-
