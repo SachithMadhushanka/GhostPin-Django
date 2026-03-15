@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}RoamLk — Discover Sri Lanka{% endblock %}
-{% block main_class %}
+{% block title %}Expearls — Discover Sri Lanka{% endblock %}
+<!-- {% block main_class %} -->
 {% block extra_css %}
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -187,7 +187,7 @@
   }
 
   /* ── PWA prompt ─────────────────────────────────────── */
-  #roamlk-install-prompt {
+  #expearls-install-prompt {
     background: var(--forest);
     border: 1px solid rgba(255,255,255,.12);
   }
@@ -198,7 +198,7 @@
   .thin-scroll::-webkit-scrollbar-thumb { background: var(--mint); border-radius: 4px; }
 </style>
 {% endblock %}
-{% endblock %}
+<!-- {% endblock %} -->
 {% block content %}
 <!-- ════════════════════════════════════════════════════════
      HERO
@@ -221,7 +221,7 @@
           <span class="inline-flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20
                        text-white/80 text-xs font-semibold tracking-widest uppercase px-4 py-2 rounded-full">
             <span class="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></span>
-            Sri Lanka's Explorer Community
+            Sri Lanka's 1<sup>st</sup> Explorer Community
           </span>
         </div>
 
@@ -849,7 +849,7 @@
             <!-- FIX #4: use double quotes inside onclick so Django url tag parses correctly -->
             <div class="flex items-center gap-4 p-4 rounded-xl border border-gray-100
                         hover:border-orange-200 hover:bg-orange-50 transition-all cursor-pointer"
-                 onclick="window.location.href='{% url 'places:challenges' %}'"
+                 onclick="window.location.href='{% url 'places:challenges' %}'">
               <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0 text-lg">
                 ⚡
               </div>
@@ -993,7 +993,7 @@
   <div class="max-w-5xl mx-auto">
 
     <div class="text-center mb-14 reveal">
-      <h2 class="font-display text-4xl font-bold text-[var(--forest)]">How RoamLk Works</h2>
+      <h2 class="font-display text-4xl font-bold text-[var(--forest)]">How Expearls Works</h2>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -1205,24 +1205,24 @@
 <!-- ════════════════════════════════════════════════════════
      PWA Install Prompt
 ════════════════════════════════════════════════════════ -->
-<div id="roamlk-install-prompt"
+<div id="expearls-install-prompt"
      class="fixed bottom-5 right-5 rounded-2xl shadow-2xl p-4 hidden z-50
             border border-white/10 backdrop-blur-md"
      style="max-width:300px;">
   <div class="flex items-start gap-3">
     <div class="text-3xl flex-shrink-0">📱</div>
     <div class="flex-1">
-      <p class="text-sm font-bold text-white mb-0.5">Install RoamLk</p>
+      <p class="text-sm font-bold text-white mb-0.5">Install Expearls</p>
       <p class="text-xs text-white/60">Add to home screen for quick access</p>
     </div>
   </div>
   <div class="flex gap-2 mt-3">
-    <button id="roamlk-install-btn"
+    <button id="expearls-install-btn"
             class="flex-1 bg-[var(--leaf)] text-white text-xs font-bold py-2 rounded-lg
                    hover:bg-[var(--fern)] transition-colors">
       Install
     </button>
-    <button id="roamlk-dismiss-btn"
+    <button id="expearls-dismiss-btn"
             class="text-white/40 hover:text-white/70 text-xs px-2 transition-colors">
       Dismiss
     </button>
@@ -1248,9 +1248,9 @@ document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
 
 // ── PWA Install ────────────────────────────────────────────
 let deferredPrompt;
-const installPrompt = document.getElementById('roamlk-install-prompt');
-const installBtn    = document.getElementById('roamlk-install-btn');
-const dismissBtn    = document.getElementById('roamlk-dismiss-btn');
+const installPrompt = document.getElementById('expearls-install-prompt');
+const installBtn    = document.getElementById('expearls-install-btn');
+const dismissBtn    = document.getElementById('expearls-dismiss-btn');
 
 window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();

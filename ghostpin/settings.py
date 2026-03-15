@@ -146,7 +146,7 @@ LOGIN_REDIRECT_URL = '/'    # Redirect URL after successful login
 LOGOUT_REDIRECT_URL = '/'   # Redirect URL after logout
 
 # PWA Configuration
-PWA_APP_NAME = 'RoamLk - Where Explorers Belong'   # App name
+PWA_APP_NAME = 'Expearls - Where Explorers Belong'   # App name
 PWA_APP_DESCRIPTION = 'Explore. Check In. Level Up.' # App description
 PWA_APP_THEME_COLOR = '#4CAF50'  # Green theme color for the app
 PWA_APP_BACKGROUND_COLOR = '#ffffff'  # White background

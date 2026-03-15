@@ -5,7 +5,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>
-            {% block title %}RoamLk - Explore Places{% endblock %}
+            {% block title %}Expearls - Explore Places{% endblock %}
         </title>
         <!-- PWA Meta Tags -->
         <meta name="theme-color" content="#4CAF50">
@@ -150,13 +150,12 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
                     <div class="flex items-center">
-                        <a href="{% url 'places:home' %}"
-                           class="flex items-center text-white text-xl font-bold">
+                        <a href="{% url 'places:home' %}" class="flex items-center text-white text-xl font-bold" style="font-family:'Dancing Script', cursive;">
                             <img src="{% static 'icons/web-app-manifest-512x512.png' %}"
-                                 alt="RoamLk Logo"
+                                 alt="Expearls Logo"
                                  class="h-8 w-8 mr-2 rounded-full bg-white p-1 shadow"
                                  style="object-fit:cover">
-                            RoamLk
+                            Expearls
                         </a>
                     </div>
                     <div class="hidden md:block">
@@ -249,7 +248,13 @@
                                                 {{ user.username|first|upper }}
                                             </div>
                                         {% endif %}
-                                        <span class="hidden sm:inline">{{ user.username }}</span>
+                                        <span class="hidden sm:inline">
+                                            {% if user.first_name or user.last_name %}
+                                                {{ user.first_name }} {{ user.last_name }}
+                                            {% else %}
+                                                {{ user.username }}
+                                            {% endif %}
+                                        </span>
                                     </button>
                                     <div class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-opacity duration-200 z-50 pointer-events-none group-hover:pointer-events-auto">
                                         <a href="{% url 'places:profile' user.username %}"
@@ -264,7 +269,7 @@
                                         {% endif %}
                                         <a href="{% url 'places:about' %}"
                                            class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                            <i class="fas fa-info-circle"></i> About RoamLk
+                                            <i class="fas fa-info-circle"></i> About Expearls
                                         </a>
                                         <form method="POST" action="{% url 'logout' %}">
                                             {% csrf_token %}
@@ -279,7 +284,7 @@
                             {% else %}
                                 <a href="{% url 'places:about' %}"
                                    class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
-                                    <i class="fas fa-info-circle"></i> About RoamLk
+                                    <i class="fas fa-info-circle"></i> About Expearls
                                 </a>
                                 <a href="{% url 'login' %}"
                                    class="text-white hover:bg-green-800 px-3 py-2 rounded-md text-sm font-medium transition-colors">
@@ -380,7 +385,7 @@
                         <a href="{% url 'places:profile' user.username %}"
                            class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-user"></i> Profile</a>
                         <a href="{% url 'places:about' %}"
-                           class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-info-circle"></i> About RoamLk</a>
+                           class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-info-circle"></i> About Expearls</a>
                         {% if user.is_staff %}
                             <a href="{% url 'places:review_places' %}"
                                class="text-white block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-user-shield"></i> Admin: Review Places</a>
@@ -421,7 +426,7 @@
             <div class="flex justify-center gap-3">
                 <button id="install-button"
                         class="bg-white text-green-800 px-4 py-2 rounded hidden"
-                        aria-label="Install the RoamLk app">Install App</button>
+                        aria-label="Install the Expearls app">Install App</button>
                 <button onclick="hideBanner()"
                         class="bg-green-900 px-4 py-2 rounded"
                         aria-label="Dismiss installation prompt">Dismiss</button>
@@ -429,44 +434,38 @@
         </div>
         <!-- Main Content -->
         <main id="page-main" class="{% block main_class %}max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8{% endblock %}">
-            {% block content %}{% endblock %}
+            {% block content %} {% endblock %}
         </main>
         <footer class="bg-gray-900 text-gray-200 mt-16" role="contentinfo">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-8">
+
                     <!-- Branding -->
                     <div class="space-y-4">
-                        <h2 class="text-white text-2xl font-bold">RoamLk</h2>
+                        <h2 class="text-white text-2xl font-bold" style="font-family:'Dancing Script', cursive;">Expearls</h2>
                         <p class="text-gray-400 text-sm">Discover Sri Lanka’s hidden treasures with us.</p>
-                        <p class="text-gray-500 text-xs">&copy; 2025 RoamLk. Built with Django & Tailwind CSS</p>
+                        <p class="text-center text-gray-400 text-xs mt-8">&copy; 2025 Expearls— A travel guide to Sri Lanka’s hidden treasures.</p>
                     </div>
+
                     <!-- Explore Links -->
                     <div>
                         <h3 class="text-white font-semibold mb-4">Explore</h3>
                         <ul class="space-y-2 text-gray-400 text-sm">
-                            <li>
-                                <a href="{% url 'places:home' %}" class="hover:text-white">Home</a>
-                            </li>
-                            <li>
-                                <a href="{% url 'places:about' %}" class="hover:text-white">About</a>
-                            </li>
-                            <li>
-                                <a href="{% url 'places:trails' %}" class="hover:text-white">Trails</a>
-                            </li>
-                            <li>
-                                <a href="{% url 'places:nearby_places' %}" class="hover:text-white">Nearby Places</a>
-                            </li>
+                            <li><a href="{% url 'places:home' %}" class="hover:text-white">Home</a></li>
+                            <li><a href="{% url 'places:about' %}" class="hover:text-white">About</a></li>
+                            <li><a href="{% url 'places:trails' %}" class="hover:text-white">Trails</a></li>
+                            <li><a href="{% url 'places:nearby_places' %}" class="hover:text-white">Nearby Places</a></li>
                         </ul>
                     </div>
+
                     <!-- Support Links -->
                     <div>
                         <h3 class="text-white font-semibold mb-4">Support</h3>
                         <ul class="space-y-2 text-gray-400 text-sm">
                             <li>
                                 {% if user.is_authenticated %}
-                                <a href="{% url 'places:profile' username=request.user.username %}"
-                                   class="hover:text-white">Profile</a>
-                                   {% endif %}
+                                <a href="{% url 'places:profile' username=request.user.username %}" class="hover:text-white">Profile</a>
+                                {% endif %}
                             </li>
                             <li>
                                 {% if user.is_authenticated %}
@@ -478,13 +477,29 @@
                                 <a href="{% url 'places:check_ins' %}" class="hover:text-white">Check-Ins</a>
                                 {% endif %}
                             </li>
-                            <!-- <li><a href="#" class="hover:text-white">Contact</a></li> -->
                             <li>
                                 <a href="{% url 'places:about' %}" class="hover:text-white">Privacy Policy</a>
                             </li>
                         </ul>
                     </div>
-                    <!-- Social & Newsletter -->
+
+                    <!-- Emergency Contacts -->
+                    <div>
+                        <h3 class="text-white font-semibold mb-4">Emergency</h3>
+                        <ul class="space-y-2 text-gray-400 text-sm">
+                            <li><i class="fas fa-shield-alt mr-2"></i> <a href="tel:119" class="hover:text-white">Police – 119</a></li>
+                            <li><i class="fas fa-ambulance mr-2"></i> <a href="tel:1990" class="hover:text-white">Suwa Seriya Ambulance – 1990</a></li>
+                            <li><i class="fas fa-fire-extinguisher mr-2"></i> <a href="tel:110" class="hover:text-white">Fire & Rescue – 110</a></li>
+                            <li><i class="fas fa-exclamation-triangle mr-2"></i> <a href="tel:112" class="hover:text-white">General Emergency – 112</a></li>
+                            <li><i class="fas fa-user-shield mr-2"></i> <a href="tel:1912" class="hover:text-white">Tourist Police – 1912</a></li>
+                            <li><i class="fas fa-hospital mr-2"></i> <a href="tel:0112691111" class="hover:text-white">National Hospital – 011 2691111</a></li>
+                            <li><i class="fas fa-plane mr-2"></i> <a href="tel:0112252861" class="hover:text-white">Airport Info – 011 2252861</a></li>
+                            <li><i class="fas fa-globe mr-2"></i> <a href="tel:0112426800" class="hover:text-white">Sri Lanka Tourism – 011 2426800</a></li>
+                            <li><i class="fas fa-shield-alt mr-2"></i> <a href="tel:118" class="hover:text-white">Police Emergency (Alt) – 118</a></li>
+                        </ul>
+                    </div>
+
+                    <!-- Social -->
                     <div class="space-y-4">
                         <h3 class="text-white font-semibold mb-4">Connect</h3>
                         <div class="flex space-x-4">
@@ -493,12 +508,8 @@
                             <a href="#" class="hover:text-white"><i class="fab fa-instagram"></i></a>
                             <a href="#" class="hover:text-white"><i class="fab fa-youtube"></i></a>
                         </div>
-                        <!-- Newsletter -->
-                        <!-- <form class="flex flex-col sm:flex-row gap-2 mt-2">
-                    <input type="email" placeholder="Your email" class="px-3 py-2 rounded bg-gray-800 text-gray-200 focus:outline-none w-full sm:w-auto">
-                    <button type="submit" class="bg-green-600 hover:bg-green-700 px-4 py-2 rounded text-white font-semibold">Subscribe</button>
-                    </form> -->
                     </div>
+
                 </div>
             </div>
         </footer>
@@ -568,7 +579,7 @@
                 e.preventDefault();
                 deferredPrompt = e;
 
-                installMessage.innerText = 'Install RoamLk for offline access and better performance.';
+                installMessage.innerText = 'Install Expearls for offline access and better performance.';
                 installBtn.classList.remove('hidden');
                 banner.classList.remove('hidden');
 
@@ -584,13 +595,13 @@
 
             // 2. iOS Safari
             if (isIOS && !isStandalone) {
-                installMessage.innerHTML = `To install RoamLk on iOS, tap the <i class="fas fa-share-square"></i> Share button and then "Add to Home Screen".`;
+                installMessage.innerHTML = `To install Expearls on iOS, tap the <i class="fas fa-share-square"></i> Share button and then "Add to Home Screen".`;
                 banner.classList.remove('hidden');
             }
 
             // 3. Firefox
             if (isFirefox && !isStandalone) {
-                installMessage.innerText = 'To install RoamLk, tap the browser menu and choose "Add to Home Screen" or "Install App".';
+                installMessage.innerText = 'To install Expearls, tap the browser menu and choose "Add to Home Screen" or "Install App".';
                 banner.classList.remove('hidden');
             }
 

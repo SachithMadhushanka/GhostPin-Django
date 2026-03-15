@@ -1,4 +1,4 @@
-const CACHE_NAME = 'roamlk-v1';
+const CACHE_NAME = 'expearls-v1';
 const urlsToCache = [
   '/',
   '/static/manifest.json',
@@ -112,7 +112,7 @@ self.addEventListener('push', function(event) {
   };
 
   event.waitUntil(
-    self.registration.showNotification('RoamLk', options)
+    self.registration.showNotification('Expearls', options)
   );
 });
 

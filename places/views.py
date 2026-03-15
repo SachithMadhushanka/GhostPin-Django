@@ -868,7 +868,7 @@ def _export_trail_gpx(trail, trail_places):
     """✅ FIX: Real GPX export instead of a fake success message."""
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
-        '<gpx version="1.1" creator="RoamLk" xmlns="http://www.topografix.com/GPX/1/1">',
+        '<gpx version="1.1" creator="Expearls" xmlns="http://www.topografix.com/GPX/1/1">',
         f"  <metadata><name>{trail.name}</name></metadata>",
         "  <rte>",
         f"    <name>{trail.name}</name>",
@@ -2041,18 +2041,21 @@ def edit_profile(request):
         if form.is_valid():
             profile_obj = form.save(commit=False)
 
-            # ── Avatar processing ─────────────────────────
+            # ── Avatar processing ─────────────────────────────────────
             if avatar_file:
                 resized = _resize_avatar(avatar_file)
                 if resized:
                     # Delete old avatar to save storage
                     if profile_obj.avatar:
-                        old_path = profile_obj.avatar.path
-                        if os.path.isfile(old_path):
-                            os.remove(old_path)
-                    ext      = 'jpg'
+                        try:
+                            old_path = profile_obj.avatar.path
+                            if os.path.isfile(old_path):
+                                os.remove(old_path)
+                        except (ValueError, OSError):
+                            pass
+                    ext = 'jpg'
                     filename = f'avatar_{user.pk}.{ext}'
-                    profile_obj.avatar.save(filename, resized, save=False)
+                    profile_obj.avatar.save(filename, resized, save=True) 
 
             # ── User model fields ─────────────────────────
             user.first_name = request.POST.get('first_name', '').strip()
@@ -2160,7 +2163,7 @@ def register(request):
             user = form.save()
             Notification.objects.create(
                 user=user,
-                title="Welcome to RoamLk!",
+                title="Welcome to Expearls!",
                 message="Thanks for signing up! Start exploring and adding places.",
                 notification_type="welcome",
             )

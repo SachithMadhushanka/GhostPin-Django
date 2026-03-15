@@ -138,7 +138,7 @@ class Place(models.Model):
     category = models.ManyToManyField(Category, related_name='places')
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='easy')
     accessibility_info = models.TextField(blank=True)
-    best_time_to_visit = models.CharField(max_length=100, blank=True)
+    best_time_to_visit = models.CharField(max_length=200, blank=True)
     safety_rating = models.IntegerField(choices=SAFETY_CHOICES, default=3)
     created_by = models.ForeignKey(User, on_delete=models.CASCADE)
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL,null=True, blank=True,related_name='updated_places')

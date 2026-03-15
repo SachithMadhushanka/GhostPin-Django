@@ -1,4 +1,4 @@
-# GhostPin - Advanced Historical Places Explorer
+# Expearls - Advanced Historical Places Explorer
 
 A comprehensive Django Progressive Web App (PWA) for discovering, exploring, and sharing historical places with advanced gamification, social features, and community-driven content.
 
@@ -142,7 +142,7 @@ ghostpin/
 ## PWA Features
 
 ### Manifest.json
-- App name: "GhostPin - Explore Historical Places"
+- App name: "Expearls - Explore Historical Places"
 - Theme color: #4CAF50 (green)
 - Display mode: standalone
 - Custom icons (192x192, 512x512)
