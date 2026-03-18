@@ -1,8 +1,15 @@
 # places/templatetags/trail_tags.py
+#
+# NOTE: trail progress is now computed in the view and attached as
+# trail.user_progress on each trail object. This tag is kept for
+# backwards compatibility only — the templates no longer call it.
+# Do NOT load this module in templates that don't use it.
+
 from django import template
 from places.models import TrailPlace, CheckIn
 
 register = template.Library()
+
 
 @register.simple_tag(takes_context=True)
 def user_trail_progress(context, trail):
@@ -10,21 +17,22 @@ def user_trail_progress(context, trail):
     if not request or not request.user.is_authenticated:
         return None
 
+    # FIX: was filter(id=trail.id) — that queries TrailPlace.id, not the trail FK
     place_ids = TrailPlace.objects.filter(
-        id=trail.id
+        trail=trail
     ).values_list('place_id', flat=True)
 
     total = len(place_ids)
     if total == 0:
         return None
-    
+
     completed = CheckIn.objects.filter(
         user=request.user,
         place_id__in=place_ids
     ).values('place_id').distinct().count()
-    
+
     return {
-        'total': total,
+        'total':     total,
         'completed': completed,
-        'percent': round((completed / total) * 100),
+        'percent':   round((completed / total) * 100),
     }

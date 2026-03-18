@@ -13,7 +13,7 @@
                         Check-ins at {{ place.name }}
                     </h1>
                     <p class="text-gray-600">
-                        {{ checkins.count }} visitor{{ checkins.count|pluralize }} {{ checkins.count|pluralize:"has,have" }} checked in at this location
+                        {{ total_count }} visitor{{ total_count|pluralize }} {{ total_count|pluralize:"has,have" }} checked in at this location
                     </p>
                 </div>
                 <div class="flex space-x-3">
@@ -105,12 +105,12 @@
                         <option value="oldest">Oldest First</option>
                         <option value="verified">Verified First</option>
                         <option value="photos">With Photos</option>
-                        <option value="rating">Highest Rated</option>
+                        <!-- <option value="rating">Highest Rated</option> -->
                     </select>
                     <!-- Filter Buttons -->
                     <button class="filter-btn active"
                             data-filter="all"
-                            onclick="filterCheckins('all')">All ({{ checkins.count }})</button>
+                            onclick="filterCheckins('all')">All ({{ total_count }})</button>
                     <button class="filter-btn"
                             data-filter="verified"
                             onclick="filterCheckins('verified')">Verified ({{ verified_checkins|default:0 }})</button>
@@ -189,7 +189,7 @@
                                         <div class="relative">
                                             <img src="{{ checkin.photo_proof.url }}"
                                                  alt="Check-in photo by {{ checkin.user.username }}"
-                                                 class="w-full h-64 object-cover rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
+                                                 class="checkin-photo w-full h-64 object-cover rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
                                                  onclick="openPhotoModal(this.src, '{{ checkin.user.username }}', '{{ checkin.created_at|date:"F j, Y" }}')">
                                             <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
                                                 <i class="fas fa-search-plus text-white text-2xl opacity-0 hover:opacity-100 transition-opacity"></i>
@@ -431,7 +431,7 @@
         modal.classList.remove('hidden');
         
         // Collect all photos for navigation
-        allPhotos = Array.from(document.querySelectorAll('.checkin-item img')).map(img => ({
+        allPhotos = Array.from(document.querySelectorAll('.checkin-photo')).map(img => ({
             src: img.src,
             username: img.alt.split(' by ')[1]?.split(' on ')[0] || 'Unknown',
             date: img.alt.split(' on ')[1] || 'Unknown date'
@@ -545,60 +545,26 @@
     
     // Update filter counts
     function updateFilterCounts() {
-        const allCheckins = document.querySelectorAll('.checkin-item');
+        const allCheckins      = document.querySelectorAll('.checkin-item');
         const verifiedCheckins = document.querySelectorAll('.checkin-item[data-verified="true"]');
-        const photoCheckins = document.querySelectorAll('.checkin-item[data-has-photo="true"]');
-        
+        const photoCheckins    = document.querySelectorAll('.checkin-item[data-has-photo="true"]');
+    
         const weekAgo = new Date();
         weekAgo.setDate(weekAgo.getDate() - 7);
-        const recentCheckins = Array.from(allCheckins).filter(checkin => 
-            new Date(checkin.dataset.date) >= weekAgo
+        const recentCheckins = Array.from(allCheckins).filter(c =>
+            new Date(c.dataset.date) >= weekAgo
         );
-        
-        // Update button text (if needed)
-        document.querySelector('[data-filter="all"]').textContent = `All (${allCheckins.length})`;
+    
+        document.querySelector('[data-filter="all"]').textContent      = `All (${allCheckins.length})`;
         document.querySelector('[data-filter="verified"]').textContent = `Verified (${verifiedCheckins.length})`;
-        document.querySelector('[data-filter="photos"]').textContent = `With Photos (${photoCheckins.length})`;
-        document.querySelector('[data-filter="recent"]').textContent = `Recent (${recentCheckins.length})`;
+        document.querySelector('[data-filter="photos"]').textContent   = `With Photos (${photoCheckins.length})`;
+        document.querySelector('[data-filter="recent"]').textContent   = `Recent (${recentCheckins.length})`;
     }
     
     // Like check-in
     function likeCheckin(checkinId) {
-        fetch(`/api/checkins/${checkinId}/like/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Update like count and button state
-                // const likeBtn = document.querySelector(`button[onclick="likeCheckin(${checkinId})"]`);
-                // const likeCount = likeBtn.querySelector('span');
-                // const likeIcon = likeBtn.querySelector('i');
-                
-                // likeCount.textContent = data.likes;
-                
-                if (data.liked) {
-                    likeIcon.classList.remove('far');
-                    likeIcon.classList.add('fas', 'text-red-600');
-                    likeBtn.classList.add('text-red-600');
-                } else {
-                    likeIcon.classList.remove('fas', 'text-red-600');
-                    likeIcon.classList.add('far');
-                    likeBtn.classList.remove('text-red-600');
-                }
-                
-                // Animation
-                likeBtn.classList.add('animate-pulse');
-                setTimeout(() => likeBtn.classList.remove('animate-pulse'), 500);
-            }
-        })
-        .catch(error => {
-            console.error('Error liking check-in:', error);
-        });
+        // Like feature not yet implemented — button is hidden in template
+        console.log('Like feature coming soon');
     }
     
     // Share check-in

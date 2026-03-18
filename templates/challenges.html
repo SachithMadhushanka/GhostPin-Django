@@ -19,6 +19,7 @@
         </a>
       {% endif %}
     </div>
+
     <!-- ── Active Challenges ─────────────────────────────────────── -->
     {% if active_challenges %}
       <section class="mb-12">
@@ -27,9 +28,13 @@
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {% for challenge in active_challenges %}
-            {% with p=challenge.user_progress %}
-              <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col border-t-4 {% if challenge.user_completed %}border-green-500 {% elif p and p.completed > 0 %}border-blue-400 {% else %}border-gray-200{% endif %}">
+            {% with p=challenge.user_progress c=challenge.criteria %}
+              <div class="bg-white rounded-xl shadow-md overflow-hidden flex flex-col border-t-4
+                {% if challenge.user_completed %}border-green-500
+                {% elif p and p.completed > 0 %}border-blue-400
+                {% else %}border-gray-200{% endif %}">
                 <div class="p-6 flex-1 flex flex-col">
+
                   <!-- Top row: type badge + reward -->
                   <div class="flex items-center justify-between mb-3">
                     <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full uppercase tracking-wide">
@@ -37,37 +42,106 @@
                     </span>
                     <span class="text-lg font-bold text-green-600">+{{ challenge.reward_points }} pts</span>
                   </div>
+
                   <!-- Completed ribbon -->
                   {% if challenge.user_completed %}
                     <div class="flex items-center gap-1.5 text-green-600 font-semibold text-sm mb-2">
                       <i class="fas fa-check-circle"></i> Completed — reward granted!
                     </div>
                   {% endif %}
+
                   <h3 class="text-lg font-bold text-gray-900 mb-1">{{ challenge.title }}</h3>
                   <p class="text-gray-500 text-sm mb-4 flex-1">{{ challenge.description }}</p>
-                  <!-- Criteria pills -->
+
+                  <!-- Criteria pills — one per criteria type -->
                   <div class="flex flex-wrap gap-2 mb-4">
-                    <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                      <i class="fas fa-map-marker-alt mr-1"></i>
-                      {{ challenge.criteria.visit_count|default:1 }}
-                      place{{ challenge.criteria.visit_count|default:1|pluralize }}
-                    </span>
-                    {% if challenge.criteria.category %}
+
+                    {% if c.type == "daily_checkin" %}
+                      <span class="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-calendar-day mr-1"></i>Check in today
+                      </span>
+
+                    {% elif c.type == "photo_checkin" %}
+                      <span class="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-camera mr-1"></i>Photo check-in required
+                      </span>
+
+                    {% elif c.type == "photo_checkins" %}
+                      {% with thresh=c.threshold|default:1 %}
+                      <span class="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-camera mr-1"></i>{{ thresh }} photo check-in{{ thresh|pluralize }}
+                      </span>
+                      {% endwith %}
+
+                    {% elif c.type == "checkins" %}
+                      {% with thresh=c.threshold|default:1 %}
+                      <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                        <i class="fas fa-map-marker-alt mr-1"></i>
+                        {{ thresh }} place{{ thresh|pluralize }}
+                      </span>
+                      {% endwith %}
+                      {% if c.days %}
+                        <span class="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full">
+                          <i class="fas fa-calendar-week mr-1"></i>
+                          {% for d in c.days %}{{ d|upper }}{% if not forloop.last %}/{% endif %}{% endfor %} only
+                        </span>
+                      {% endif %}
+
+                    {% elif c.type == "new_checkins" %}
+                      {% with thresh=c.threshold|default:1 %}
+                      <span class="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-star mr-1"></i>{{ thresh }} new place{{ thresh|pluralize }}
+                      </span>
+                      {% endwith %}
+
+                    {% elif c.type == "unique_categories" %}
+                      {% with thresh=c.threshold|default:1 %}
                       <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full">
-                        <i class="fas fa-tag mr-1"></i>{{ challenge.criteria.category }} only
+                        <i class="fas fa-th mr-1"></i>{{ thresh }} different categor{{ thresh|pluralize:"y,ies" }}
+                      </span>
+                      {% endwith %}
+
+                    {% elif c.type == "trail_complete" %}
+                      {% with thresh=c.threshold|default:1 %}
+                      <span class="text-xs bg-teal-50 text-teal-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-route mr-1"></i>Complete {{ thresh }} trail{{ thresh|pluralize }}
+                      </span>
+                      {% endwith %}
+
+                    {% elif c.type == "nearby_checkins" %}
+                      {% with thresh=c.threshold|default:1 %}
+                      <span class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-location-arrow mr-1"></i>{{ thresh }} nearby check-in{{ thresh|pluralize }}
+                      </span>
+                      {% endwith %}
+
+                    {% else %}
+                      {% with thresh=c.visit_count|default:1 %}
+                      <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                        <i class="fas fa-map-marker-alt mr-1"></i>
+                        {{ thresh }} place{{ thresh|pluralize }}
+                      </span>
+                      {% endwith %}
+                    {% endif %}
+
+                    <!-- Shared modifiers -->
+                    {% if c.category %}
+                      <span class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded-full">
+                        <i class="fas fa-tag mr-1"></i>{{ c.category }} only
                       </span>
                     {% endif %}
-                    {% if challenge.criteria.require_photo %}
+                    {% if c.require_photo %}
                       <span class="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded-full">
                         <i class="fas fa-camera mr-1"></i>Photo required
                       </span>
                     {% endif %}
-                    {% if challenge.criteria.require_review %}
+                    {% if c.require_review %}
                       <span class="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded-full">
                         <i class="fas fa-pen mr-1"></i>Review required
                       </span>
                     {% endif %}
                   </div>
+
                   <!-- Progress bar -->
                   {% if user.is_authenticated and p %}
                     <div class="mb-4">
@@ -76,18 +150,34 @@
                         <span class="font-medium">{{ p.completed }}/{{ p.required }}</span>
                       </div>
                       <div class="w-full bg-gray-100 rounded-full h-2.5">
-                        <div class="h-2.5 rounded-full transition-all duration-500 {% if challenge.user_completed %}bg-green-500 {% elif p.completed > 0 %}bg-blue-500 {% else %}bg-gray-300{% endif %}"
+                        <div class="h-2.5 rounded-full transition-all duration-500
+                          {% if challenge.user_completed %}bg-green-500
+                          {% elif p.completed > 0 %}bg-blue-500
+                          {% else %}bg-gray-300{% endif %}"
                              style="width: {{ p.percent }}%"></div>
                       </div>
                       {% if not challenge.user_completed and p.completed == 0 %}
                         <p class="text-xs text-gray-400 mt-1">
-                          Check in at
-                          {% if challenge.criteria.category %}
-                            <span class="font-medium">{{ challenge.criteria.category }}</span> places
+                          {% if c.type == "daily_checkin" %}
+                            Check in at any place today to complete this challenge.
+                          {% elif c.type == "photo_checkin" or c.type == "photo_checkins" %}
+                            Check in with a photo to start your progress.
+                          {% elif c.type == "checkins" and c.days %}
+                            Check in on
+                            {% for d in c.days %}{{ d|upper }}{% if not forloop.last %}/{% endif %}{% endfor %}
+                            to start your progress.
+                          {% elif c.type == "unique_categories" %}
+                            Check in at places from different categories.
+                          {% elif c.type == "trail_complete" %}
+                            Complete all places in a trail to progress.
+                          {% elif c.type == "nearby_checkins" %}
+                            Check in with location verification enabled.
                           {% else %}
-                            any places
+                            Check in at
+                            {% if c.category %}<span class="font-medium">{{ c.category }}</span> places
+                            {% else %}any places{% endif %}
+                            to start your progress.
                           {% endif %}
-                          to start your progress.
                         </p>
                       {% endif %}
                     </div>
@@ -98,14 +188,18 @@
                       to track your progress.
                     </div>
                   {% endif %}
+
                   <!-- Countdown -->
                   <div class="text-xs text-gray-400 flex items-center gap-1 mt-auto pt-2 border-t border-gray-100">
                     <i class="fas fa-clock"></i>
                     <span class="countdown text-orange-500 font-medium"
                           data-end="{{ challenge.end_date|date:'c' }}">Calculating…</span>
-                    <span class="ml-auto"><i class="fas fa-calendar mr-1"></i>{{ challenge.end_date|date:"M d, Y" }}</span>
+                    <span class="ml-auto">
+                      <i class="fas fa-calendar mr-1"></i>{{ challenge.end_date|date:"M d, Y" }}
+                    </span>
                   </div>
                 </div>
+
                 <!-- Staff controls -->
                 {% if user.is_staff or user.is_superuser %}
                   <div class="border-t border-gray-100 px-4 py-2 bg-gray-50 flex justify-end gap-3">
@@ -129,6 +223,7 @@
         </div>
       </section>
     {% endif %}
+
     <!-- ── Past Challenges ───────────────────────────────────────── -->
     {% if past_challenges %}
       <section class="mb-12">
@@ -160,6 +255,7 @@
         </div>
       </section>
     {% endif %}
+
     <!-- ── Empty state ───────────────────────────────────────────── -->
     {% if not active_challenges and not past_challenges %}
       <div class="text-center py-20">
@@ -179,6 +275,7 @@
         {% endif %}
       </div>
     {% endif %}
+
     <!-- ── How It Works ──────────────────────────────────────────── -->
     {% if active_challenges or past_challenges %}
       <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mt-4">
@@ -200,7 +297,7 @@
               <i class="fas fa-tasks text-orange-500"></i>
             </div>
             <h3 class="font-semibold mb-1">Meet the Criteria</h3>
-            <p class="text-gray-500 text-sm">Some challenges need photos or reviews. Check the pills on each card.</p>
+            <p class="text-gray-500 text-sm">Some challenges need photos, reviews, or specific days. Check the pills on each card.</p>
           </div>
           <div class="p-4">
             <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -216,6 +313,7 @@
     {% endif %}
   </div>
 {% endblock %}
+
 {% block extra_js %}
   <script>
 function updateCountdowns() {

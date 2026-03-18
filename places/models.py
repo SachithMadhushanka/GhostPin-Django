@@ -133,7 +133,7 @@ class Place(models.Model):
     legends_stories = models.TextField(blank=True)
     latitude = models.FloatField()
     longitude = models.FloatField()
-    image = models.ImageField(upload_to=place_image_upload_to, null=True, blank=True)
+    image = models.ImageField(upload_to=place_image_upload_to,max_length=300, null=True, blank=True)
     # category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='other')
     category = models.ManyToManyField(Category, related_name='places')
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='easy')
@@ -196,7 +196,7 @@ class Place(models.Model):
 
 class PlaceImage(models.Model):
     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to=place_extra_image_upload_to)
+    image = models.ImageField(upload_to=place_extra_image_upload_to, max_length=300)
     uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
     is_challenge_photo = models.BooleanField(default=False)
     challenge_description = models.CharField(max_length=200, blank=True)
@@ -239,7 +239,7 @@ class Trail(models.Model):
     places = models.ManyToManyField('Place', through='TrailPlace', related_name='trails')
     is_public = models.BooleanField(default=True)
     allow_comments = models.BooleanField(default=True)  # ✅ ADD THIS
-    cover_image = models.ImageField(upload_to='trail_covers/', null=True, blank=True)  # ✅ ADD THIS
+    cover_image = models.ImageField(upload_to='trail_covers/', max_length=300, null=True, blank=True)  # ✅ ADD THIS
     distance = models.FloatField(null=True, blank=True)  # ✅ ADD THIS
     estimated_duration = models.DurationField(null=True, blank=True)
     difficulty = models.CharField(max_length=20, choices=DIFFICULTY_CHOICES, default='easy')
@@ -253,6 +253,20 @@ class Trail(models.Model):
     
     def __str__(self):
         return self.name
+    
+    @property
+    def duration_display(self):
+        """Returns estimated_duration as a human-readable string e.g. '2h 30m'."""
+        if not self.estimated_duration:
+            return None
+        total = int(self.estimated_duration.total_seconds())
+        hours   = total // 3600
+        minutes = (total % 3600) // 60
+        if hours and minutes:
+            return f"{hours}h {minutes}m"
+        if hours:
+            return f"{hours} hours"
+        return f"{minutes}m"
 
 
 class TrailPlace(models.Model):
@@ -361,7 +375,8 @@ class Badge(models.Model):
     image = models.ImageField(                                
         upload_to=badge_image_upload_to,
         null=True,
-        blank=True
+        blank=True,
+        max_length=300
     )
     criteria = models.JSONField()
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='explorer')
@@ -601,6 +616,25 @@ class TourPackage(models.Model):
     def price_display(self):
         return f"LKR {self.price_lkr:,.0f}"
 
+class TrailCompletion(models.Model):
+    """
+    Records that a user has fully completed a trail (checked in at every place).
+    Used instead of Notification text-matching to track trail completion rewards
+    idempotently — rename-safe and O(1) to query.
+    """
+    user           = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trail_completions')
+    trail          = models.ForeignKey('Trail', on_delete=models.CASCADE, related_name='completions')
+    completed_at   = models.DateTimeField(auto_now_add=True)
+    points_awarded = models.IntegerField(default=0)
+ 
+    class Meta:
+        unique_together = ['user', 'trail']
+        ordering = ['-completed_at']
+ 
+    def __str__(self):
+        return f"{self.user.username} completed '{self.trail.name}'"
+ 
+
 # class AudioGuide(models.Model):
 #     place = models.ForeignKey(Place, on_delete=models.CASCADE, related_name='audio_guides')
 #     title = models.CharField(max_length=200)
@@ -633,3 +667,4 @@ class TourPackage(models.Model):
 #     def __str__(self):
 #         target = self.place or self.comment
 #         return f"Report by {self.reported_by.username} on {target}"
+

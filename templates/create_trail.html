@@ -1224,9 +1224,11 @@
     function saveDraft() {
         if (!validateBeforeSubmit(true)) return;
         const form = document.getElementById('trail-form');
-        const inp  = document.createElement('input');
-        inp.type = 'hidden'; inp.name = 'save_as_draft'; inp.value = 'true';
-        form.appendChild(inp);
+        if (!form.querySelector('[name="save_as_draft"]')) {
+            const inp = document.createElement('input');
+            inp.type = 'hidden'; inp.name = 'save_as_draft'; inp.value = 'true';
+            form.appendChild(inp);
+        }
         form.submit();
     }
 

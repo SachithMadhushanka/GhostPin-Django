@@ -26,10 +26,10 @@
                     <h2 class="text-xl font-bold text-gray-900 mb-1">{{ place.name }}</h2>
                     <p class="text-gray-600 text-sm mb-2">{{ place.description|truncatewords:20 }}</p>
                     <div class="flex flex-wrap items-center gap-3 text-sm">
-                        <span class="bg-100 text-800 px-2 py-1 rounded-full">
+                        {# FIX: added correct Tailwind color prefix bg-blue-100 text-blue-800 #}
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
                             {% for cat in place.category.all %}
-                                {{ cat.name }}
-                                {% if not forloop.last %},{% endif %}
+                                {{ cat.name }}{% if not forloop.last %},{% endif %}
                             {% endfor %}
                         </span>
                         <span class="text-gray-500">
@@ -54,6 +54,9 @@
             </h3>
             <form method="post" enctype="multipart/form-data" class="space-y-6">
                 {% csrf_token %}
+                {# FIX: moved hidden input outside photo div so it's always in the form #}
+                <input type="hidden" name="location_verified" id="location-verified-input" value="false">
+
                 <!-- Photo Proof -->
                 <div>
                     <label for="{{ form.photo_proof.id_for_label }}"
@@ -65,11 +68,6 @@
                     <p class="mt-2 text-sm text-gray-500">
                         Upload a photo of yourself at this location to verify your visit and earn bonus points!
                     </p>
-                    <!-- Add inside the form -->
-                    <input type="hidden"
-                           name="location_verified"
-                           id="location-verified-input"
-                           value="false">
                     <!-- Photo Preview -->
                     <div id="photo-preview" class="mt-4 hidden">
                         <img id="preview-image"
@@ -93,7 +91,8 @@
                         <div>
                             <h4 class="font-semibold text-blue-900 mb-1">Location Verification</h4>
                             <p class="text-blue-800 text-sm mb-3">
-                                We'll verify your location to ensure authentic check-ins. This helps maintain the quality of our community.
+                                We'll verify your location to ensure authentic check-ins.
+                                Being within 500m of the place earns you +5 bonus points.
                             </p>
                             <button type="button"
                                     id="verify-location"
@@ -149,7 +148,7 @@
                 </div>
             </form>
         </div>
-        <!-- Tips for Better Check-ins -->
+        <!-- Tips -->
         <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
             <h3 class="text-lg font-bold text-gray-900 mb-4">
                 <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
@@ -178,70 +177,75 @@
 {% endblock %}
 {% block extra_js %}
     <script>
-    // Photo preview functionality
+    // Photo preview
     document.getElementById('{{ form.photo_proof.id_for_label }}').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                const preview = document.getElementById('photo-preview');
-                const image = document.getElementById('preview-image');
-                image.src = e.target.result;
-                preview.classList.remove('hidden');
+                document.getElementById('preview-image').src = e.target.result;
+                document.getElementById('photo-preview').classList.remove('hidden');
             };
             reader.readAsDataURL(file);
         }
     });
-    
+
     // Location verification
     document.getElementById('verify-location').addEventListener('click', function() {
         const button = this;
         const status = document.getElementById('location-status');
-        
+        const verifiedInput = document.getElementById('location-verified-input');
+
         button.disabled = true;
         button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Verifying...';
         status.innerHTML = '<span class="text-blue-600">Getting your location...</span>';
-        
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    const userLat = position.coords.latitude;
-                    const userLng = position.coords.longitude;
-                    const placeLat = {{ place.latitude }};
-                    const placeLng = {{ place.longitude }};
-                    
-                    // Calculate distance using Haversine formula
-                    const R = 6371; // Earth's radius in km
-                    const dLat = (placeLat - userLat) * Math.PI / 180;
-                    const dLng = (placeLng - userLng) * Math.PI / 180;
-                    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                            Math.cos(userLat * Math.PI / 180) * Math.cos(placeLat * Math.PI / 180) *
-                            Math.sin(dLng/2) * Math.sin(dLng/2);
-                    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-                    const distance = R * c * 1000; // Distance in meters
-                    
-                    if (distance <= 100) { // Within 100 meters
-                        status.innerHTML = '<span class="text-green-600"><i class="fas fa-check-circle mr-1"></i> Location verified! You\'re at the right place.</span>';
-                        button.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Location Verified';
-                        button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                        button.classList.add('bg-green-600', 'hover:bg-green-700');
-                    } else {
-                        status.innerHTML = `<span class="text-orange-600"><i class="fas fa-exclamation-triangle mr-1"></i> You're ${Math.round(distance)}m away from the place. Get closer for verification.</span>`;
-                        button.innerHTML = '<i class="fas fa-crosshairs mr-1"></i> Try Again';
-                        button.disabled = false;
-                    }
-                },
-                function(error) {
-                    status.innerHTML = '<span class="text-red-600"><i class="fas fa-times-circle mr-1"></i> Location access denied. You can still check in without verification.</span>';
-                    button.innerHTML = '<i class="fas fa-crosshairs mr-1"></i> Verify My Location';
-                    button.disabled = false;
-                }
-            );
-        } else {
+
+        if (!navigator.geolocation) {
             status.innerHTML = '<span class="text-red-600">Geolocation is not supported by this browser.</span>';
             button.innerHTML = '<i class="fas fa-crosshairs mr-1"></i> Verify My Location';
             button.disabled = false;
+            return;
         }
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const userLat  = position.coords.latitude;
+                const userLng  = position.coords.longitude;
+                const placeLat = {{ place.latitude }};
+                const placeLng = {{ place.longitude }};
+
+                // Haversine distance in metres
+                const R    = 6371000;
+                const dLat = (placeLat - userLat) * Math.PI / 180;
+                const dLng = (placeLng - userLng) * Math.PI / 180;
+                const a    = Math.sin(dLat/2) * Math.sin(dLat/2)
+                           + Math.cos(userLat * Math.PI/180) * Math.cos(placeLat * Math.PI/180)
+                           * Math.sin(dLng/2) * Math.sin(dLng/2);
+                const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+                // FIX: raised threshold to 500m to accommodate large heritage sites
+                if (distance <= 500) {
+                    // FIX: actually set the hidden input to 'true' so the view records it
+                    verifiedInput.value = 'true';
+                    status.innerHTML = '<span class="text-green-600"><i class="fas fa-check-circle mr-1"></i> Location verified! You\'re at the right place.</span>';
+                    button.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Location Verified';
+                    button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    button.classList.add('bg-green-600', 'hover:bg-green-700');
+                } else {
+                    verifiedInput.value = 'false';
+                    status.innerHTML = `<span class="text-orange-600"><i class="fas fa-exclamation-triangle mr-1"></i> You're ${Math.round(distance)}m away. Get within 500m for verification.</span>`;
+                    button.innerHTML = '<i class="fas fa-crosshairs mr-1"></i> Try Again';
+                    button.disabled = false;
+                }
+            },
+            function(error) {
+                verifiedInput.value = 'false';
+                status.innerHTML = '<span class="text-red-600"><i class="fas fa-times-circle mr-1"></i> Location access denied. You can still check in without verification.</span>';
+                button.innerHTML = '<i class="fas fa-crosshairs mr-1"></i> Verify My Location';
+                button.disabled = false;
+            },
+            { timeout: 10000, maximumAge: 0 }
+        );
     });
     </script>
 {% endblock %}

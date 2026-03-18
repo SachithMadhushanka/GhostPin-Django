@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% load trail_tags %}
+{# FIX: removed {% load trail_tags %} — tag is unused here and had IndentationError #}
 {% block title %}Trails - Expearls{% endblock %}
 {% block content %}
     <div class="max-w-6xl mx-auto">
@@ -37,31 +37,24 @@
                     <select name="difficulty"
                             class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 text-sm">
                         <option value="">All Difficulties</option>
-                        <option value="easy"
-                                {% if selected_difficulty == 'easy' %}selected{% endif %}>Easy</option>
-                        <option value="moderate"
-                                {% if selected_difficulty == 'moderate' %}selected{% endif %}>Moderate</option>
-                        <option value="challenging"
-                                {% if selected_difficulty == 'challenging' %}selected{% endif %}>Challenging</option>
+                        <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>Easy</option>
+                        <option value="moderate" {% if selected_difficulty == 'moderate' %}selected{% endif %}>Moderate</option>
+                        <option value="challenging" {% if selected_difficulty == 'challenging' %}selected{% endif %}>Challenging</option>
                     </select>
                     <select name="category"
                             class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 text-sm">
                         <option value="">All Categories</option>
                         {% for cat in category_choices %}
-                            <option value="{{ cat.slug }}"
-                                    {% if selected_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                            <option value="{{ cat.slug }}" {% if selected_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
                         {% endfor %}
                     </select>
                     <select name="sort"
                             class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 text-sm">
-                        <option value="created_at"
-                                {% if selected_sort == 'created_at' %}selected{% endif %}>Newest First</option>
+                        <option value="created_at" {% if selected_sort == 'created_at' %}selected{% endif %}>Newest First</option>
                         <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>Name A–Z</option>
                         <option value="places" {% if selected_sort == 'places' %}selected{% endif %}>Most Places</option>
-                        <option value="difficulty"
-                                {% if selected_sort == 'difficulty' %}selected{% endif %}>Difficulty</option>
-                        <option value="popularity"
-                                {% if selected_sort == 'popularity' %}selected{% endif %}>Most Popular</option>
+                        <option value="difficulty" {% if selected_sort == 'difficulty' %}selected{% endif %}>Difficulty</option>
+                        <option value="popularity" {% if selected_sort == 'popularity' %}selected{% endif %}>Most Popular</option>
                     </select>
                     <button type="submit"
                             class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm">
@@ -73,7 +66,6 @@
                             <i class="fas fa-times mr-1"></i> Clear
                         </a>
                     {% endif %}
-                    {# ✅ FIX: use paginator count, not |length on a page object #}
                     <span class="ml-auto text-sm text-gray-500">
                         {{ trails.paginator.count }} trail{{ trails.paginator.count|pluralize }} found
                     </span>
@@ -85,7 +77,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {% for trail in trails %}
                     <div class="bg-white rounded-lg shadow-lg overflow-hidden card-hover">
-                        <!-- Trail Header: cover image or gradient fallback -->
+                        <!-- Trail Header -->
                         <div class="relative h-40 overflow-hidden">
                             {% if trail.cover_image %}
                                 <img src="{{ trail.cover_image.url }}"
@@ -119,17 +111,17 @@
                                 <div class="flex items-center space-x-4 text-sm text-gray-500">
                                     <span class="flex items-center">
                                         <i class="fas fa-clock mr-1 text-blue-500"></i>
-                                        {% if trail.estimated_duration %}
-                                            {{ trail.estimated_duration }}
+                                        {# FIX: use duration_display property instead of raw timedelta #}
+                                        {% if trail.duration_display %}
+                                            {{ trail.duration_display }}
                                         {% else %}
                                             Varies
                                         {% endif %}
                                     </span>
                                     <span class="flex items-center">
-                                        <i class="fas fa-signal mr-1 {% if trail.difficulty == 'easy' %}text-green-500 {% elif trail.difficulty == 'moderate' %}text-yellow-500 {% else %}text-red-500{% endif %}"></i>
+                                        <i class="fas fa-signal mr-1 {% if trail.difficulty == 'easy' %}text-green-500{% elif trail.difficulty == 'moderate' %}text-yellow-500{% else %}text-red-500{% endif %}"></i>
                                         {{ trail.get_difficulty_display }}
                                     </span>
-                                    {# ✅ NEW: popularity stat #}
                                     {% if trail.checkin_count %}
                                         <span class="flex items-center">
                                             <i class="fas fa-shoe-prints mr-1 text-purple-500"></i>
@@ -138,19 +130,22 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            <!-- Sample Places Preview -->
+                            <!-- Place Preview Chips -->
+                            <!-- FIX: use forloop.counter instead of |slice to respect prefetch cache -->
                             <div class="mb-4">
                                 <h4 class="text-sm font-semibold text-gray-700 mb-2">Places:</h4>
                                 <div class="flex flex-wrap gap-2">
-                                    {% for place in trail.places.all|slice:":3" %}
-                                        <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">{{ place.name|truncatechars:20 }}</span>
+                                    {% for place in trail.places.all %}
+                                        {% if forloop.counter <= 3 %}
+                                            <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">{{ place.name|truncatechars:20 }}</span>
+                                        {% endif %}
                                     {% endfor %}
                                     {% if trail.place_count > 3 %}
                                         <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">+{{ trail.place_count|add:"-3" }} more</span>
                                     {% endif %}
                                 </div>
                             </div>
-                            {# ✅ FIX: progress is now attached in the view, not via a broken template tag #}
+                            <!-- Progress bar (authenticated only, only if started) -->
                             {% if user.is_authenticated and trail.user_progress and trail.user_progress.completed > 0 %}
                                 <div class="mb-4">
                                     <div class="flex justify-between text-xs text-gray-500 mb-1">
@@ -181,18 +176,18 @@
                     </div>
                 {% endfor %}
             </div>
-            {# ✅ FIX: Pagination controls — was completely missing #}
+            <!-- FIX: Pagination with URL-encoded query params -->
             {% if is_paginated %}
                 <div class="mt-10 flex items-center justify-center gap-2">
                     {% if trails.has_previous %}
-                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}&{% endif %}page={{ trails.previous_page_number }}"
+                        <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}&{% endif %}page={{ trails.previous_page_number }}"
                            class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
                             <i class="fas fa-chevron-left mr-1"></i> Previous
                         </a>
                     {% endif %}
                     <span class="px-4 py-2 text-sm text-gray-600">Page {{ trails.number }} of {{ trails.paginator.num_pages }}</span>
                     {% if trails.has_next %}
-                        <a href="?{% if search_query %}search={{ search_query }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}&{% endif %}page={{ trails.next_page_number }}"
+                        <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}&{% endif %}page={{ trails.next_page_number }}"
                            class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
                             Next <i class="fas fa-chevron-right ml-1"></i>
                         </a>

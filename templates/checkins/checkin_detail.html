@@ -1,10 +1,8 @@
 {% extends 'base.html' %}
 {% block title %}
-    Check-In Details - {{ place.name }} -
-    Expearls
+    Check-In Details - {{ place.name }} - Expearls
 {% endblock %}
 {% block content %}
-    <!-- CSRF Token for AJAX requests -->
     {% csrf_token %}
     <div class="max-w-4xl mx-auto">
         <!-- Header -->
@@ -29,10 +27,10 @@
                 </div>
             </div>
         </div>
+
         <!-- Place Card -->
         <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8 card-hover">
             <div class="flex flex-col md:flex-row">
-                <!-- Place Image -->
                 <div class="md:w-1/3 h-64 md:h-auto">
                     {% if checkin.place.image %}
                         <img src="{{ checkin.place.image.url }}"
@@ -44,21 +42,13 @@
                         </div>
                     {% endif %}
                 </div>
-                <!-- Place Details -->
                 <div class="md:w-2/3 p-6">
                     <h2 class="text-2xl font-bold text-gray-900 mb-3">{{ place.name }}</h2>
                     <p class="text-gray-600 mb-4">{{ place.description|truncatewords:20 }}</p>
-                    <!-- Tags -->
                     <div class="flex flex-wrap gap-2 mb-4">
                         <span class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">
                             <i class="fas fa-tag mr-1"></i>
-                            {% for cat in place.category.all %}
-                                {{ cat.name }}
-                                {% if not
-                                    forloop.last %}
-                                    ,
-                                {% endif %}
-                            {% endfor %}
+                            {% for cat in place.category.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
                         </span>
                         <span class="bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded-full">
                             <i class="fas fa-signal mr-1"></i>
@@ -71,12 +61,10 @@
                             </span>
                         {% endif %}
                     </div>
-                    <!-- Quick Stats -->
                     <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
                         <div class="flex items-center">
                             <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>
-                            {{ place.latitude|floatformat:4 }}, {{ place.longitude|floatformat:4
-                            }}
+                            {{ place.latitude|floatformat:4 }}, {{ place.longitude|floatformat:4 }}
                         </div>
                         <div class="flex items-center">
                             <i class="fas fa-users text-blue-500 mr-2"></i>
@@ -86,6 +74,7 @@
                 </div>
             </div>
         </div>
+
         <!-- Check-In Summary Card -->
         <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
             <h3 class="text-xl font-semibold text-gray-900 mb-6">
@@ -93,18 +82,14 @@
                 Check-In Summary
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Left Column -->
                 <div class="space-y-4">
                     <div class="flex items-center justify-between py-2 border-b border-gray-100">
                         <span class="text-gray-600 font-medium">Checked in by</span>
                         <div class="flex items-center space-x-2">
-                            <!-- Clickable User Avatar -->
-                            <div>
-                                <a href="{% url 'places:profile' checkin.user.username %}"
-                                   class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                    {{ checkin.user.username|first|upper }}
-                                </a>
-                            </div>
+                            <a href="{% url 'places:profile' checkin.user.username %}"
+                               class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                {{ checkin.user.username|first|upper }}
+                            </a>
                             <span class="font-semibold text-gray-900">{{ checkin.user.username }}</span>
                         </div>
                     </div>
@@ -123,19 +108,16 @@
                         </span>
                     </div>
                 </div>
-                <!-- Right Column -->
                 <div class="space-y-4">
                     <div class="flex items-center justify-between py-2 border-b border-gray-100">
                         <span class="text-gray-600 font-medium">Location Verified</span>
                         {% if checkin.location_verified %}
                             <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                <i class="fas fa-check-circle mr-1"></i>
-                                Yes
+                                <i class="fas fa-check-circle mr-1"></i>Yes
                             </span>
                         {% else %}
                             <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                <i class="fas fa-times-circle mr-1"></i>
-                                No
+                                <i class="fas fa-times-circle mr-1"></i>No
                             </span>
                         {% endif %}
                     </div>
@@ -143,62 +125,46 @@
                         <span class="text-gray-600 font-medium">Photo Proof</span>
                         {% if checkin.photo_proof %}
                             <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                <i class="fas fa-camera mr-1"></i>
-                                Provided
+                                <i class="fas fa-camera mr-1"></i>Provided
                             </span>
                         {% else %}
                             <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
-                                <i class="fas fa-camera-slash mr-1"></i>
-                                No photo
+                                <i class="fas fa-camera-slash mr-1"></i>No photo
                             </span>
                         {% endif %}
                     </div>
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                        <span class="text-gray-600 font-medium">Weather</span>
-                        <!-- <span class="font-semibold text-gray-900">
-                        {% if checkin.weather %}
-                            <i class="fas fa-cloud-sun text-yellow-500 mr-1"></i>
-                            {{ checkin.weather }}
-                        {% else %}
-                            <span class="text-gray-500">Not recorded</span>
-                        {% endif %}
-                    </span> -->
-                    </div>
                 </div>
             </div>
-            <!-- Notes Section -->
             {% if checkin.notes %}
                 <div class="mt-6 p-4 bg-gray-50 rounded-lg">
                     <h4 class="font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-sticky-note text-yellow-600 mr-2"></i>
-                        Notes
+                        <i class="fas fa-sticky-note text-yellow-600 mr-2"></i>Notes
                     </h4>
                     <p class="text-gray-700 italic">"{{ checkin.notes }}"</p>
                 </div>
             {% endif %}
         </div>
+
         <!-- Photo Preview -->
         {% if checkin.photo_proof %}
             <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
                 <h3 class="text-xl font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-image text-purple-600 mr-2"></i>
-                    Photo Proof
+                    <i class="fas fa-image text-purple-600 mr-2"></i>Photo Proof
                 </h3>
                 <div class="relative">
                     <img src="{{ checkin.photo_proof.url }}"
                          alt="Photo proof at {{ place.name }}"
                          class="w-full max-w-2xl mx-auto rounded-lg shadow-lg cursor-pointer"
                          onclick="openPhotoModal(this.src)" />
-                    <!-- Photo Info Overlay -->
                     <div class="absolute bottom-4 left-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        Click to view full size
+                        <i class="fas fa-info-circle mr-1"></i>Click to view full size
                     </div>
                 </div>
             </div>
         {% endif %}
+
         <!-- Comments Section -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-8" id="comments">
             <h3 class="text-xl font-semibold text-gray-900 mb-6">
                 <i class="fas fa-comments text-blue-600 mr-2"></i>
                 Visitor Comments
@@ -210,12 +176,10 @@
                         <div class="comment-item border-b border-gray-100 pb-6 last:border-b-0"
                              data-comment-id="{{ comment.id }}">
                             <div class="flex items-start space-x-4">
-                                <!-- Clickable User Avatar -->
                                 <a href="{% url 'places:profile' comment.user.username %}"
                                    class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 hover:opacity-90 transition">
                                     {{ comment.user.username|first|upper }}
                                 </a>
-                                <!-- Comment Content -->
                                 <div class="flex-1">
                                     <div class="flex items-center space-x-2 mb-2">
                                         <span class="font-semibold text-gray-900">{{ comment.user.username }}</span>
@@ -223,8 +187,7 @@
                                         {% if comment.rating %}
                                             <div class="flex items-center space-x-1">
                                                 {% for i in "12345" %}
-                                                    {% if forloop.counter <= comment.rating
-                                                        %}
+                                                    {% if forloop.counter <= comment.rating %}
                                                         <i class="fas fa-star text-yellow-400 text-xs"></i>
                                                     {% else %}
                                                         <i class="far fa-star text-gray-300 text-xs"></i>
@@ -233,67 +196,56 @@
                                             </div>
                                         {% endif %}
                                     </div>
-                                    <!-- Comment Text -->
                                     <p class="text-gray-700 mb-3">{{ comment.text }}</p>
-                                    <!-- YouTube Thumbnail (if exists) -->
                                     {% if comment.youtube_id %}
                                         <div class="mb-3">
                                             <a href="https://www.youtube.com/watch?v={{ comment.youtube_id }}"
-                                               target="_blank"
-                                               rel="noopener">
+                                               target="_blank" rel="noopener">
                                                 <img src="https://img.youtube.com/vi/{{ comment.youtube_id }}/0.jpg"
                                                      alt="YouTube thumbnail"
                                                      class="rounded-lg shadow-md hover:opacity-80 transition w-full max-w-xs" />
                                             </a>
                                         </div>
                                     {% endif %}
-                                    <!-- Voting Controls -->
+                                    <!-- Voting -->
                                     <div class="flex items-center space-x-4">
                                         <div class="flex items-center space-x-2">
-                                            <button class="vote-btn"
+                                            <button class="vote-btn hover:text-green-700 transition-colors"
                                                     data-comment-id="{{ comment.id }}"
                                                     data-vote-type="up"
                                                     onclick="voteComment('{{ comment.id }}', 'up')">
-                                                <i class="fas fa-thumbs-up text-green-600 hover:text-green-700 cursor-pointer transition-colors"></i>
+                                                <i class="fas fa-thumbs-up text-green-600"></i>
                                             </button>
                                             <span class="text-sm text-gray-600 vote-count-up">{{ comment.votes }}</span>
                                         </div>
                                         <div class="flex items-center space-x-2">
-                                            <button class="vote-btn"
+                                            <button class="vote-btn hover:text-red-700 transition-colors"
                                                     data-comment-id="{{ comment.id }}"
                                                     data-vote-type="down"
                                                     onclick="voteComment('{{ comment.id }}', 'down')">
-                                                <i class="fas fa-thumbs-down text-red-600 hover:text-red-700 cursor-pointer transition-colors"></i>
+                                                <i class="fas fa-thumbs-down text-red-600"></i>
                                             </button>
                                             <span class="text-sm text-gray-600 vote-count-down">{{ comment.votes }}</span>
                                         </div>
-                                        <button class="text-sm text-blue-600 hover:text-blue-700 cursor-pointer"
+                                        <button class="text-sm text-blue-600 hover:text-blue-700"
                                                 onclick="toggleReplyForm('{{ comment.id }}')">
-                                            <i class="fas fa-reply mr-1"></i>
-                                            Reply
+                                            <i class="fas fa-reply mr-1"></i>Reply
                                         </button>
                                     </div>
-                                    <!-- Reply Form (Hidden by default) -->
-                                    <div id="reply-form-{{ comment.id }}"
-                                         class="hidden mt-4 ml-4 p-4 bg-gray-50 rounded-lg">
-                                        <form onsubmit="submitReply(event, '{{ comment.id }}')">
-                                            {% csrf_token %}
-                                            <textarea name="reply_text"
-                                                      rows="2"
-                                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                                                      placeholder="Write your reply..."></textarea>
-                                            <div class="flex justify-end space-x-2 mt-2">
-                                                <button type="button"
-                                                        onclick="toggleReplyForm('{{ comment.id }}')"
-                                                        class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800">
-                                                    Cancel
-                                                </button>
-                                                <button type="submit"
-                                                        class="px-4 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
-                                                    Reply
-                                                </button>
-                                            </div>
-                                        </form>
+                                    <!-- Reply Form -->
+                                    <div id="reply-form-{{ comment.id }}" class="hidden mt-4 ml-4 p-4 bg-gray-50 rounded-lg">
+                                        <textarea id="reply-text-{{ comment.id }}"
+                                                  rows="2"
+                                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                                  placeholder="Write your reply..."></textarea>
+                                        <div class="flex justify-end space-x-2 mt-2">
+                                            <button type="button"
+                                                    onclick="toggleReplyForm('{{ comment.id }}')"
+                                                    class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
+                                            <button type="button"
+                                                    onclick="submitReply('{{ comment.id }}')"
+                                                    class="px-4 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">Reply</button>
+                                        </div>
                                     </div>
                                     <!-- Replies -->
                                     {% if comment.replies.all %}
@@ -320,7 +272,6 @@
                     {% endfor %}
                 </div>
             {% else %}
-                <!-- Empty State -->
                 <div class="text-center py-12">
                     <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
                     <h4 class="text-xl font-semibold text-gray-900 mb-2">No comments yet</h4>
@@ -328,28 +279,25 @@
                 </div>
             {% endif %}
         </div>
+
         <!-- Comment Form -->
         {% if user.is_authenticated %}
             <div class="bg-white rounded-lg shadow-lg p-6">
                 <h3 class="text-xl font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-pen text-green-600 mr-2"></i>
-                    Leave a Comment
+                    <i class="fas fa-pen text-green-600 mr-2"></i>Leave a Comment
                 </h3>
                 <form method="post" id="comment-form" class="space-y-4">
                     {% csrf_token %}
                     <input type="hidden" name="checkin_id" value="{{ checkin.id }}" />
-                    <!-- Comment Text -->
                     <div>
-                        <label for="comment-text"
-                               class="block text-sm font-medium text-gray-700 mb-2">Your Comment</label>
+                        <label for="comment-text" class="block text-sm font-medium text-gray-700 mb-2">Your Comment</label>
                         <textarea name="text"
                                   id="comment-text"
                                   rows="4"
                                   required
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                                   placeholder="Write something about this check-in..."></textarea>
                     </div>
-                    <!-- Rating (Optional) -->
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Rating (Optional)</label>
                         <div class="flex items-center space-x-1" id="rating-stars">
@@ -361,37 +309,31 @@
                         </div>
                         <input type="hidden" name="rating" id="rating-input" value="" />
                     </div>
-                    <!-- Submit Button -->
                     <div class="flex justify-end">
                         <button type="submit"
                                 class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-                            <i class="fas fa-paper-plane mr-2"></i>
-                            Post Comment
+                            <i class="fas fa-paper-plane mr-2"></i>Post Comment
                         </button>
                     </div>
                 </form>
             </div>
         {% else %}
-            <!-- Login Prompt -->
             <div class="bg-gray-50 rounded-lg p-6 text-center">
                 <i class="fas fa-sign-in-alt text-4xl text-gray-400 mb-4"></i>
                 <h3 class="text-lg font-semibold text-gray-900 mb-2">Want to leave a comment?</h3>
                 <p class="text-gray-600 mb-4">Log in to share your thoughts about this check-in.</p>
                 <a href="{% url 'login' %}?next={{ request.path }}" class="btn-primary">
-                    <i class="fas fa-sign-in-alt mr-2"></i>
-                    Log In
+                    <i class="fas fa-sign-in-alt mr-2"></i>Log In
                 </a>
             </div>
         {% endif %}
     </div>
+
     <!-- Photo Modal -->
     <div id="photo-modal"
          class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
         <div class="max-w-4xl max-h-full p-4 relative">
-            <img id="modal-photo"
-                 src=""
-                 alt="Full size photo"
-                 class="max-w-full max-h-full rounded-lg" />
+            <img id="modal-photo" src="" alt="Full size photo" class="max-w-full max-h-full rounded-lg" />
             <button class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300"
                     onclick="closePhotoModal()">
                 <i class="fas fa-times"></i>
@@ -399,196 +341,148 @@
         </div>
     </div>
 {% endblock %}
+
 {% block extra_js %}
+    {# FIX: expose real Django URL patterns to JS — no more hardcoded /api/ paths #}
     <script>
-  // Photo modal functionality
-  function openPhotoModal(src) {
-    const modal = document.getElementById("photo-modal");
-    const modalPhoto = document.getElementById("modal-photo");
-    modalPhoto.src = src;
-    modal.classList.remove("hidden");
-  }
+    const URLS = {
+        voteComment:  "{% url 'places:vote_comment' 0 %}",   // replace 0 with comment id
+        replyComment: "{% url 'places:reply_comment' %}",
+    };
+    const CSRF_TOKEN = document.querySelector("[name=csrfmiddlewaretoken]").value;
+    </script>
 
-  function closePhotoModal() {
-    const modal = document.getElementById("photo-modal");
-    modal.classList.add("hidden");
-  }
-
-  // Rating system
-  function setRating(rating) {
-    const stars = document.querySelectorAll("#rating-stars i");
-    const ratingInput = document.getElementById("rating-input");
-
-    stars.forEach((star, index) => {
-      if (index < rating) {
-        star.classList.remove("far", "text-gray-300");
-        star.classList.add("fas", "text-yellow-400");
-      } else {
-        star.classList.remove("fas", "text-yellow-400");
-        star.classList.add("far", "text-gray-300");
-      }
-    });
-
-    ratingInput.value = rating;
-  }
-
-  // Comment voting
-  function voteComment(commentId, voteType) {
-    fetch(`/api/comments/${commentId}/vote/`, {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]")
-          .value,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        vote_type: voteType,
-      }),
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          // Update vote counts
-          const comment = document.querySelector(
-            `[data-comment-id="${commentId}"]`,
-          );
-          const upCount = comment.querySelector(".vote-count-up");
-          const downCount = comment.querySelector(".vote-count-down");
-
-          upCount.textContent = data.upvotes;
-          downCount.textContent = data.downvotes;
-
-          // Visual feedback
-          const voteBtn = comment.querySelector(
-            `[data-vote-type="${voteType}"]`,
-          );
-          voteBtn.classList.add("animate-pulse");
-          setTimeout(() => voteBtn.classList.remove("animate-pulse"), 500);
-        }
-      })
-      .catch((error) => {
-        console.error("Error voting:", error);
-        alert("Error submitting vote. Please try again.");
-      });
-  }
-
-  // Reply form toggle
-  function toggleReplyForm(commentId) {
-    const replyForm = document.getElementById(`reply-form-${commentId}`);
-    replyForm.classList.toggle("hidden");
-
-    if (!replyForm.classList.contains("hidden")) {
-      const textarea = replyForm.querySelector("textarea");
-      textarea.focus();
+    <script>
+    // ── Photo modal ───────────────────────────────────────────────
+    function openPhotoModal(src) {
+        document.getElementById("modal-photo").src = src;
+        document.getElementById("photo-modal").classList.remove("hidden");
     }
-  }
+    function closePhotoModal() {
+        document.getElementById("photo-modal").classList.add("hidden");
+    }
 
-  // Submit reply
-  function submitReply(event, commentId) {
-    event.preventDefault();
-
-    const form = event.target;
-    const formData = new FormData(form);
-    formData.append("parent_id", commentId);
-
-    fetch(`/api/comments/reply/`, {
-      method: "POST",
-      headers: {
-        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]")
-          .value,
-      },
-      body: formData,
-    })
-      .then((response) => response.json())
-      .then((data) => {
-        if (data.success) {
-          // Reload page to show new reply
-          location.reload();
-        } else {
-          alert("Error submitting reply. Please try again.");
-        }
-      })
-      .catch((error) => {
-        console.error("Error submitting reply:", error);
-        alert("Error submitting reply. Please try again.");
-      });
-  }
-
-  // Comment form submission
-  document
-    .getElementById("comment-form")
-    ?.addEventListener("submit", function (e) {
-      e.preventDefault();
-
-      const formData = new FormData(this);
-      const submitBtn = this.querySelector('button[type="submit"]');
-      const originalText = submitBtn.innerHTML;
-
-      // Show loading state
-      submitBtn.innerHTML =
-        '<i class="fas fa-spinner fa-spin mr-2"></i>Posting...';
-      submitBtn.disabled = true;
-
-      fetch(window.location.pathname, {
-        method: "POST",
-        headers: {
-          "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]")
-            .value,
-        },
-        body: formData,
-      })
-        .then((response) => {
-          if (response.ok) {
-            // Reload page to show new comment
-            location.reload();
-          } else {
-            throw new Error("Network response was not ok");
-          }
-        })
-        .catch((error) => {
-          console.error("Error submitting comment:", error);
-          alert("Error submitting comment. Please try again.");
-        })
-        .finally(() => {
-          // Reset button
-          submitBtn.innerHTML = originalText;
-          submitBtn.disabled = false;
+    // ── Rating stars ──────────────────────────────────────────────
+    function setRating(rating) {
+        document.querySelectorAll("#rating-stars i").forEach((star, idx) => {
+            if (idx < rating) {
+                star.classList.replace("far", "fas");
+                star.classList.add("text-yellow-400");
+                star.classList.remove("text-gray-300");
+            } else {
+                star.classList.replace("fas", "far");
+                star.classList.remove("text-yellow-400");
+                star.classList.add("text-gray-300");
+            }
         });
+        document.getElementById("rating-input").value = rating;
+    }
+
+    // ── Comment voting ────────────────────────────────────────────
+    function voteComment(commentId, voteType) {
+        // FIX: use URLS object built from Django {% url %} tag — not hardcoded /api/
+        const url = URLS.voteComment.replace("/0/", `/${commentId}/`);
+
+        fetch(url, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": CSRF_TOKEN,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ vote_type: voteType }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+            const commentEl = document.querySelector(`[data-comment-id="${commentId}"]`);
+            if (!commentEl) return;
+            commentEl.querySelector(".vote-count-up").textContent   = data.upvotes;
+            commentEl.querySelector(".vote-count-down").textContent = data.downvotes;
+            // Visual pulse feedback
+            const btn = commentEl.querySelector(`[data-vote-type="${voteType}"]`);
+            if (btn) {
+                btn.classList.add("animate-pulse");
+                setTimeout(() => btn.classList.remove("animate-pulse"), 500);
+            }
+        })
+        .catch(err => console.error("Vote error:", err));
+    }
+
+    // ── Reply form toggle ─────────────────────────────────────────
+    function toggleReplyForm(commentId) {
+        const form = document.getElementById(`reply-form-${commentId}`);
+        form.classList.toggle("hidden");
+        if (!form.classList.contains("hidden")) {
+            document.getElementById(`reply-text-${commentId}`).focus();
+        }
+    }
+
+    // ── Submit reply ──────────────────────────────────────────────
+    function submitReply(commentId) {
+        const text = document.getElementById(`reply-text-${commentId}`).value.trim();
+        if (!text) return;
+
+        // FIX: use URLS.replyComment from Django {% url %} tag
+        const formData = new FormData();
+        formData.append("parent_id", commentId);
+        formData.append("reply_text", text);
+        formData.append("csrfmiddlewaretoken", CSRF_TOKEN);
+
+        fetch(URLS.replyComment, {
+            method: "POST",
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert(data.error || "Error submitting reply. Please try again.");
+            }
+        })
+        .catch(err => console.error("Reply error:", err));
+    }
+
+    // ── Comment form ──────────────────────────────────────────────
+    document.getElementById("comment-form")?.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const btn = this.querySelector('button[type="submit"]');
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Posting...';
+        btn.disabled = true;
+
+        fetch(window.location.pathname, {
+            method: "POST",
+            headers: { "X-CSRFToken": CSRF_TOKEN },
+            body: new FormData(this),
+        })
+        .then(r => {
+            if (r.ok) {
+                location.reload();
+            } else {
+                throw new Error("Server error");
+            }
+        })
+        .catch(() => alert("Error submitting comment. Please try again."))
+        .finally(() => { btn.innerHTML = orig; btn.disabled = false; });
     });
 
-  // Close modal when clicking outside
-  document
-    .getElementById("photo-modal")
-    .addEventListener("click", function (e) {
-      if (e.target === this) {
-        closePhotoModal();
-      }
+    // ── Modal keyboard / outside-click close ─────────────────────
+    document.getElementById("photo-modal").addEventListener("click", function(e) {
+        if (e.target === this) closePhotoModal();
+    });
+    document.addEventListener("keydown", e => {
+        if (e.key === "Escape") closePhotoModal();
     });
 
-  // Keyboard shortcuts
-  document.addEventListener("keydown", function (e) {
-    // Escape key to close modal
-    if (e.key === "Escape") {
-      closePhotoModal();
-    }
-  });
-
-  // Initialize page
-  document.addEventListener("DOMContentLoaded", function () {
-    // Add smooth scrolling to comments
-    const commentsSection = document.getElementById("comments-list");
-    if (commentsSection) {
-      commentsSection.scrollIntoView({ behavior: "smooth", block: "nearest" });
-    }
-
-    // Auto-focus comment form if coming from a direct link
-    if (window.location.hash === "#comment") {
-      const commentText = document.getElementById("comment-text");
-      if (commentText) {
-        commentText.focus();
-        commentText.scrollIntoView({ behavior: "smooth" });
-      }
-    }
-  });
+    // ── Auto-scroll ───────────────────────────────────────────────
+    // FIX: only scroll to comments when URL explicitly contains #comments,
+    // not on every page load (which was scrolling all visitors past the content)
+    document.addEventListener("DOMContentLoaded", function() {
+        if (window.location.hash === "#comments") {
+            document.getElementById("comments")
+                    ?.scrollIntoView({ behavior: "smooth" });
+        }
+    });
     </script>
 {% endblock %}

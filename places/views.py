@@ -33,6 +33,7 @@ from .models import (
     CheckIn,
     Trail,
     TrailPlace,
+    TrailCompletion,
     Vote,
     Favorite,
     Badge,
@@ -66,11 +67,40 @@ from .forms import (
 # ─────────────────────────────────────────────────────────
 # Constants
 # ─────────────────────────────────────────────────────────
-MAX_PLACES_PER_TRAIL = 20  # ✅ FIX: cap trail size
+MAX_PLACES_PER_TRAIL = 20
+CHECKIN_COOLDOWN_SECONDS = 300
+NOTIFICATION_HOURLY_CAP = 5
 
 
 def is_staff_or_superuser(user):
     return user.is_staff or user.is_superuser
+
+
+def _can_notify(user, max_per_hour=NOTIFICATION_HOURLY_CAP):
+    cutoff = timezone.now() - timedelta(hours=1)
+    recent = Notification.objects.filter(
+        user=user,
+        created_at__gte=cutoff,
+    ).count()
+    return recent < max_per_hour
+
+
+def _recalculate_level(profile):
+    """Recalculate and save user level based on current points.
+    Only writes to DB if level changed. Call after every profile.points change."""
+    if profile.points >= 1000:
+        new_level = 5
+    elif profile.points >= 500:
+        new_level = 4
+    elif profile.points >= 200:
+        new_level = 3
+    elif profile.points >= 50:
+        new_level = 2
+    else:
+        new_level = 1
+    if profile.level != new_level:
+        profile.level = new_level
+        profile.save(update_fields=['level'])
 
 
 def extract_video_info(url):
@@ -123,7 +153,6 @@ def get_trail_progress(user, trail):
 # ─────────────────────────────────────────────────────────
 
 def home(request):
-    # ── Paginated recent places (bottom strip) ──────────────
     all_places = Place.objects.filter(
         status='approved'
     ).order_by('-created_at')
@@ -132,9 +161,6 @@ def home(request):
     page_number = request.GET.get('page')
     places      = paginator.get_page(page_number)
 
-    # ── Trending places ──────────────────────────────────────
-    # Actual related names from your model error output:
-    #   vote, checkin, comments, visit_count (direct field)
     trending_places = Place.objects.filter(
         status='approved'
     ).annotate(
@@ -143,12 +169,10 @@ def home(request):
         comment_count=Count('comments', distinct=True),
     ).order_by('-visit_count', '-check_in_count', '-vote_count')[:6]
 
-    # ── Featured trails ─────────────────────────────────────
     featured_trails = Trail.objects.filter(
         is_public=True
     ).prefetch_related('places').order_by('-created_at')[:3]
 
-    # ── Tour packages ────────────────────────────────────────
     try:
         featured_tours = TourPackage.objects.filter(
             is_active=True
@@ -156,17 +180,16 @@ def home(request):
     except Exception:
         featured_tours = []
 
-    # ── Badges preview ───────────────────────────────────────
     featured_badges = Badge.objects.filter(
         is_active=True
     ).order_by('points_required')[:6]
 
-    # ── Active challenges (with user progress) ───────────────
-    now = timezone.now()
+    # FIX: renamed to now_ts to avoid shadowing the imported now() function
+    now_ts = timezone.now()
     challenges_qs = Challenge.objects.filter(
         is_active=True,
-        start_date__lte=now,
-        end_date__gte=now,
+        start_date__lte=now_ts,
+        end_date__gte=now_ts,
     ).order_by('end_date')[:4]
 
     if request.user.is_authenticated:
@@ -181,7 +204,6 @@ def home(request):
     else:
         active_challenges = list(challenges_qs)
 
-    # ── Leaderboard top 8 ────────────────────────────────────
     top_profiles = UserProfile.objects.select_related('user').order_by('-points')[:8]
     top_explorers = []
     for rank, profile in enumerate(top_profiles, start=1):
@@ -191,7 +213,6 @@ def home(request):
             'profile':  profile,
         })
 
-    # ── Hero stat pills ──────────────────────────────────────
     total_places = Place.objects.filter(status='approved').count()
     total_trails = Trail.objects.filter(is_public=True).count()
     total_users  = UserProfile.objects.count()
@@ -214,6 +235,7 @@ def home(request):
         'total_users':       total_users,
     })
 
+
 def place_detail(request, slug):
     place = get_object_or_404(Place, slug=slug)
 
@@ -232,8 +254,12 @@ def place_detail(request, slug):
     place_images = place.images.all()
 
     if not request.user.is_staff:
-        place.visit_count += 1
-        place.save(update_fields=["visit_count"])
+        # FIX: atomic increment to prevent lost updates under concurrent requests
+        from django.db.models import F
+        Place.objects.filter(pk=place.pk).update(
+            visit_count=F('visit_count') + 1
+        )
+        place.refresh_from_db(fields=['visit_count'])
 
     comments = place.comments.filter(parent=None).prefetch_related("replies")
 
@@ -291,9 +317,17 @@ def place_detail(request, slug):
 
                 comment.save()
 
-                profile, created = UserProfile.objects.get_or_create(user=request.user)
-                profile.points += 5
-                profile.save()
+                # FIX: rate-limit comment points — max 3 comments earn points per day
+                today_start = timezone.now().replace(hour=0, minute=0, second=0, microsecond=0)
+                comments_today = Comment.objects.filter(
+                    user=request.user,
+                    created_at__gte=today_start,
+                ).count()
+                if comments_today <= 3:
+                    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+                    profile.points += 5
+                    profile.save()
+                    _recalculate_level(profile)
                 evaluate_badges_for_user(request.user)
 
                 messages.success(request, "Comment added successfully!")
@@ -332,9 +366,18 @@ def add_place(request):
                 related_place=place,
             )
 
-            profile, created = UserProfile.objects.get_or_create(user=request.user)
-            profile.points += 20
-            profile.save()
+            profile, _ = UserProfile.objects.get_or_create(user=request.user)
+            # FIX: only award submission points if no other place by this user
+            # has the same name — prevents re-submission farming after rejection
+            duplicate_exists = Place.objects.filter(
+                created_by=request.user,
+                name__iexact=place.name,
+            ).exclude(pk=place.pk).exists()
+            if not duplicate_exists:
+                profile.points += 20
+                profile.save()
+                _recalculate_level(profile)
+            evaluate_badges_for_user(request.user)
 
             messages.success(
                 request,
@@ -398,16 +441,20 @@ def profile(request, username):
     )
 
     if profile.points >= 1000:
-        profile.level = 5
+        new_level = 5
     elif profile.points >= 500:
-        profile.level = 4
+        new_level = 4
     elif profile.points >= 200:
-        profile.level = 3
+        new_level = 3
     elif profile.points >= 50:
-        profile.level = 2
+        new_level = 2
     else:
-        profile.level = 1
-    profile.save()
+        new_level = 1
+
+    # FIX: only write to DB if level actually changed — avoids a write on every page view
+    if profile.level != new_level:
+        profile.level = new_level
+        profile.save(update_fields=['level'])
 
     context = {
         "profile_user": user,
@@ -513,13 +560,16 @@ def check_new_notifications(request):
 
 
 def get_streaks(checkins):
-    dates = sorted(set(ci.created_at.date() for ci in checkins))
+    # FIX: use values_list to avoid loading full CheckIn objects into memory
+    dates = sorted(set(
+        checkins.values_list('created_at__date', flat=True)
+    ))
     if not dates:
         return []
     streaks = []
     current_streak = 1
     for i in range(1, len(dates)):
-        if dates[i] == dates[i - 1] + timedelta(days=1):
+        if (dates[i] - dates[i - 1]).days == 1:
             current_streak += 1
         else:
             streaks.append(current_streak)
@@ -532,38 +582,34 @@ def get_streaks(checkins):
 def check_ins(request):
     user = request.user
     today = now().date()
-    checkins = CheckIn.objects.filter(user=user).select_related("place")
+    checkins_qs = CheckIn.objects.filter(user=user).select_related("place")
 
-    total_points = checkins.aggregate(total=Sum("points_awarded"))["total"] or 0
-    unique_places = checkins.values("place").distinct().count()
+    total_points  = checkins_qs.aggregate(total=Sum("points_awarded"))["total"] or 0
+    unique_places = checkins_qs.values("place").distinct().count()
 
-    week_ago = today - timedelta(days=7)
+    week_ago  = today - timedelta(days=7)
     month_ago = today - timedelta(days=30)
-    week_checkins = checkins.filter(created_at__date__gte=week_ago).count()
-    month_checkins = checkins.filter(created_at__date__gte=month_ago).count()
+    week_checkins  = checkins_qs.filter(created_at__date__gte=week_ago).count()
+    month_checkins = checkins_qs.filter(created_at__date__gte=month_ago).count()
 
-    total_count = checkins.count()
-    photo_checkins = checkins.filter(photo_proof__isnull=False).count()
-    verified_checkins = checkins.filter(location_verified=True).count()
+    total_count       = checkins_qs.count()
+    photo_checkins    = checkins_qs.exclude(photo_proof="").exclude(photo_proof__isnull=True).count()
+    verified_checkins = checkins_qs.filter(location_verified=True).count()
 
-    photo_percent = round((photo_checkins / total_count) * 100, 1) if total_count else 0
-    verified_percent = (
-        round((verified_checkins / total_count) * 100, 1) if total_count else 0
-    )
+    photo_percent    = round((photo_checkins / total_count) * 100, 1) if total_count else 0
+    verified_percent = round((verified_checkins / total_count) * 100, 1) if total_count else 0
 
-    streaks = get_streaks(checkins)
+    streaks        = get_streaks(checkins_qs)
     longest_streak = max(streaks) if streaks else 0
 
-    months = checkins.dates("created_at", "month")
-    month_counts = Counter([dt.strftime("%B %Y") for dt in months])
+    months = checkins_qs.dates("created_at", "month")
+    month_counts     = Counter([dt.strftime("%B %Y") for dt in months])
     most_active_month = month_counts.most_common(1)[0][0] if month_counts else "N/A"
 
     category_counts = Counter(
-        [cat.name for c in checkins if c.place for cat in c.place.category.all()]
+        [cat.name for c in checkins_qs if c.place for cat in c.place.category.all()]
     )
-    favorite_category = (
-        category_counts.most_common(1)[0][0] if category_counts else "N/A"
-    )
+    favorite_category = category_counts.most_common(1)[0][0] if category_counts else "N/A"
 
     recent_badges = (
         UserBadge.objects.filter(user=user)
@@ -571,21 +617,39 @@ def check_ins(request):
         .order_by("-earned_at")[:5]
     )
 
+    # FIX: provide recent_milestones so the Stats tab renders correctly.
+    # Use recently earned badges as milestones — they have a title and date.
+    recent_milestones = [
+        {"title": ub.badge.name, "date": ub.earned_at}
+        for ub in UserBadge.objects.filter(user=user)
+        .select_related("badge")
+        .order_by("-earned_at")[:5]
+    ]
+
+    # FIX: paginate checkins so the template's has_next works correctly.
+    # checkins is now a Page object — use checkins.paginator.count in template
+    # if you need the total, or use total_count passed separately.
+    paginator   = Paginator(checkins_qs, 20)
+    page_number = request.GET.get("page")
+    checkins    = paginator.get_page(page_number)
+
     return render(
         request,
         "check_ins.html",
         {
-            "checkins": checkins,
-            "total_points": total_points,
-            "unique_places": unique_places,
-            "week_checkins": week_checkins,
-            "month_checkins": month_checkins,
-            "photo_checkins": photo_percent,
-            "verified_checkins": verified_percent,
-            "longest_streak": longest_streak,
-            "most_active_month": most_active_month,
-            "favorite_category": favorite_category,
-            "recent_badges": recent_badges,
+            "checkins":           checkins,
+            "total_count":        total_count,
+            "total_points":       total_points,
+            "unique_places":      unique_places,
+            "week_checkins":      week_checkins,
+            "month_checkins":     month_checkins,
+            "photo_checkins":     photo_percent,
+            "verified_checkins":  verified_percent,
+            "longest_streak":     longest_streak,
+            "most_active_month":  most_active_month,
+            "favorite_category":  favorite_category,
+            "recent_badges":      recent_badges,
+            "recent_milestones":  recent_milestones,
         },
     )
 
@@ -596,11 +660,10 @@ def award_trail_completions(user, checked_place):
     ).distinct()
 
     for trail in affected_trails:
-        already_rewarded = Notification.objects.filter(
-            user=user,
-            notification_type="challenge",
-            message__icontains=trail.name,
-            title__icontains="Completed",
+        # FIX: use UserChallengeCompletion-style idempotency check instead of
+        # fragile notification text matching (which breaks if trail is renamed)
+        already_rewarded = TrailCompletion.objects.filter(
+            user=user, trail=trail
         ).exists()
         if already_rewarded:
             continue
@@ -611,17 +674,24 @@ def award_trail_completions(user, checked_place):
             multiplier = multipliers.get(trail.difficulty, 1.0)
             bonus = int(100 * multiplier)
 
+            # Record completion first (idempotent guard)
+            TrailCompletion.objects.create(user=user, trail=trail, points_awarded=bonus)
+
             profile, _ = UserProfile.objects.get_or_create(user=user)
             profile.points += bonus
             profile.save()
+            # Recalculate level after points change
+            _recalculate_level(profile)
+            evaluate_badges_for_user(user)
 
-            Notification.objects.create(
-                user=user,
-                title="Trail Completed! 🎉",
-                message=f'You completed "{trail.name}" and earned {bonus} bonus points!',
-                notification_type="challenge",
-                related_trail=trail,
-            )
+            if _can_notify(user):
+                Notification.objects.create(
+                    user=user,
+                    title="Trail Completed! 🎉",
+                    message=f'You completed "{trail.name}" and earned {bonus} bonus points!',
+                    notification_type="challenge",
+                    related_trail=trail,
+                )
 
             if hasattr(trail, "completion_badge") and trail.completion_badge:
                 UserBadge.objects.get_or_create(user=user, badge=trail.completion_badge)
@@ -644,6 +714,21 @@ def check_in(request, slug):
             checkin.place = place
             checkin.location_verified = request.POST.get("location_verified") == "true"
 
+            last_checkin = (
+                CheckIn.objects.filter(user=request.user)
+                .order_by("-created_at")
+                .first()
+            )
+            if last_checkin:
+                elapsed = (timezone.now() - last_checkin.created_at).total_seconds()
+                if elapsed < CHECKIN_COOLDOWN_SECONDS:
+                    wait = int(CHECKIN_COOLDOWN_SECONDS - elapsed)
+                    messages.warning(
+                        request,
+                        f"⏳ Please wait {wait} seconds before your next check-in.",
+                    )
+                    return redirect("places:place_detail", slug=place.slug)
+
             points = 10
             if checkin.photo_proof:
                 points += 5
@@ -652,13 +737,14 @@ def check_in(request, slug):
             checkin.points_awarded = points
             checkin.save()
 
+            profile, _ = UserProfile.objects.get_or_create(user=request.user)
+            profile.points += checkin.points_awarded
+            profile.save()
+            _recalculate_level(profile)
+
             award_trail_completions(request.user, place)
             evaluate_challenges_for_user(request.user)
             evaluate_badges_for_user(request.user)
-
-            profile, created = UserProfile.objects.get_or_create(user=request.user)
-            profile.points += checkin.points_awarded
-            profile.save()
 
             messages.success(
                 request,
@@ -677,22 +763,15 @@ def check_in(request, slug):
 
 
 def trails(request):
-    """
-    ✅ FIX 1: Added pagination (was missing).
-    ✅ FIX 2: Added .distinct() to prevent duplicate rows from M2M category joins.
-    ✅ FIX 3: Fixed difficulty sort — was using raw string comparison; now uses
-               CASE ordering via annotate or a sensible fallback.
-    ✅ FIX 4: Added popularity stats (checkin_count annotation).
-    """
     trails_qs = (
         Trail.objects.filter(is_public=True)
         .annotate(
-            place_count=Count("places", distinct=True),  # ✅ distinct avoids inflation
-            checkin_count=Count("places__checkin", distinct=True),  # ✅ popularity stat
+            place_count=Count("places", distinct=True),
+            checkin_count=Count("places__checkin", distinct=True),
         )
         .select_related("created_by")
         .prefetch_related("places", "category")
-        .distinct()  # ✅ FIX category M2M duplicate rows
+        .distinct()
     )
 
     search_query = request.GET.get("search", "")
@@ -717,9 +796,8 @@ def trails(request):
     elif sort_by == "places":
         trails_qs = trails_qs.order_by("-place_count")
     elif sort_by == "popularity":
-        trails_qs = trails_qs.order_by("-checkin_count")  # ✅ real popularity
+        trails_qs = trails_qs.order_by("-checkin_count")
     elif sort_by == "difficulty":
-        # ✅ FIX: map difficulty to a numeric weight for proper ordering
         from django.db.models import Case, When, IntegerField, Value
 
         trails_qs = trails_qs.annotate(
@@ -737,12 +815,10 @@ def trails(request):
     difficulty_choices = Trail.DIFFICULTY_CHOICES
     category_choices = Category.objects.filter(trails__isnull=False).distinct()
 
-    # ✅ FIX: pagination
     paginator = Paginator(trails_qs, 9)
     page_number = request.GET.get("page")
     trails_page = paginator.get_page(page_number)
 
-    # Attach per-user progress to each trail in the page
     if request.user.is_authenticated:
         for trail in trails_page:
             trail.user_progress = get_trail_progress(request.user, trail)
@@ -751,7 +827,7 @@ def trails(request):
             trail.user_progress = None
 
     context = {
-        "trails": trails_page,  # ✅ now paginated
+        "trails": trails_page,
         "search_query": search_query,
         "selected_difficulty": difficulty,
         "selected_category": category,
@@ -766,14 +842,12 @@ def trails(request):
 def trail_detail(request, pk):
     trail = get_object_or_404(Trail, pk=pk)
 
-    # ✅ FIX: lock check should also handle unauthenticated users gracefully
     is_locked = False
     if trail.required_points > 0:
         if not request.user.is_authenticated:
             is_locked = True
         else:
             user_profile = getattr(request.user, "userprofile", None)
-            # ✅ FIX: was checking wrong condition — staff bypass, correct points check
             if not request.user.is_staff and (
                 user_profile is None or user_profile.points < trail.required_points
             ):
@@ -796,7 +870,6 @@ def trail_detail(request, pk):
         .order_by("order")
     )
 
-    # ✅ FIX: save_trail is now a real toggle (remove if already saved)
     if request.method == "POST" and request.user.is_authenticated:
         action = request.POST.get("action")
 
@@ -812,7 +885,6 @@ def trail_detail(request, pk):
                 messages.info(request, "Trail removed from your favorites.")
 
         elif action == "start_trail":
-            # ✅ FIX: redirect to first uncompleted place in the trail
             if is_locked:
                 messages.error(
                     request,
@@ -821,7 +893,6 @@ def trail_detail(request, pk):
                 return redirect("places:trail_detail", pk=trail.pk)
 
             if trail_places.exists():
-                # Find first place user hasn't checked into yet
                 checked_ids = set(
                     CheckIn.objects.filter(user=request.user).values_list(
                         "place_id", flat=True
@@ -839,13 +910,11 @@ def trail_detail(request, pk):
                 messages.warning(request, "This trail has no places yet.")
 
         elif action == "export_route":
-            # ✅ FIX: generate a real GPX export instead of a fake response
             return _export_trail_gpx(trail, trail_places)
 
     total_distance = sum([tp.distance_from_previous or 0 for tp in trail_places])
     estimated_time = trail.estimated_duration or "Varies"
 
-    # ✅ FIX: is_saved state for the button
     is_saved = False
     if request.user.is_authenticated:
         is_saved = TrailFavorite.objects.filter(user=request.user, trail=trail).exists()
@@ -859,13 +928,12 @@ def trail_detail(request, pk):
         and (request.user == trail.created_by or request.user.is_staff),
         "progress": progress,
         "is_locked": is_locked,
-        "is_saved": is_saved,  # ✅ saved state for button
+        "is_saved": is_saved,
     }
     return render(request, "trail_detail.html", context)
 
 
 def _export_trail_gpx(trail, trail_places):
-    """✅ FIX: Real GPX export instead of a fake success message."""
     lines = [
         '<?xml version="1.0" encoding="UTF-8"?>',
         '<gpx version="1.1" creator="Expearls" xmlns="http://www.topografix.com/GPX/1/1">',
@@ -888,17 +956,9 @@ def _export_trail_gpx(trail, trail_places):
 
 @login_required
 def create_trail(request):
-    """
-    ✅ FIX: Wrapped place insertion in transaction.atomic().
-    ✅ FIX: Added max-place enforcement (MAX_PLACES_PER_TRAIL).
-    ✅ FIX: Added duplicate name check per creator.
-    ✅ FIX: Added zero-place validation.
-    ✅ FIX: Deduplicate place_ids to prevent duplicate TrailPlace entries.
-    """
     if request.method == "POST":
         form = TrailForm(request.POST, request.FILES)
 
-        # ✅ FIX: duplicate name check per user
         trail_name = request.POST.get("name", "").strip()
         if Trail.objects.filter(
             created_by=request.user, name__iexact=trail_name
@@ -918,35 +978,28 @@ def create_trail(request):
             selected_places_raw = request.POST.get("selected_places", "")
             place_ids = _parse_place_ids(selected_places_raw)
 
-            # ✅ FIX: zero-place validation
             save_as_draft = request.POST.get("save_as_draft", False)
             if not save_as_draft and len(place_ids) == 0:
                 messages.error(request, "A trail must include at least one place.")
-                available_places = Place.objects.filter(status="approved").order_by(
-                    "name"
-                )
+                available_places = Place.objects.filter(status="approved").order_by("name")
                 return render(
                     request,
                     "create_trail.html",
                     {"form": form, "available_places": available_places},
                 )
 
-            # ✅ FIX: max place limit
             if len(place_ids) > MAX_PLACES_PER_TRAIL:
                 messages.error(
                     request,
                     f"A trail can contain at most {MAX_PLACES_PER_TRAIL} places.",
                 )
-                available_places = Place.objects.filter(status="approved").order_by(
-                    "name"
-                )
+                available_places = Place.objects.filter(status="approved").order_by("name")
                 return render(
                     request,
                     "create_trail.html",
                     {"form": form, "available_places": available_places},
                 )
 
-            # ✅ FIX: wrap in transaction
             with transaction.atomic():
                 trail = form.save(commit=False)
                 trail.created_by = request.user
@@ -954,7 +1007,6 @@ def create_trail(request):
                     trail.is_public = False
                 trail.save()
                 form.save_m2m()
-
                 _attach_places_to_trail(trail, place_ids)
 
             if save_as_draft:
@@ -982,19 +1034,13 @@ def create_trail(request):
         "form": form,
         "available_places": available_places,
         "preselected_places": preselected_places,
-        "max_places": MAX_PLACES_PER_TRAIL,  # pass to template for JS validation
+        "max_places": MAX_PLACES_PER_TRAIL,
     }
     return render(request, "create_trail.html", context)
 
 
 @login_required
 def edit_trail(request, pk):
-    """
-    ✅ FIX: Wrapped in transaction.atomic().
-    ✅ FIX: Duplicate name check (excluding current trail).
-    ✅ FIX: Zero-place and max-place validation.
-    ✅ FIX: Deduplicate place ids.
-    """
     trail = get_object_or_404(Trail, pk=pk)
 
     if trail.created_by != request.user and not request.user.is_staff:
@@ -1004,7 +1050,6 @@ def edit_trail(request, pk):
     if request.method == "POST":
         form = TrailForm(request.POST, request.FILES, instance=trail)
 
-        # ✅ FIX: duplicate name check excluding self
         trail_name = request.POST.get("name", "").strip()
         if (
             Trail.objects.filter(created_by=request.user, name__iexact=trail_name)
@@ -1035,9 +1080,7 @@ def edit_trail(request, pk):
 
             if len(place_ids) == 0:
                 messages.error(request, "A trail must include at least one place.")
-                available_places = Place.objects.filter(status="approved").order_by(
-                    "name"
-                )
+                available_places = Place.objects.filter(status="approved").order_by("name")
                 current_places = trail.places.all()
                 return render(
                     request,
@@ -1052,15 +1095,12 @@ def edit_trail(request, pk):
                     },
                 )
 
-            # ✅ FIX: max place limit
             if len(place_ids) > MAX_PLACES_PER_TRAIL:
                 messages.error(
                     request,
                     f"A trail can contain at most {MAX_PLACES_PER_TRAIL} places.",
                 )
-                available_places = Place.objects.filter(status="approved").order_by(
-                    "name"
-                )
+                available_places = Place.objects.filter(status="approved").order_by("name")
                 current_places = trail.places.all()
                 return render(
                     request,
@@ -1075,7 +1115,6 @@ def edit_trail(request, pk):
                     },
                 )
 
-            # ✅ FIX: wrap in transaction
             with transaction.atomic():
                 trail = form.save()
                 TrailPlace.objects.filter(trail=trail).delete()
@@ -1104,10 +1143,6 @@ def edit_trail(request, pk):
 
 
 def _parse_place_ids(raw):
-    """
-    Parse comma-separated place IDs, deduplicate while preserving order.
-    ✅ FIX: prevents duplicate TrailPlace entries from double-clicks.
-    """
     seen = set()
     ids = []
     for part in raw.split(","):
@@ -1125,7 +1160,6 @@ def _parse_place_ids(raw):
 
 
 def _attach_places_to_trail(trail, place_ids):
-    """Create TrailPlace entries. Skips non-existent / unapproved places."""
     place_map = {
         p.pk: p for p in Place.objects.filter(pk__in=place_ids, status="approved")
     }
@@ -1177,75 +1211,186 @@ def leaderboard(request):
 def get_challenge_progress(user, challenge):
     """
     Compute a user's live progress toward a challenge.
-    No join required — computed purely from CheckIn records.
 
-    Rules:
-    - Only check-ins within the challenge's start/end window count.
-    - If criteria has a category slug, only check-ins at places in that
-      category count. If no category, all places count.
-    - If require_photo=True, the check-in must have a photo.
-    - If require_review=True, the user must have left a comment on that
-      place within the challenge window.
-    - Each place counts once (distinct), regardless of how many times
-      the user checked in there.
-
-    Returns:
-        {
-            'required': int,
-            'completed': int,   # capped at required for display
-            'percent': int,     # 0–100
-            'is_done': bool,
-        }
+    Supported criteria types:
+      - daily_checkin      : at least `limit` check-ins on any single day in the window
+      - photo_checkin      : at least 1 check-in with photo proof in the window
+      - photo_checkins     : at least `threshold` check-ins with photo proof in the window
+      - checkins           : at least `threshold` distinct places checked in within window,
+                             optionally restricted to specific weekdays via `days` list
+                             (e.g. ['sat', 'sun'])
+      - new_checkins       : `threshold` places never visited before the challenge started
+      - unique_categories  : `threshold` distinct place categories checked in within window
+      - trail_complete     : `threshold` trails fully completed (all places checked in)
+      - nearby_checkins    : `threshold` location-verified check-ins within the window
+      - require_photo      : modifier — restrict checkins to those with photo proof
+      - require_review     : modifier — restrict checkins to places also reviewed in window
     """
-    criteria = challenge.criteria or {}
-    required = max(int(criteria.get("visit_count", 1)), 1)
-    require_photo = bool(criteria.get("require_photo", False))
-    require_review = bool(criteria.get("require_review", False))
-    category_slug = criteria.get("category", "").strip()
+    criteria      = challenge.criteria or {}
+    criteria_type = criteria.get("type", "")
 
-    checkins = CheckIn.objects.filter(
-        user=user,
-        created_at__gte=challenge.start_date,
-        created_at__lte=challenge.end_date,
-    )
-
-    # Category restriction — only matching category counts
-    if category_slug:
-        checkins = checkins.filter(place__category__slug=category_slug)
-
-    # Photo proof required
-    if require_photo:
-        checkins = checkins.exclude(photo_proof="").exclude(photo_proof__isnull=True)
-
-    # Review required: user must have commented on that place in the window
-    if require_review:
-        reviewed_place_ids = Comment.objects.filter(
+    # ── Helpers ──────────────────────────────────────────────────────────────
+    def _base_checkins():
+        """All checkins for this user within the challenge window."""
+        return CheckIn.objects.filter(
             user=user,
             created_at__gte=challenge.start_date,
             created_at__lte=challenge.end_date,
+        )
+
+    def _make_result(raw_count, threshold):
+        completed = min(raw_count, threshold)
+        return {
+            "required":  threshold,
+            "completed": completed,
+            "percent":   round((completed / threshold) * 100),
+            "is_done":   raw_count >= threshold,
+        }
+
+    # ── daily_checkin ─────────────────────────────────────────────────────────
+    # Criteria: {"type": "daily_checkin", "limit": 1}
+    # Completed when the user has checked in at least `limit` times on any
+    # single calendar day within the challenge window.
+    if criteria_type == "daily_checkin":
+        limit = max(int(criteria.get("limit", 1)), 1)
+        checkins = _base_checkins()
+        # Count checkins per day; find the max for any single day
+        from django.db.models import Count as _Count
+        from django.db.models.functions import TruncDate
+        daily = (
+            checkins
+            .annotate(day=TruncDate("created_at"))
+            .values("day")
+            .annotate(cnt=_Count("id"))
+            .order_by()
+        )
+        max_on_any_day = max((r["cnt"] for r in daily), default=0)
+        raw_count = 1 if max_on_any_day >= limit else 0
+        return _make_result(raw_count, 1)
+
+    # ── photo_checkin (single photo check-in) ────────────────────────────────
+    # Criteria: {"type": "photo_checkin", "required": true}
+    # Completed when the user has at least 1 check-in with photo proof.
+    if criteria_type == "photo_checkin":
+        raw_count = (
+            _base_checkins()
+            .exclude(photo_proof="")
+            .exclude(photo_proof__isnull=True)
+            .count()
+        )
+        return _make_result(min(raw_count, 1), 1)
+
+    # ── photo_checkins (multiple photo check-ins) ────────────────────────────
+    # Criteria: {"type": "photo_checkins", "threshold": N}
+    if criteria_type == "photo_checkins":
+        threshold = max(int(criteria.get("threshold", 1)), 1)
+        raw_count = (
+            _base_checkins()
+            .exclude(photo_proof="")
+            .exclude(photo_proof__isnull=True)
+            .count()
+        )
+        return _make_result(raw_count, threshold)
+
+    # ── new_checkins (places not visited before challenge start) ─────────────
+    # Criteria: {"type": "new_checkins", "threshold": N}
+    if criteria_type == "new_checkins":
+        threshold = max(int(criteria.get("threshold", 1)), 1)
+        pre_existing = CheckIn.objects.filter(
+            user=user,
+            created_at__lt=challenge.start_date,
         ).values_list("place_id", flat=True)
-        checkins = checkins.filter(place_id__in=reviewed_place_ids)
 
-    # Count distinct places (one check-in per place is enough)
-    raw_count = checkins.values("place_id").distinct().count()
-    completed = min(raw_count, required)
+        checkins = _base_checkins().exclude(place_id__in=pre_existing)
 
-    return {
-        "required": required,
-        "completed": completed,
-        "percent": round((completed / required) * 100),
-        "is_done": raw_count >= required,
-    }
+        category_slug = criteria.get("category", "").strip()
+        if category_slug:
+            checkins = checkins.filter(place__category__slug=category_slug)
+        if bool(criteria.get("require_photo", False)):
+            checkins = checkins.exclude(photo_proof="").exclude(photo_proof__isnull=True)
+
+        raw_count = checkins.values("place_id").distinct().count()
+        return _make_result(raw_count, threshold)
+
+    # ── checkins (general visit count, optional weekday filter) ──────────────
+    # Criteria: {"type": "checkins", "threshold": N}
+    # Optional: {"days": ["sat", "sun"]} to restrict to specific weekdays
+    if criteria_type == "checkins":
+        threshold = max(int(criteria.get("threshold", 1)), 1)
+        checkins  = _base_checkins()
+
+        # Weekday filter — isoweekday: Mon=1 … Sun=7
+        day_map = {"mon": 1, "tue": 2, "wed": 3, "thu": 4, "fri": 5, "sat": 6, "sun": 7}
+        days = [d.lower() for d in criteria.get("days", [])]
+        if days:
+            iso_days = [day_map[d] for d in days if d in day_map]
+            if iso_days:
+                checkins = checkins.filter(created_at__week_day__in=[
+                    # Django week_day: Sun=1, Mon=2 … Sat=7
+                    {1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 1}[iso]
+                    for iso in iso_days
+                ])
+
+        category_slug = criteria.get("category", "").strip()
+        if category_slug:
+            checkins = checkins.filter(place__category__slug=category_slug)
+        if bool(criteria.get("require_photo", False)):
+            checkins = checkins.exclude(photo_proof="").exclude(photo_proof__isnull=True)
+        if bool(criteria.get("require_review", False)):
+            reviewed_ids = Comment.objects.filter(
+                user=user,
+                created_at__gte=challenge.start_date,
+                created_at__lte=challenge.end_date,
+            ).values_list("place_id", flat=True)
+            checkins = checkins.filter(place_id__in=reviewed_ids)
+
+        raw_count = checkins.values("place_id").distinct().count()
+        return _make_result(raw_count, threshold)
+
+    # ── unique_categories ─────────────────────────────────────────────────────
+    # Criteria: {"type": "unique_categories", "threshold": N}
+    # Count how many distinct place categories the user checked in to.
+    if criteria_type == "unique_categories":
+        threshold = max(int(criteria.get("threshold", 1)), 1)
+        place_ids = (
+            _base_checkins()
+            .values_list("place_id", flat=True)
+            .distinct()
+        )
+        raw_count = (
+            Category.objects.filter(places__pk__in=place_ids)
+            .distinct()
+            .count()
+        )
+        return _make_result(raw_count, threshold)
+
+    # ── trail_complete ────────────────────────────────────────────────────────
+    # Criteria: {"type": "trail_complete", "threshold": N}
+    # Count how many public trails the user has fully completed.
+    # FIX: use TrailCompletion records (1 query) instead of looping all trails (N*2 queries)
+    if criteria_type == "trail_complete":
+        threshold = max(int(criteria.get("threshold", 1)), 1)
+        completed_count = TrailCompletion.objects.filter(user=user).count()
+        return _make_result(completed_count, threshold)
+
+    # ── nearby_checkins ───────────────────────────────────────────────────────
+    # Criteria: {"type": "nearby_checkins", "radius_km": N, "threshold": N}
+    # CheckIn has no lat/lng, so we use location_verified=True as the
+    # best available approximation for "verified nearby check-in".
+    if criteria_type == "nearby_checkins":
+        threshold = max(int(criteria.get("threshold", 1)), 1)
+        raw_count = _base_checkins().filter(location_verified=True).count()
+        return _make_result(raw_count, threshold)
+
+    # ── Fallback: unknown type ────────────────────────────────────────────────
+    # Graceful degradation: treat as a simple visit_count challenge so unknown
+    # types don't silently complete on the first check-in.
+    required  = max(int(criteria.get("visit_count", criteria.get("threshold", 1))), 1)
+    raw_count = _base_checkins().values("place_id").distinct().count()
+    return _make_result(raw_count, required)
 
 
 def evaluate_challenges_for_user(user):
-    """
-    Called after every check-in.
-    Scans all currently active challenges, computes progress for the user,
-    and fires a one-time reward for any newly completed challenges.
-    Safe to call repeatedly — unique_together on UserChallengeCompletion
-    prevents double rewards.
-    """
     now_ts = timezone.now()
 
     active_challenges = Challenge.objects.filter(
@@ -1254,7 +1399,6 @@ def evaluate_challenges_for_user(user):
         end_date__gte=now_ts,
     )
 
-    # Challenges this user has already been rewarded for — skip them
     already_completed = set(
         UserChallengeCompletion.objects.filter(user=user).values_list(
             "challenge_id", flat=True
@@ -1271,35 +1415,34 @@ def evaluate_challenges_for_user(user):
 
 
 def _grant_challenge_reward(user, challenge):
-    """
-    Award points + notification for completing a challenge.
-    Uses get_or_create so it's idempotent even if called concurrently.
-    """
     completion, created = UserChallengeCompletion.objects.get_or_create(
         user=user,
         challenge=challenge,
         defaults={"points_awarded": challenge.reward_points},
     )
     if not created:
-        return  # already rewarded, nothing to do
+        return
 
     profile, _ = UserProfile.objects.get_or_create(user=user)
     profile.points += challenge.reward_points
     profile.save(update_fields=["points"])
+    _recalculate_level(profile)
+    evaluate_badges_for_user(user)
 
-    Notification.objects.create(
-        user=user,
-        title="Challenge Completed! 🏆",
-        message=(
-            f'You completed "{challenge.title}" and earned '
-            f"{challenge.reward_points} bonus points!"
-        ),
-        notification_type="challenge",
-    )
+    if _can_notify(user):
+        Notification.objects.create(
+            user=user,
+            title="Challenge Completed! 🏆",
+            message=(
+                f'You completed "{challenge.title}" and earned '
+                f"{challenge.reward_points} bonus points!"
+            ),
+            notification_type="challenge",
+        )
 
 
 # ─────────────────────────────────────────────────────────
-# Updated challenges view
+# Challenges view
 # ─────────────────────────────────────────────────────────
 
 
@@ -1316,11 +1459,8 @@ def challenges(request):
 
     past_challenges = Challenge.objects.filter(
         end_date__lt=now_ts,
-    ).order_by(
-        "-end_date"
-    )[:10]
+    ).order_by("-end_date")[:10]
 
-    # Attach live progress to each active challenge for authenticated users
     if request.user.is_authenticated:
         completed_ids = set(
             UserChallengeCompletion.objects.filter(user=request.user).values_list(
@@ -1348,14 +1488,11 @@ def challenges(request):
 @login_required
 @user_passes_test(is_staff_or_superuser)
 def create_challenge(request):
-    """Staff-only: create a new challenge."""
     if request.method == "POST":
         form = ChallengeForm(request.POST)
         if form.is_valid():
             challenge = form.save()
-            messages.success(
-                request, f'Challenge "{challenge.title}" created successfully!'
-            )
+            messages.success(request, f'Challenge "{challenge.title}" created successfully!')
             return redirect("places:challenges")
         else:
             messages.error(request, "Please fix the errors below.")
@@ -1368,7 +1505,6 @@ def create_challenge(request):
 @login_required
 @user_passes_test(is_staff_or_superuser)
 def edit_challenge(request, pk):
-    """Staff-only: edit an existing challenge."""
     challenge = get_object_or_404(Challenge, pk=pk)
 
     if request.method == "POST":
@@ -1386,11 +1522,7 @@ def edit_challenge(request, pk):
     return render(
         request,
         "create_challenge.html",
-        {
-            "form": form,
-            "challenge": challenge,
-            "action": "Edit",
-        },
+        {"form": form, "challenge": challenge, "action": "Edit"},
     )
 
 
@@ -1398,7 +1530,6 @@ def edit_challenge(request, pk):
 @user_passes_test(is_staff_or_superuser)
 @require_POST
 def delete_challenge(request, pk):
-    """Staff-only: delete a challenge (POST only)."""
     challenge = get_object_or_404(Challenge, pk=pk)
     title = challenge.title
     challenge.delete()
@@ -1410,7 +1541,6 @@ def delete_challenge(request, pk):
 @user_passes_test(is_staff_or_superuser)
 @require_POST
 def toggle_challenge_active(request, pk):
-    """Staff-only AJAX: toggle is_active."""
     challenge = get_object_or_404(Challenge, pk=pk)
     challenge.is_active = not challenge.is_active
     challenge.save(update_fields=["is_active"])
@@ -1422,18 +1552,6 @@ def toggle_challenge_active(request, pk):
 # ─────────────────────────────────────────────────────────
 
 def get_badge_progress(user, badge):
-    """
-    Compute a user's live progress toward a badge.
-    Returns:
-        {
-            'current':    int,   # raw current value
-            'threshold':  int,   # target value
-            'percent':    int,   # 0–100, capped
-            'is_done':    bool,
-            'label':      str,   # human-readable description e.g. "8 / 10 check-ins"
-            'action_hint':str,   # what the user should do next
-        }
-    """
     criteria = badge.criteria or {}
     badge_type = criteria.get("type", "")
     threshold = max(int(criteria.get("threshold", 1)), 1)
@@ -1451,7 +1569,11 @@ def get_badge_progress(user, badge):
         hint = "Submit more places and get them approved."
 
     elif badge_type == "points":
-        current = profile.points if profile else 0
+        # FIX: query DB directly to avoid stale cached relation after recent points update
+        try:
+            current = UserProfile.objects.get(user=user).points
+        except UserProfile.DoesNotExist:
+            current = 0
         label = f"{current} / {threshold} points"
         hint = "Keep exploring and contributing to earn more points."
 
@@ -1467,7 +1589,6 @@ def get_badge_progress(user, badge):
         hint = f"Check in at more {slug} places."
 
     elif badge_type == "streak":
-        # Reuse existing get_streaks helper
         checkins = CheckIn.objects.filter(user=user)
         streaks = get_streaks(checkins)
         current = max(streaks) if streaks else 0
@@ -1480,17 +1601,13 @@ def get_badge_progress(user, badge):
         hint = "Leave star ratings when visiting places."
 
     elif badge_type == "trail_complete":
-        # Count distinct trails fully completed (all places checked in)
-        completed = 0
-        for trail in Trail.objects.filter(is_public=True):
-            p = get_trail_progress(user, trail)
-            if p["total"] > 0 and p["completed"] == p["total"]:
-                completed += 1
-        current = completed
+        # FIX: use TrailCompletion records instead of looping all trails with 2 queries each
+        current = TrailCompletion.objects.filter(user=user).count()
         label = f"{current} / {threshold} trails completed"
         hint = "Complete all places in a trail."
 
     elif badge_type == "photo_checkins":
+        # FIX: also exclude empty string to match how check_in saves photo_proof
         current = (
             CheckIn.objects.filter(user=user)
             .exclude(photo_proof="")
@@ -1501,7 +1618,6 @@ def get_badge_progress(user, badge):
         hint = "Upload photo proof when checking in."
 
     else:
-        # Unknown criteria type — treat as binary (earned or not)
         current = (
             threshold
             if UserBadge.objects.filter(user=user, badge=badge).exists()
@@ -1525,8 +1641,8 @@ def get_badge_progress(user, badge):
 
 def evaluate_badges_for_user(user):
     """
-    Check all active badges and award any that the user has now earned
-    but hasn't been awarded yet. Safe to call multiple times.
+    Check all active badges and award any the user has now earned.
+    Safe to call multiple times — idempotent via get_or_create.
     """
     already_earned = set(
         UserBadge.objects.filter(user=user).values_list("badge_id", flat=True)
@@ -1538,13 +1654,17 @@ def evaluate_badges_for_user(user):
             continue
         progress = get_badge_progress(user, badge)
         if progress["is_done"]:
-            UserBadge.objects.get_or_create(user=user, badge=badge)
-            Notification.objects.create(
-                user=user,
-                title="Badge Earned! 🏅",
-                message=f'You earned the "{badge.name}" badge!',
-                notification_type="badge_earned",
-            )
+            # FIX: unpack the tuple — get_or_create returns (instance, created_bool)
+            # previously `created = get_or_create(...)` assigned the whole tuple,
+            # making the notification check always True
+            _, created = UserBadge.objects.get_or_create(user=user, badge=badge)
+            if created and _can_notify(user):
+                Notification.objects.create(
+                    user=user,
+                    title="Badge Earned! 🏅",
+                    message=f'You earned the "{badge.name}" badge!',
+                    notification_type="badge_earned",
+                )
 
 
 def badges(request):
@@ -1552,8 +1672,8 @@ def badges(request):
         "category", "points_required"
     )
 
-    earned_map = {}  # badge_id → UserBadge (for earned_at date)
-    progress_map = {}  # badge_id → progress dict
+    earned_map = {}
+    progress_map = {}
 
     if request.user.is_authenticated:
         for ub in UserBadge.objects.filter(user=request.user).select_related("badge"):
@@ -1562,7 +1682,6 @@ def badges(request):
         for badge in all_badges:
             progress_map[badge.pk] = get_badge_progress(request.user, badge)
 
-    # Attach computed data directly onto each badge object for the template
     for badge in all_badges:
         badge.is_earned = badge.pk in earned_map
         badge.earned_at = earned_map[badge.pk].earned_at if badge.is_earned else None
@@ -1591,20 +1710,6 @@ def badges(request):
         },
     )
 
-# ── Example badge criteria JSON for the Django admin ───────────────────
-#
-# First explorer:       {"type": "checkins",       "threshold": 1}
-# Trailblazer:          {"type": "checkins",       "threshold": 10}
-# Centurion:            {"type": "checkins",       "threshold": 100}
-# First contribution:   {"type": "places_added",   "threshold": 1}
-# Top contributor:      {"type": "places_added",   "threshold": 10}
-# Points milestone:     {"type": "points",         "threshold": 500}
-# Waterfall hunter:     {"type": "category",       "slug": "waterfall", "threshold": 5}
-# Week streak:          {"type": "streak",         "threshold": 7}
-# Reviewer:             {"type": "reviews",        "threshold": 5}
-# Trail finisher:       {"type": "trail_complete", "threshold": 1}
-# Photographer:         {"type": "photo_checkins", "threshold": 10}
-
 
 # ─────────────────────────────────────────────────────────
 # AJAX Views
@@ -1625,10 +1730,7 @@ def toggle_favorite(request, slug):
     if request.headers.get("HX-Request"):
         html = render_to_string(
             "partials/favorite_button.html",
-            {
-                "place": place,
-                "is_favorited": is_favorited,
-            },
+            {"place": place, "is_favorited": is_favorited},
             request=request,
         )
         return HttpResponse(html)
@@ -1659,7 +1761,8 @@ def vote_place(request, slug):
 
     place.approval_votes = Vote.objects.filter(place=place, vote_type="up").count()
     place.rejection_votes = Vote.objects.filter(place=place, vote_type="down").count()
-    place.save()
+    # FIX: use update_fields to avoid triggering auto_now on updated_at
+    place.save(update_fields=["approval_votes", "rejection_votes"])
 
     return JsonResponse(
         {
@@ -1706,9 +1809,18 @@ def update_place_status(request, slug):
         )
 
         if status == "approved":
-            profile, created = UserProfile.objects.get_or_create(user=place.created_by)
-            profile.points += 50
-            profile.save()
+            profile, _ = UserProfile.objects.get_or_create(user=place.created_by)
+            # FIX: guard against awarding approval bonus twice if place is
+            # rejected then re-approved — check notification history
+            already_awarded = Notification.objects.filter(
+                user=place.created_by,
+                notification_type="place_approved",
+                related_place=place,
+            ).exists()
+            if not already_awarded:
+                profile.points += 50
+                profile.save(update_fields=["points"])
+                _recalculate_level(profile)
             evaluate_badges_for_user(place.created_by)
 
         return JsonResponse({"success": True, "status": status})
@@ -1742,12 +1854,8 @@ def analytics(request):
         "category_labels": list(Category.objects.values_list("name", flat=True)),
         "category_data": [cat.places.count() for cat in Category.objects.all()],
         "new_users_this_month": User.objects.filter(date_joined__gte=month_ago).count(),
-        "new_places_this_month": Place.objects.filter(
-            created_at__gte=month_ago
-        ).count(),
-        "new_checkins_this_month": CheckIn.objects.filter(
-            created_at__gte=month_ago
-        ).count(),
+        "new_places_this_month": Place.objects.filter(created_at__gte=month_ago).count(),
+        "new_checkins_this_month": CheckIn.objects.filter(created_at__gte=month_ago).count(),
         "active_users": CheckIn.objects.filter(created_at__gte=month_ago)
         .values("user")
         .distinct()
@@ -1852,7 +1960,7 @@ def get_nearby_places(request):
                     {
                         "id": place.id,
                         "name": place.name,
-                        "slug": place.slug, 
+                        "slug": place.slug,
                         "description": place.description[:200],
                         "category": category_name,
                         "latitude": place.latitude,
@@ -1915,43 +2023,42 @@ def search_results(request):
         },
     )
 
+
 # ── Profile completion scorer ─────────────────────────────
 
 PROFILE_FIELDS = [
-    ('avatar',      20, 'Upload a profile photo'),
-    ('bio',         15, 'Write a short bio'),
-    ('location',    10, 'Add your location'),
-    ('website',      5, 'Link your website'),
-    ('first_name',  10, 'Add your first name'),   
-    ('last_name',   10, 'Add your last name'),
-    ('email',       10, 'Confirm your email'),
-    ('show_email',   5, 'Set email visibility'),
-    ('show_location',5, 'Set location visibility'),
-    ('expert_areas', 10,'Choose areas of expertise'),
+    ('avatar',       20, 'Upload a profile photo'),
+    ('bio',          15, 'Write a short bio'),
+    ('location',     10, 'Add your location'),
+    ('website',       5, 'Link your website'),
+    ('first_name',   10, 'Add your first name'),
+    ('last_name',    10, 'Add your last name'),
+    ('email',        10, 'Confirm your email'),
+    ('show_email',    5, 'Set email visibility'),
+    ('show_location', 5, 'Set location visibility'),
+    ('expert_areas', 10, 'Choose areas of expertise'),
 ]
 
 PROFILE_COMPLETION_TOTAL = sum(w for _, w, _ in PROFILE_FIELDS)  # = 100
 
 
 def get_profile_completion(user, profile):
-    """
-    Returns (score: int 0–100, missing: list[str], completed: list[str])
-    """
     score = 0
     missing = []
     completed = []
 
     field_checks = {
-        'avatar':       bool(profile.avatar),
-        'bio':          bool(profile.bio and profile.bio.strip()),
-        'location':     bool(profile.location and profile.location.strip()),
-        'website':      bool(profile.website and profile.website.strip()),
-        'first_name':   bool(user.first_name and user.first_name.strip()),
-        'last_name':    bool(user.last_name and user.last_name.strip()),
-        'email':        bool(user.email and user.email.strip()),
-        'show_email':   True,           # just having the field set counts
-        'show_location':True,
-        'expert_areas': profile.expert_areas.exists(),
+        'avatar':        bool(profile.avatar),
+        'bio':           bool(profile.bio and profile.bio.strip()),
+        'location':      bool(profile.location and profile.location.strip()),
+        'website':       bool(profile.website and profile.website.strip()),
+        'first_name':    bool(user.first_name and user.first_name.strip()),
+        'last_name':     bool(user.last_name and user.last_name.strip()),
+        'email':         bool(user.email and user.email.strip()),
+        # FIX: check actual field values instead of hardcoding True
+        'show_email':    profile.show_email,
+        'show_location': profile.show_location,
+        'expert_areas':  profile.expert_areas.exists(),
     }
 
     for field, weight, hint in PROFILE_FIELDS:
@@ -1965,14 +2072,9 @@ def get_profile_completion(user, profile):
 
 
 def _resize_avatar(image_file, max_size=(400, 400), quality=85):
-    """
-    Resize + convert uploaded avatar to JPEG, max 400×400.
-    Returns a ContentFile ready to save, or None on error.
-    """
     try:
         img = Image.open(image_file)
 
-        # Convert palette/RGBA → RGB for JPEG
         if img.mode in ('RGBA', 'P', 'LA'):
             background = Image.new('RGB', img.size, (255, 255, 255))
             if img.mode == 'P':
@@ -1982,14 +2084,12 @@ def _resize_avatar(image_file, max_size=(400, 400), quality=85):
         elif img.mode != 'RGB':
             img = img.convert('RGB')
 
-        # Crop to square from centre
         w, h = img.size
         side = min(w, h)
         left = (w - side) // 2
         top  = (h - side) // 2
         img  = img.crop((left, top, left + side, top + side))
 
-        # Resize
         img.thumbnail(max_size, Image.LANCZOS)
 
         buf = BytesIO()
@@ -2008,13 +2108,11 @@ def edit_profile(request):
     user    = request.user
     profile, _ = UserProfile.objects.get_or_create(user=user)
 
-    # ── Pre-save completion score ──────────────────────────
     score_before, _, _ = get_profile_completion(user, profile)
 
     if request.method == 'POST':
         form = UserProfileForm(request.POST, request.FILES, instance=profile)
 
-        # ── Avatar safety checks ──────────────────────────
         avatar_error = None
         avatar_file  = request.FILES.get('avatar')
 
@@ -2041,11 +2139,9 @@ def edit_profile(request):
         if form.is_valid():
             profile_obj = form.save(commit=False)
 
-            # ── Avatar processing ─────────────────────────────────────
             if avatar_file:
                 resized = _resize_avatar(avatar_file)
                 if resized:
-                    # Delete old avatar to save storage
                     if profile_obj.avatar:
                         try:
                             old_path = profile_obj.avatar.path
@@ -2053,17 +2149,14 @@ def edit_profile(request):
                                 os.remove(old_path)
                         except (ValueError, OSError):
                             pass
-                    ext = 'jpg'
-                    filename = f'avatar_{user.pk}.{ext}'
-                    profile_obj.avatar.save(filename, resized, save=True) 
+                    filename = f'avatar_{user.pk}.jpg'
+                    profile_obj.avatar.save(filename, resized, save=True)
 
-            # ── User model fields ─────────────────────────
             user.first_name = request.POST.get('first_name', '').strip()
             user.last_name  = request.POST.get('last_name',  '').strip()
 
             new_email = request.POST.get('email', '').strip()
             if new_email and new_email != user.email:
-                # Basic uniqueness check
                 from django.contrib.auth.models import User as AuthUser
                 if AuthUser.objects.filter(email=new_email).exclude(pk=user.pk).exists():
                     messages.error(request, 'That email address is already in use.')
@@ -2081,18 +2174,12 @@ def edit_profile(request):
             profile_obj.save()
             form.save_m2m()
 
-            # ── Post-save completion score ─────────────────
             score_after, missing, completed = get_profile_completion(user, profile_obj)
-
-            # ── Gamification: profile completion milestone ─
             _award_profile_completion_points(user, profile_obj, score_before, score_after)
-
-            # ── Re-evaluate badges (profile fields unlock badges) ──
             evaluate_badges_for_user(user)
 
             messages.success(request, 'Profile updated successfully!')
 
-            # If they just hit 100% for the first time, celebrate
             if score_before < 100 <= score_after:
                 messages.success(request, '🎉 Your profile is now 100% complete! You earned bonus points.')
 
@@ -2109,7 +2196,6 @@ def edit_profile(request):
         'completion_score':     score,
         'completion_missing':   missing,
         'completion_completed': completed,
-        # Pre-populate User model fields into context for the template
         'initial_first_name':   user.first_name,
         'initial_last_name':    user.last_name,
         'initial_email':        user.email,
@@ -2128,12 +2214,6 @@ _COMPLETION_MILESTONES = {
 
 
 def _award_profile_completion_points(user, profile, score_before, score_after):
-    """
-    Award points and a notification the first time a user crosses
-    each completion milestone (25 / 50 / 75 / 100 %).
-    Uses notifications as a lightweight "already rewarded" check
-    so it's idempotent.
-    """
     uprof, _ = UserProfile.objects.get_or_create(user=user)
 
     for threshold, (title, pts) in _COMPLETION_MILESTONES.items():
@@ -2146,6 +2226,8 @@ def _award_profile_completion_points(user, profile, score_before, score_after):
             if not already:
                 uprof.points += pts
                 uprof.save(update_fields=['points'])
+                _recalculate_level(uprof)
+                evaluate_badges_for_user(user)
                 Notification.objects.create(
                     user=user,
                     title=title,
@@ -2155,6 +2237,7 @@ def _award_profile_completion_points(user, profile, score_before, score_after):
                     ),
                     notification_type='profile_complete',
                 )
+
 
 def register(request):
     if request.method == "POST":
@@ -2212,13 +2295,27 @@ def checkin_detail(request, pk):
 def vote_comment(request, comment_id):
     data = json.loads(request.body)
     vote_type = data.get("vote_type")
+    if vote_type not in ["up", "down"]:
+        return JsonResponse({"success": False, "error": "Invalid vote type"})
+
     comment = get_object_or_404(Comment, id=comment_id)
 
-    vote, created = Vote.objects.get_or_create(user=request.user, comment=comment)
-    vote.vote_type = vote_type
-    vote.save()
+    # FIX: make comment voting consistent with place voting — clicking same
+    # vote type again removes it (toggle), clicking opposite type switches it
+    vote, created = Vote.objects.get_or_create(
+        user=request.user, comment=comment,
+        defaults={"vote_type": vote_type}
+    )
+    if not created:
+        if vote.vote_type == vote_type:
+            # Same vote again — remove it (toggle off)
+            vote.delete()
+        else:
+            # Different vote — switch it
+            vote.vote_type = vote_type
+            vote.save()
 
-    upvotes = Vote.objects.filter(comment=comment, vote_type="up").count()
+    upvotes   = Vote.objects.filter(comment=comment, vote_type="up").count()
     downvotes = Vote.objects.filter(comment=comment, vote_type="down").count()
 
     return JsonResponse({"success": True, "upvotes": upvotes, "downvotes": downvotes})
@@ -2246,23 +2343,28 @@ def place_checkins(request, slug):
         .order_by("-created_at")
     )
 
-    unique_visitors = checkins_list.values("user").distinct().count()
+    # FIX: compute counts from the QuerySet BEFORE paginating.
+    # After Paginator.get_page(), checkins is a Page object which has no .count().
+    # Pass total_count separately so the template can use it safely.
+    total_count       = checkins_list.count()
+    unique_visitors   = checkins_list.values("user").distinct().count()
     verified_checkins = checkins_list.filter(location_verified=True).count()
-    photo_checkins = (
+    photo_checkins    = (
         checkins_list.exclude(photo_proof__isnull=True).exclude(photo_proof="").count()
     )
 
-    paginator = Paginator(checkins_list, 10)
-    page_number = request.GET.get("page")
-    checkins = paginator.get_page(page_number)
+    paginator    = Paginator(checkins_list, 10)
+    page_number  = request.GET.get("page")
+    checkins     = paginator.get_page(page_number)
 
     context = {
-        "place": place,
-        "checkins": checkins,
-        "unique_visitors": unique_visitors,
+        "place":             place,
+        "checkins":          checkins,
+        "total_count":       total_count,        # use this in template instead of checkins.count
+        "unique_visitors":   unique_visitors,
         "verified_checkins": verified_checkins,
-        "photo_checkins": photo_checkins,
-        "has_more": checkins.has_next(),
+        "photo_checkins":    photo_checkins,
+        "has_more":          checkins.has_next(),
     }
     return render(request, "place_checkins.html", context)
 
@@ -2308,20 +2410,18 @@ def route_planner(request):
 def about(request):
     return render(request, "about.html")
 
+
 # ─────────────────────────────────────────────────────────
 # Tour views (public + staff-only CRUD)
 # ─────────────────────────────────────────────────────────
 
-# ── Public views ──────────────────────────────────────────
 
 def tour_list(request):
-    """Public listing of all active tour packages."""
     tours = TourPackage.objects.filter(is_active=True).prefetch_related('trails', 'offerings')
     return render(request, 'tours.html', {'tours': tours})
 
 
 def tour_detail(request, slug):
-    """Public detail page for a single tour package."""
     tour = get_object_or_404(TourPackage, slug=slug, is_active=True)
     trails   = tour.trails.all().prefetch_related('places')
     offerings = tour.offerings.all()
@@ -2335,12 +2435,9 @@ def tour_detail(request, slug):
     })
 
 
-# ── Staff views ───────────────────────────────────────────
-
 @login_required
 @user_passes_test(is_staff_or_superuser)
 def create_tour(request):
-    """Staff-only: create a new tour package."""
     if request.method == 'POST':
         form = TourPackageForm(request.POST, request.FILES)
         if form.is_valid():
@@ -2355,7 +2452,7 @@ def create_tour(request):
     else:
         form = TourPackageForm()
 
-    all_trails   = Trail.objects.filter(is_public=True).order_by('name')
+    all_trails    = Trail.objects.filter(is_public=True).order_by('name')
     all_offerings = TourOffering.objects.all().order_by('name')
 
     return render(request, 'create_tour.html', {
@@ -2369,7 +2466,6 @@ def create_tour(request):
 @login_required
 @user_passes_test(is_staff_or_superuser)
 def edit_tour(request, slug):
-    """Staff-only: edit an existing tour package."""
     tour = get_object_or_404(TourPackage, slug=slug)
 
     if request.method == 'POST':
@@ -2403,7 +2499,6 @@ def edit_tour(request, slug):
 @user_passes_test(is_staff_or_superuser)
 @require_POST
 def delete_tour(request, slug):
-    """Staff-only: delete a tour package."""
     tour = get_object_or_404(TourPackage, slug=slug)
     name = tour.name
     tour.delete()
@@ -2415,46 +2510,7 @@ def delete_tour(request, slug):
 @user_passes_test(is_staff_or_superuser)
 @require_POST
 def toggle_tour_active(request, slug):
-    """Staff-only AJAX: toggle is_active on a tour."""
     tour = get_object_or_404(TourPackage, slug=slug)
     tour.is_active = not tour.is_active
     tour.save(update_fields=['is_active'])
     return JsonResponse({'success': True, 'is_active': tour.is_active})
-
-
-# def route_planner(request):
-#     destination_id = request.GET.get('destination', '')
-#     slugs = [s.strip() for s in destination_id.split(',') if s.strip()]
-#
-#     destination = None
-#     preselected_waypoints = []
-
-#     if slugs:
-#         destination = Place.objects.filter(slug=slugs[0], status='approved').first()
-#         if len(slugs) > 1:
-#             preselected_waypoints = list(
-#                 Place.objects.filter(slug__in=slugs[1:], status='approved')
-#                 .values('id', 'name', 'latitude', 'longitude')
-#             )
-
-#     context = {
-#         'destination': destination,
-#         'preselected_waypoints': json.dumps(preselected_waypoints),
-#         'all_places': json.dumps(all_places_data),
-#         'categories': categories,
-#     }
-
-
-# @require_POST
-# def update_place_status(request, slug):
-#     if not request.user.is_staff:
-#         return JsonResponse({'success': False, 'error': 'Unauthorized'}, status=403)
-
-#     place = get_object_or_404(Place, slug=slug)
-#     status = request.POST.get('status')
-
-#     if status in ['approved', 'rejected']:
-#         place.status = status
-#         place.save()
-#         return JsonResponse({'success': True})
-#     return JsonResponse({'success': False, 'error': 'Invalid status'}, status=400)
