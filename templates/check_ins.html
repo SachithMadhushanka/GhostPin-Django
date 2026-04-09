@@ -1,599 +1,607 @@
 {% extends 'base.html' %}
-{% block title %}My Check-ins - Expearls{% endblock %}
+{% block title %}My Check-ins — Expearls{% endblock %}
+
 {% block content %}
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                    <i class="fas fa-map-pin text-green-600 mr-2"></i>
-                    My Check-ins
-                </h1>
-                <p class="text-gray-600">
-                    {% if checkins %}
-                        You've checked in to {{ checkins.count }} places and earned {{ total_points }} points
-                    {% else %}
-                        Start exploring and checking in to places to earn points and track your visits
-                    {% endif %}
-                </p>
-            </div>
-            <div class="flex items-center space-x-3">
-                <!-- Stats Summary -->
-                <div class="bg-white rounded-lg shadow-lg p-4 text-center">
-                    <div class="text-2xl font-bold text-green-600">{{ checkins.count }}</div>
-                    <div class="text-sm text-gray-600">Total Check-ins</div>
-                </div>
-                <div class="bg-white rounded-lg shadow-lg p-4 text-center">
-                    <div class="text-2xl font-bold text-blue-600">{{ total_points }}</div>
-                    <div class="text-sm text-gray-600">Points Earned</div>
-                </div>
-                <div class="bg-white rounded-lg shadow-lg p-4 text-center">
-                    <div class="text-2xl font-bold text-purple-600">{{ unique_places }}</div>
-                    <div class="text-sm text-gray-600">Unique Places</div>
-                </div>
-            </div>
-        </div>
-        <!-- Filters and Controls -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div class="flex flex-wrap items-center gap-4">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-filter text-purple-600 mr-2"></i>
-                        Filter Check-ins
-                    </h3>
-                    <!-- Time Period Filter -->
-                    <select id="period-filter"
-                            class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                            onchange="filterCheckins()">
-                        <option value="all">All Time</option>
-                        <option value="today">Today</option>
-                        <option value="week">This Week</option>
-                        <option value="month">This Month</option>
-                        <option value="year">This Year</option>
-                    </select>
-                    <!-- Verification Status Filter -->
-                    <select id="status-filter"
-                            class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                            onchange="filterCheckins()">
-                        <option value="all">All Check-ins</option>
-                        <option value="verified">Verified Only</option>
-                        <option value="with_photo">With Photos</option>
-                        <option value="high_points">High Points (15+)</option>
-                    </select>
-                </div>
-                <!-- View Toggle -->
-                <div class="flex bg-gray-100 rounded-lg p-1">
-                    <button id="timeline-view"
-                            class="px-3 py-2 rounded-md bg-white shadow-sm text-gray-700"
-                            onclick="toggleView('timeline')">
-                        <i class="fas fa-list"></i> Timeline
-                    </button>
-                    <button id="map-view"
-                            class="px-3 py-2 rounded-md text-gray-500"
-                            onclick="toggleView('map')">
-                        <i class="fas fa-map"></i> Map
-                    </button>
-                    <button id="stats-view"
-                            class="px-3 py-2 rounded-md text-gray-500"
-                            onclick="toggleView('stats')">
-                        <i class="fas fa-chart-bar"></i> Stats
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- Content Views -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <!-- Main Content -->
-            <div class="lg:col-span-3">
-                <!-- Timeline View -->
-                <div id="checkins-timeline" class="space-y-6">
-                    {% if checkins %}
-                        {% for checkin in checkins %}
-                            <div class="checkin-item bg-white rounded-lg shadow-lg overflow-hidden card-hover"
-                                 data-date="{{ checkin.created_at|date:'c' }}"
-                                 data-verified="{{ checkin.location_verified|yesno:'true,false' }}"
-                                 data-photo="{{ checkin.photo_proof|yesno:'true,false' }}"
-                                 data-points="{{ checkin.points_awarded }}">
-                                <div class="flex flex-col sm:flex-row">
-                                    <!-- Check-in Photo/Icon -->
-                                    <div class="sm:w-48 h-48 sm:h-auto flex-shrink-0 relative">
-                                        {% if checkin.photo_proof %}
-                                            <img src="{{ checkin.photo_proof.url }}"
-                                                 alt="Check-in photo"
-                                                 class="w-full h-full object-cover">
-                                            <div class="absolute top-3 left-3 bg-green-600 text-white px-2 py-1 rounded-full text-xs font-semibold">
-                                                <i class="fas fa-camera mr-1"></i> Photo
-                                            </div>
-                                        {% else %}
-                                            <div class="w-full h-full bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center">
-                                                <div class="text-center text-white">
-                                                    <i class="fas fa-map-pin text-4xl mb-2"></i>
-                                                    <div class="text-sm">No Photo</div>
-                                                </div>
-                                            </div>
-                                        {% endif %}
-                                        <!-- Verification Badge -->
-                                        {% if checkin.location_verified %}
-                                            <div class="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 rounded-full text-xs font-semibold">
-                                                <i class="fas fa-check-circle mr-1"></i> Verified
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <!-- Check-in Details -->
-                                    <div class="flex-1 p-6">
-                                        <div class="flex items-start justify-between mb-3">
-                                            <div>
-                                                <h3 class="text-xl font-bold text-gray-900 mb-1">
-                                                    <a href="{% url 'places:place_detail' checkin.place.slug %}"
-                                                       class="hover:text-green-600 transition-colors">
-                                                        {{ checkin.place.name }}
-                                                    </a>
-                                                </h3>
-                                                <p class="text-gray-600 text-sm">
-                                                    <i class="fas fa-map-marker-alt mr-1"></i>
-                                                    {% for cat in checkin.place.category.all %}
-                                                        {{ cat.name }}
-                                                        {% if not forloop.last %},{% endif %}
-                                                    {% endfor %}
-                                                </p>
-                                            </div>
-                                            <!-- Points Earned -->
-                                            <div class="text-right">
-                                                <div class="text-2xl font-bold text-green-600">+{{ checkin.points_awarded }}</div>
-                                                <div class="text-xs text-gray-500">points</div>
-                                            </div>
-                                        </div>
-                                        <!-- Check-in Notes -->
-                                        {% if checkin.notes %}<p class="text-gray-700 mb-4 italic">"{{ checkin.notes }}"</p>{% endif %}
-                                        <!-- Check-in Metadata -->
-                                        <div class="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-500">
-                                            <span class="flex items-center">
-                                                <i class="fas fa-calendar mr-1"></i>
-                                                {{ checkin.created_at|date:"M d, Y" }}
-                                            </span>
-                                            <span class="flex items-center">
-                                                <i class="fas fa-clock mr-1"></i>
-                                                {{ checkin.created_at|time:"H:i" }}
-                                            </span>
-                                            <!-- {% if checkin.weather %}
-                                            <span class="flex items-center">
-                                                <i class="fas fa-cloud-sun mr-1"></i>
-                                                {{ checkin.weather }}
-                                            </span>
-                                        {% endif %} -->
-                                        </div>
-                                        <!-- Points Breakdown -->
-                                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                                            <h4 class="font-semibold text-gray-900 mb-2">Points Breakdown:</h4>
-                                            <div class="space-y-1 text-sm">
-                                                <div class="flex justify-between">
-                                                    <span class="text-gray-600">Base check-in:</span>
-                                                    <span class="font-medium">+10 points</span>
-                                                </div>
-                                                {% if checkin.photo_proof %}
-                                                    <div class="flex justify-between">
-                                                        <span class="text-gray-600">Photo bonus:</span>
-                                                        <span class="font-medium text-green-600">+5 points</span>
-                                                    </div>
-                                                {% endif %}
-                                                {% if checkin.location_verified %}
-                                                    <div class="flex justify-between">
-                                                        <span class="text-gray-600">Verification bonus:</span>
-                                                        <span class="font-medium text-blue-600">+5 points</span>
-                                                    </div>
-                                                {% endif %}
-                                                <!-- {% if checkin.first_visit %}
-                                                <div class="flex justify-between">
-                                                    <span class="text-gray-600">First visit bonus:</span>
-                                                    <span class="font-medium text-purple-600">+10 points</span>
-                                                </div>
-                                            {% endif %} -->
-                                            </div>
-                                        </div>
-                                        <!-- Actions -->
-                                        <div class="flex items-center justify-between">
-                                            <div class="flex space-x-3">
-                                                <a href="{% url 'places:place_detail' checkin.place.slug %}"
-                                                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                                    <i class="fas fa-eye mr-1"></i> View Place
-                                                </a>
-                                                {% if checkin.photo_proof %}
-                                                    <button class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                                            onclick="viewPhoto('{{ checkin.photo_proof.url }}')">
-                                                        <i class="fas fa-expand mr-1"></i> View Photo
-                                                    </button>
-                                                {% endif %}
-                                            </div>
-                                            <div class="flex items-center space-x-2 text-sm text-gray-500">
-                                                <span>{{ checkin.created_at|timesince }} ago</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                        <!-- Load More -->
-                        {% if checkins.has_next %}
-                            <div class="text-center">
-                                <button class="btn-secondary" onclick="loadMoreCheckins()">
-                                    <i class="fas fa-chevron-down mr-2"></i> Load More Check-ins
-                                </button>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <!-- Empty State -->
-                        <div class="text-center py-16">
-                            <i class="fas fa-map-pin text-8xl text-gray-300 mb-6"></i>
-                            <h3 class="text-2xl font-bold text-gray-900 mb-4">No Check-ins Yet</h3>
-                            <p class="text-gray-600 mb-8 max-w-md mx-auto">
-                                Start exploring places and check in to earn points,
-                                track your visits, and build your exploration history.
-                            </p>
-                            <div class="space-x-4">
-                                <a href="{% url 'places:home' %}"
-                                   class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                    <i class="fas fa-search mr-2"></i> Explore Places
-                                </a>
-                                <a href="{% url 'places:nearby_places' %}"
-                                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                    <i class="fas fa-location-arrow mr-2"></i> Find Nearby
-                                </a>
-                            </div>
-                        </div>
-                    {% endif %}
-                </div>
-                <!-- Map View (Hidden by default) -->
-                <div id="checkins-map-view" class="hidden">
-                    <div class="bg-white rounded-lg shadow-lg p-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                            <i class="fas fa-map text-green-600 mr-2"></i>
-                            Check-ins Map
-                        </h3>
-                        <div id="checkins-map" class="w-full h-96 rounded-lg"></div>
-                    </div>
-                </div>
-                <!-- Stats View (Hidden by default) -->
-                <div id="checkins-stats-view" class="hidden">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Monthly Activity -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <i class="fas fa-chart-line text-blue-600 mr-2"></i>
-                                Monthly Activity
-                            </h3>
-                            <canvas id="monthly-chart" width="400" height="200"></canvas>
-                        </div>
-                        <!-- Category Breakdown -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <i class="fas fa-chart-pie text-purple-600 mr-2"></i>
-                                Places by Category
-                            </h3>
-                            <canvas id="category-chart" width="400" height="200"></canvas>
-                        </div>
-                        <!-- Achievements -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <i class="fas fa-trophy text-yellow-600 mr-2"></i>
-                                Check-in Achievements
-                            </h3>
-                            <div class="space-y-3">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-gray-600">Longest Streak</span>
-                                    <span class="font-semibold">{{ longest_streak }} days</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-gray-600">Most Active Month</span>
-                                    <span class="font-semibold">{{ most_active_month }}</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-gray-600">Favorite Category</span>
-                                    <span class="font-semibold">{{ favorite_category }}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Recent Milestones -->
-                        <div class="bg-white rounded-lg shadow-lg p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                                <i class="fas fa-flag text-green-600 mr-2"></i>
-                                Recent Milestones
-                            </h3>
-                            <div class="space-y-3">
-                                {% for milestone in recent_milestones %}
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                                            <i class="fas fa-trophy text-green-600 text-sm"></i>
-                                        </div>
-                                        <div>
-                                            <div class="font-medium text-gray-900">{{ milestone.title }}</div>
-                                            <div class="text-sm text-gray-600">{{ milestone.date|date:"M d, Y" }}</div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Sidebar -->
-            <div class="lg:col-span-1">
-                <!-- Quick Stats -->
-                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-chart-bar text-blue-600 mr-2"></i>
-                        Quick Stats
-                    </h3>
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">This Week</span>
-                            <span class="font-semibold text-green-600">{{ week_checkins }} check-ins</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">This Month</span>
-                            <span class="font-semibold text-blue-600">{{ month_checkins }} check-ins</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">With Photos</span>
-                            <span class="font-semibold text-purple-600">{{ photo_checkins }}%</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Verified</span>
-                            <span class="font-semibold text-yellow-600">{{ verified_checkins }}%</span>
-                        </div>
-                    </div>
-                </div>
-                <!-- Recent Badges -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-medal text-yellow-600 mr-2"></i>
-                        Recent Badges
-                    </h3>
-                    <div class="space-y-3">
-                        {% for badge in recent_badges %}
-                            <div class="flex items-center space-x-3">
-                                <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                                    {% if badge.badge.image %}
-                                        <img src="{{ badge.badge.image.url }}"
-                                             class="w-full h-full rounded-full object-cover">
-                                    {% else %}
-                                        <span class="text-lg">{{ badge.badge.icon }}</span>
-                                    {% endif %}
-                                </div>
-                                <div>
-                                    <div class="font-medium text-gray-900">{{ badge.badge.name }}</div>
-                                    <div class="text-sm text-gray-600">{{ badge.earned_at|timesince }} ago</div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <a href="{% url 'places:badges' %}"
-                       class="block mt-4 text-center text-green-600 hover:text-green-700 text-sm font-medium">
-                        View All Badges →
-                    </a>
-                </div>
-            </div>
-        </div>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .checkins-page { font-family: 'DM Sans', sans-serif; }
+  .display-font  { font-family: 'Playfair Display', serif; }
+
+  /* ── Hero ──────────────────────────────────────────── */
+  .hero-checkins {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-checkins::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-checkins::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 64px;
+    background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px;
+    background: #86efac;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(1.4); }
+  }
+
+  /* ── Stats bar ─────────────────────────────────────── */
+  .stats-bar {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.10);
+  }
+  .stat-item + .stat-item { border-left: 1px solid #e5e7eb; }
+
+  /* ── Controls bar ──────────────────────────────────── */
+  .controls-bar {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.06);
+    border: 1px solid #f3f4f6;
+  }
+  .exp-select {
+    border: 1.5px solid #e5e7eb;
+    border-radius: 50px;
+    padding: 8px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .83rem;
+    color: #374151;
+    cursor: pointer;
+    transition: border-color .2s;
+    background: #f9fafb;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 30px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+  }
+  .exp-select:focus { outline: none; border-color: #34d399; }
+
+  /* View toggle */
+  .view-toggle {
+    display: flex;
+    background: #f3f4f6;
+    border-radius: 50px;
+    padding: 4px;
+    gap: 2px;
+  }
+  .view-btn {
+    padding: 7px 14px;
+    border-radius: 50px;
+    font-size: .8rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: #9ca3af;
+    transition: all .2s;
+  }
+  .view-btn.active {
+    background: #fff;
+    color: #111827;
+    box-shadow: 0 1px 4px rgba(0,0,0,.10);
+  }
+
+  /* ── Check-in card ─────────────────────────────────── */
+  .checkin-card {
+    background: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    transition: transform .25s, box-shadow .25s;
+  }
+  .checkin-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 32px rgba(0,0,0,.09);
+  }
+  .checkin-thumb {
+    width: 200px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  @media (max-width: 640px) { .checkin-thumb { width: 100%; height: 180px; } }
+  .checkin-thumb img, .checkin-thumb .thumb-placeholder {
+    width: 100%; height: 100%; object-fit: cover;
+  }
+  .thumb-placeholder {
+    background: linear-gradient(135deg, #6b7280, #9ca3af);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; flex-direction: column; gap: 6px;
+  }
+  .badge-float {
+    position: absolute;
+    padding: 4px 10px;
+    border-radius: 50px;
+    font-size: .7rem;
+    font-weight: 600;
+    display: flex; align-items: center; gap: 5px;
+  }
+  .badge-photo    { top: 10px; left: 10px; background: #16a34a; color: #fff; }
+  .badge-verified { top: 10px; right: 10px; background: #2563eb; color: #fff; }
+
+  .checkin-body { flex: 1; padding: 24px; }
+
+  .points-pill {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 3px;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    border-radius: 50px;
+    padding: 4px 14px;
+  }
+  .points-pill .pts-num { font-size: 1.4rem; font-weight: 700; color: #16a34a; }
+  .points-pill .pts-lbl { font-size: .7rem; color: #6b7280; }
+
+  .breakdown-row {
+    display: flex; justify-content: space-between;
+    font-size: .8rem;
+    padding: 5px 0;
+    border-bottom: 1px solid #f9fafb;
+    color: #6b7280;
+  }
+  .breakdown-row:last-child { border-bottom: none; }
+  .breakdown-row strong { color: #374151; }
+
+  .action-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 16px;
+    border-radius: 50px;
+    font-size: .8rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: all .2s;
+  }
+  .btn-green  { background: #dcfce7; color: #15803d; }
+  .btn-green:hover { background: #bbf7d0; }
+  .btn-blue   { background: #dbeafe; color: #1d4ed8; }
+  .btn-blue:hover  { background: #bfdbfe; }
+
+  /* ── Sidebar card ──────────────────────────────────── */
+  .sidebar-card {
+    background: #fff;
+    border-radius: 18px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    padding: 22px;
+    margin-bottom: 16px;
+  }
+  .sidebar-label {
+    font-size: .68rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #16a34a;
+    margin-bottom: 14px;
+  }
+  .sidebar-stat-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f9fafb;
+    font-size: .85rem;
+  }
+  .sidebar-stat-row:last-child { border-bottom: none; }
+
+  /* ── Empty state ───────────────────────────────────── */
+  .empty-state {
+    text-align: center;
+    padding: 64px 20px;
+  }
+  .empty-icon {
+    width: 80px; height: 80px;
+    background: #f0fdf4;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+    font-size: 32px;
+    border: 2px solid #d1fae5;
+  }
+
+  /* ── Photo modal ───────────────────────────────────── */
+  .photo-modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.8);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+  }
+  .photo-modal-bg img { max-width: 100%; max-height: 90vh; border-radius: 14px; }
+
+  /* ── Badge badge ───────────────────────────────────── */
+  .badge-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f9fafb;
+  }
+  .badge-item:last-child { border-bottom: none; }
+  .badge-avatar {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: #fef9c3;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  /* Fade entrance */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+
+<div class="checkins-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-checkins pt-14 pb-24 px-4 text-center">
+    <div class="max-w-3xl mx-auto relative z-10">
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-6 tracking-wide uppercase">
+        <span class="hero-dot"></span> Your Exploration Journal
+      </span>
+      <h1 class="display-font text-5xl md:text-6xl font-black text-white leading-tight mb-4">
+        My <em class="text-green-300 not-italic">Check-ins</em>
+      </h1>
+      <p class="text-green-100 text-lg font-light">
+        {% if checkins %}
+          {{ checkins.count }} place{{ checkins.count|pluralize }} visited · {{ total_points }} points earned
+        {% else %}
+          Every adventure starts with a first check-in.
+        {% endif %}
+      </p>
     </div>
-    <!-- Photo Modal -->
-    <div id="photo-modal"
-         class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="max-w-4xl max-h-full p-4">
-            <img id="modal-photo"
-                 src=""
-                 alt="Check-in photo"
-                 class="max-w-full max-h-full rounded-lg">
-            <button class="absolute top-4 right-4 text-white text-2xl"
-                    onclick="closePhotoModal()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
+  </section>
+
+  <div class="max-w-6xl mx-auto px-4 -mt-8 pb-20 relative z-10">
+
+    <!-- ══ STATS BAR ══ -->
+    <div class="stats-bar grid grid-cols-3 mb-8 fade-up">
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-gray-900">{{ checkins.paginator.count }}</div>
+        <div class="text-sm text-gray-500 mt-1">Total Check-ins</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-green-600">{{ total_points }}</div>
+        <div class="text-sm text-gray-500 mt-1">Points Earned</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-gray-900">{{ unique_places }}</div>
+        <div class="text-sm text-gray-500 mt-1">Unique Places</div>
+      </div>
     </div>
-{% endblock %}
-{% block extra_js %}
-    <script>
-    let checkinsMap;
-    let currentView = 'timeline';
-    
-    // Toggle between different views
-    function toggleView(view) {
-        const timelineView = document.getElementById('timeline-view');
-        const mapView = document.getElementById('map-view');
-        const statsView = document.getElementById('stats-view');
-        
-        const timelineContent = document.getElementById('checkins-timeline');
-        const mapContent = document.getElementById('checkins-map-view');
-        const statsContent = document.getElementById('checkins-stats-view');
-        
-        // Reset button styles
-        [timelineView, mapView, statsView].forEach(btn => {
-            btn.classList.remove('bg-white', 'shadow-sm', 'text-gray-700');
-            btn.classList.add('text-gray-500');
-        });
-        
-        // Hide all content
-        timelineContent.classList.add('hidden');
-        mapContent.classList.add('hidden');
-        statsContent.classList.add('hidden');
-        
-        // Show selected view
-        if (view === 'timeline') {
-            timelineView.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
-            timelineView.classList.remove('text-gray-500');
-            timelineContent.classList.remove('hidden');
-        } else if (view === 'map') {
-            mapView.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
-            mapView.classList.remove('text-gray-500');
-            mapContent.classList.remove('hidden');
-            
-            if (!checkinsMap) {
-                initCheckinsMap();
-            }
-        } else if (view === 'stats') {
-            statsView.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
-            statsView.classList.remove('text-gray-500');
-            statsContent.classList.remove('hidden');
-            
-            initCharts();
-        }
-        
-        currentView = view;
-    }
-    
-    // Initialize check-ins map
-    function initCheckinsMap() {
-        checkinsMap = L.map('checkins-map').setView([7.8731, 80.7718], 7);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(checkinsMap);
-        
-        // Add markers for check-ins
-        const checkins = [
+
+    <!-- ══ CONTROLS ══ -->
+    <div class="controls-bar flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 mb-8 fade-up" style="transition-delay:.08s">
+      <div class="flex flex-wrap items-center gap-3">
+        <i class="fas fa-filter text-green-500 text-sm"></i>
+        <select id="period-filter" class="exp-select" onchange="filterCheckins()">
+          <option value="all">All Time</option>
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="year">This Year</option>
+        </select>
+        <select id="status-filter" class="exp-select" onchange="filterCheckins()">
+          <option value="all">All Check-ins</option>
+          <option value="verified">Verified Only</option>
+          <option value="with_photo">With Photos</option>
+          <option value="high_points">High Points (15+)</option>
+        </select>
+      </div>
+      <div class="view-toggle">
+        <button class="view-btn active" id="btn-timeline" onclick="toggleView('timeline')"><i class="fas fa-list mr-1"></i>Timeline</button>
+        <button class="view-btn" id="btn-map"      onclick="toggleView('map')"><i class="fas fa-map mr-1"></i>Map</button>
+        <button class="view-btn" id="btn-stats"    onclick="toggleView('stats')"><i class="fas fa-chart-bar mr-1"></i>Stats</button>
+      </div>
+    </div>
+
+    <!-- ══ CONTENT + SIDEBAR ══ -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
+
+      <!-- Main -->
+      <div class="lg:col-span-3">
+
+        <!-- Timeline -->
+        <div id="view-timeline" class="space-y-6">
+          {% if checkins %}
             {% for checkin in checkins %}
-                {
-                    lat: {{ checkin.place.latitude }},
-                    lng: {{ checkin.place.longitude }},
-                    name: "{{ checkin.place.name|escapejs }}",
-                    date: "{{ checkin.created_at|date:'M d, Y' }}",
-                    points: {{ checkin.points_awarded }},
-                    verified: {{ checkin.location_verified|yesno:'true,false' }},
-                    photo: {{ checkin.photo_proof|yesno:'true,false' }}
-                }{% if not forloop.last %},{% endif %}
+            <div class="checkin-card fade-up checkin-item"
+                 style="transition-delay:{{ forloop.counter0 | add:0 | floatformat:0 }}0ms; display:flex; flex-direction:row;"
+                 data-date="{{ checkin.created_at|date:'c' }}"
+                 data-verified="{{ checkin.location_verified|yesno:'true,false' }}"
+                 data-photo="{{ checkin.photo_proof|yesno:'true,false' }}"
+                 data-points="{{ checkin.points_awarded }}">
+
+              <!-- Thumb -->
+              <div class="checkin-thumb">
+                {% if checkin.photo_proof %}
+                  <img src="{{ checkin.photo_proof.url }}" alt="Check-in photo">
+                  <span class="badge-float badge-photo"><i class="fas fa-camera text-xs"></i> Photo</span>
+                {% else %}
+                  <div class="thumb-placeholder">
+                    <i class="fas fa-map-pin text-3xl"></i>
+                    <span class="text-xs">No Photo</span>
+                  </div>
+                {% endif %}
+                {% if checkin.location_verified %}
+                  <span class="badge-float badge-verified"><i class="fas fa-check text-xs"></i> GPS</span>
+                {% endif %}
+              </div>
+
+              <!-- Body -->
+              <div class="checkin-body">
+                <div class="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-0.5 leading-snug">
+                      <a href="{% url 'places:place_detail' checkin.place.slug %}" class="hover:text-green-600 transition-colors">{{ checkin.place.name }}</a>
+                    </h3>
+                    <p class="text-xs text-gray-400">
+                      {% for cat in checkin.place.category.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                    </p>
+                  </div>
+                  <div class="points-pill">
+                    <span class="pts-num">+{{ checkin.points_awarded }}</span>
+                    <span class="pts-lbl">pts</span>
+                  </div>
+                </div>
+
+                {% if checkin.notes %}
+                  <p class="text-sm text-gray-600 italic mb-3 leading-relaxed">"{{ checkin.notes }}"</p>
+                {% endif %}
+
+                <div class="flex flex-wrap gap-4 mb-4 text-xs text-gray-400">
+                  <span><i class="fas fa-calendar mr-1"></i>{{ checkin.created_at|date:"M d, Y" }}</span>
+                  <span><i class="fas fa-clock mr-1"></i>{{ checkin.created_at|time:"H:i" }}</span>
+                  <span class="text-gray-300">{{ checkin.created_at|timesince }} ago</span>
+                </div>
+
+                <!-- Points breakdown -->
+                <div class="bg-gray-50 rounded-xl px-4 py-3 mb-4">
+                  <div class="breakdown-row"><span>Base check-in</span><strong>+10 pts</strong></div>
+                  {% if checkin.photo_proof %}<div class="breakdown-row"><span>Photo bonus</span><strong class="text-green-600">+5 pts</strong></div>{% endif %}
+                  {% if checkin.location_verified %}<div class="breakdown-row"><span>GPS verification</span><strong class="text-blue-600">+5 pts</strong></div>{% endif %}
+                </div>
+
+                <div class="flex items-center gap-3">
+                  <a href="{% url 'places:place_detail' checkin.place.slug %}" class="action-btn btn-green">
+                    <i class="fas fa-eye text-xs"></i> View Place
+                  </a>
+                  {% if checkin.photo_proof %}
+                    <button class="action-btn btn-blue" onclick="viewPhoto('{{ checkin.photo_proof.url }}')">
+                      <i class="fas fa-expand text-xs"></i> Full Photo
+                    </button>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
             {% endfor %}
-        ];
-        
-        if (checkins.length > 0) {
-            const bounds = L.latLngBounds();
-            
-            checkins.forEach(checkin => {
-                const marker = L.marker([checkin.lat, checkin.lng])
-                    .bindPopup(`
-                        <div class="text-center">
-                            <h3 class="font-semibold">${checkin.name}</h3>
-                            <p class="text-sm text-gray-600 mt-1">${checkin.date}</p>
-                            <p class="text-sm font-medium text-green-600">+${checkin.points} points</p>
-                            ${checkin.verified ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Verified</span>' : ''}
-                            ${checkin.photo_proof ? '<span class="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full ml-1">Photo</span>' : ''}
-                        </div>
-                    `)
-                    .addTo(checkinsMap);
-                
-                bounds.extend([checkin.lat, checkin.lng]);
-            });
-            
-            checkinsMap.fitBounds(bounds, { padding: [20, 20] });
-        }
-    }
-    
-    // Initialize charts for stats view
-    function initCharts() {
-        // Monthly activity chart (mock data)
-        const monthlyCtx = document.getElementById('monthly-chart');
-        if (monthlyCtx && !monthlyCtx.chartInstance) {
-            // Chart.js implementation would go here
-            monthlyCtx.chartInstance = true;
-        }
-        
-        // Category breakdown chart (mock data)
-        const categoryCtx = document.getElementById('category-chart');
-        if (categoryCtx && !categoryCtx.chartInstance) {
-            // Chart.js implementation would go here
-            categoryCtx.chartInstance = true;
-        }
-    }
-    
-    // Filter check-ins
-    function filterCheckins() {
-        const periodFilter = document.getElementById('period-filter').value;
-        const statusFilter = document.getElementById('status-filter').value;
-        const checkinItems = document.querySelectorAll('.checkin-item');
-        
-        checkinItems.forEach(item => {
-            let showItem = true;
-            
-            // Apply filters
-            const itemDate = new Date(item.dataset.date);
-            const now = new Date();
-            
-            // Period filter
-            if (periodFilter !== 'all') {
-                const daysDiff = (now - itemDate) / (1000 * 60 * 60 * 24);
-                
-                switch (periodFilter) {
-                    case 'today':
-                        showItem = daysDiff < 1;
-                        break;
-                    case 'week':
-                        showItem = daysDiff < 7;
-                        break;
-                    case 'month':
-                        showItem = daysDiff < 30;
-                        break;
-                    case 'year':
-                        showItem = daysDiff < 365;
-                        break;
-                }
-            }
-            
-            // Status filter
-            if (showItem && statusFilter !== 'all' ) {
-                const isVerified = item.dataset.verified === 'true';
-                const hasPhoto = item.dataset.photo === 'true';
-                const points = parseInt(item.dataset.points);
-                
-                switch (statusFilter) {
-                    case 'verified':
-                        showItem = isVerified;
-                        break;
-                    case 'with_photo':
-                        showItem = hasPhoto;
-                        break;
-                    case 'high_points':
-                        showItem = points >= 15;
-                        break;
-                }
-            }
-            
-            // Show/hide item
-            if (showItem) {
-                item.style.display = 'block';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-    }
-    
-    // View photo in modal
-    function viewPhoto(photoUrl) {
-        const modal = document.getElementById('photo-modal');
-        const modalPhoto = document.getElementById('modal-photo');
-        
-        modalPhoto.src = photoUrl;
-        modal.classList.remove('hidden');
-    }
-    
-    // Close photo modal
-    function closePhotoModal() {
-        const modal = document.getElementById('photo-modal');
-        modal.classList.add('hidden');
-    }
-    
-    // Load more check-ins
-    function loadMoreCheckins() {
-        // Implementation for loading more check-ins via AJAX
-        alert('Load more functionality would be implemented here');
-    }
-    
-    // Initialize page
-    document.addEventListener('DOMContentLoaded', function() {
-        toggleView('timeline');
-        
-        // Close modal when clicking outside
-        document.getElementById('photo-modal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closePhotoModal();
-            }
-        });
+
+            {% if checkins.has_next %}
+              <div class="text-center pt-4">
+                <button onclick="loadMoreCheckins()" class="px-8 py-3 rounded-full bg-white border border-gray-200 text-gray-600 text-sm font-medium hover:border-green-400 hover:text-green-600 transition-all shadow-sm">
+                  <i class="fas fa-chevron-down mr-2"></i> Load More
+                </button>
+              </div>
+            {% endif %}
+
+          {% else %}
+            <!-- Empty state -->
+            <div class="empty-state fade-up">
+              <div class="empty-icon">📍</div>
+              <h3 class="display-font text-3xl font-bold text-gray-900 mb-3">No Check-ins Yet</h3>
+              <p class="text-gray-500 mb-8 max-w-sm mx-auto">Start exploring and check in to earn points, track your visits, and build your journal.</p>
+              <div class="flex justify-center gap-4">
+                <a href="{% url 'places:home' %}" class="action-btn btn-green px-6 py-3"><i class="fas fa-search text-xs"></i> Explore Places</a>
+                <a href="{% url 'places:nearby_places' %}" class="action-btn btn-blue px-6 py-3"><i class="fas fa-location-arrow text-xs"></i> Find Nearby</a>
+              </div>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Map view -->
+        <div id="view-map" class="hidden">
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-6 border-b border-gray-100">
+              <p class="text-xs font-semibold uppercase tracking-widest text-green-600 mb-1">Mapped</p>
+              <h3 class="display-font text-2xl font-bold text-gray-900">Your Check-in Trail</h3>
+            </div>
+            <div id="checkins-map" class="w-full" style="height:420px;"></div>
+          </div>
+        </div>
+
+        <!-- Stats view -->
+        <div id="view-stats" class="hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <p class="sidebar-label">Monthly Activity</p>
+              <canvas id="monthly-chart" height="200"></canvas>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <p class="sidebar-label">Places by Category</p>
+              <canvas id="category-chart" height="200"></canvas>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <p class="sidebar-label">Achievements</p>
+              <div class="sidebar-stat-row"><span class="text-gray-500">Longest Streak</span><strong>{{ longest_streak }} days</strong></div>
+              <div class="sidebar-stat-row"><span class="text-gray-500">Most Active Month</span><strong>{{ most_active_month }}</strong></div>
+              <div class="sidebar-stat-row"><span class="text-gray-500">Favourite Category</span><strong>{{ favorite_category }}</strong></div>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+              <p class="sidebar-label">Recent Milestones</p>
+              {% for milestone in recent_milestones %}
+                <div class="badge-item">
+                  <div class="badge-avatar">🏆</div>
+                  <div>
+                    <p class="text-sm font-medium text-gray-900">{{ milestone.title }}</p>
+                    <p class="text-xs text-gray-400">{{ milestone.date|date:"M d, Y" }}</p>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ SIDEBAR ══ -->
+      <div class="lg:col-span-1">
+
+        <div class="sidebar-card fade-up" style="transition-delay:.15s">
+          <p class="sidebar-label">Quick Stats</p>
+          <div class="sidebar-stat-row"><span class="text-gray-500">This Week</span><span class="font-semibold text-green-600">{{ week_checkins }} check-ins</span></div>
+          <div class="sidebar-stat-row"><span class="text-gray-500">This Month</span><span class="font-semibold text-blue-600">{{ month_checkins }} check-ins</span></div>
+          <div class="sidebar-stat-row"><span class="text-gray-500">With Photos</span><span class="font-semibold text-purple-600">{{ photo_checkins }}%</span></div>
+          <div class="sidebar-stat-row"><span class="text-gray-500">Verified GPS</span><span class="font-semibold text-yellow-600">{{ verified_checkins }}%</span></div>
+        </div>
+
+        <div class="sidebar-card fade-up" style="transition-delay:.22s">
+          <p class="sidebar-label">Recent Badges</p>
+          {% for badge in recent_badges %}
+            <div class="badge-item">
+              <div class="badge-avatar">
+                {% if badge.badge.image %}
+                  <img src="{{ badge.badge.image.url }}" class="w-full h-full rounded-full object-cover">
+                {% else %}
+                  {{ badge.badge.icon }}
+                {% endif %}
+              </div>
+              <div>
+                <p class="text-sm font-medium text-gray-900">{{ badge.badge.name }}</p>
+                <p class="text-xs text-gray-400">{{ badge.earned_at|timesince }} ago</p>
+              </div>
+            </div>
+          {% empty %}
+            <p class="text-sm text-gray-400">No badges yet — keep exploring!</p>
+          {% endfor %}
+          <a href="{% url 'places:badges' %}" class="block mt-4 text-center text-xs font-semibold text-green-600 hover:text-green-700">View All Badges →</a>
+        </div>
+
+        <!-- CTA mini -->
+        <div class="rounded-2xl bg-gradient-to-br from-green-700 to-emerald-900 p-6 text-center fade-up" style="transition-delay:.29s">
+          <p class="text-green-200 text-xs mb-2 font-medium uppercase tracking-widest">Keep Going</p>
+          <h3 class="display-font text-xl font-bold text-white mb-4">Find your next adventure</h3>
+          <a href="{% url 'places:nearby_places' %}" class="inline-flex items-center gap-2 bg-white text-green-800 font-semibold text-sm px-5 py-2.5 rounded-full hover:bg-green-50 transition-all">
+            <i class="fas fa-location-arrow text-xs"></i> Nearby Places
+          </a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo modal -->
+  <div id="photo-modal" class="photo-modal-bg" style="display:none;" onclick="if(event.target===this)closePhotoModal()">
+    <div style="position:relative;">
+      <img id="modal-photo" src="" alt="Check-in photo">
+      <button onclick="closePhotoModal()" style="position:absolute;top:-14px;right:-14px;width:32px;height:32px;border-radius:50%;background:#fff;border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);">✕</button>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let mapInstance;
+
+function toggleView(v) {
+  ['timeline','map','stats'].forEach(id => {
+    document.getElementById('view-' + id).classList.add('hidden');
+    document.getElementById('btn-' + id).classList.remove('active');
+  });
+  document.getElementById('view-' + v).classList.remove('hidden');
+  document.getElementById('btn-' + v).classList.add('active');
+
+  if (v === 'map' && !mapInstance) initMap();
+  if (v === 'stats') initCharts();
+}
+
+function initMap() {
+  mapInstance = L.map('checkins-map').setView([7.8731, 80.7718], 7);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(mapInstance);
+
+  const checkins = [
+    {% for c in checkins %}
+    { lat:{{ c.place.latitude }}, lng:{{ c.place.longitude }}, name:"{{ c.place.name|escapejs }}", date:"{{ c.created_at|date:'M d, Y' }}", points:{{ c.points_awarded }}, verified:{{ c.location_verified|yesno:'true,false' }} }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+
+  if (checkins.length) {
+    const bounds = L.latLngBounds();
+    checkins.forEach(c => {
+      L.marker([c.lat, c.lng])
+        .bindPopup(`<div style="text-align:center;font-family:sans-serif"><strong>${c.name}</strong><br><small style="color:#6b7280">${c.date}</small><br><span style="color:#16a34a;font-weight:600">+${c.points} pts</span>${c.verified ? '<br><span style="font-size:11px;background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:50px">GPS Verified</span>' : ''}</div>`)
+        .addTo(mapInstance);
+      bounds.extend([c.lat, c.lng]);
     });
-    </script>
+    mapInstance.fitBounds(bounds, { padding: [24, 24] });
+  }
+}
+
+function initCharts() { /* Chart.js integration hooks */ }
+
+function filterCheckins() {
+  const period = document.getElementById('period-filter').value;
+  const status = document.getElementById('status-filter').value;
+  const now = new Date();
+
+  document.querySelectorAll('.checkin-item').forEach(item => {
+    const d = new Date(item.dataset.date);
+    const diff = (now - d) / 86400000;
+    let show = true;
+
+    if (period === 'today')  show = diff < 1;
+    else if (period === 'week')  show = diff < 7;
+    else if (period === 'month') show = diff < 30;
+    else if (period === 'year')  show = diff < 365;
+
+    if (show && status !== 'all') {
+      if (status === 'verified')   show = item.dataset.verified === 'true';
+      if (status === 'with_photo') show = item.dataset.photo === 'true';
+      if (status === 'high_points') show = parseInt(item.dataset.points) >= 15;
+    }
+
+    item.style.display = show ? '' : 'none';
+  });
+}
+
+function viewPhoto(url) {
+  document.getElementById('modal-photo').src = url;
+  document.getElementById('photo-modal').style.display = 'flex';
+}
+function closePhotoModal() { document.getElementById('photo-modal').style.display = 'none'; }
+
+function loadMoreCheckins() { alert('Load more would be implemented here'); }
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
 {% endblock %}

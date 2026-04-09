@@ -1,187 +1,554 @@
 {% extends 'base.html' %}
-{% block title %}About Expearls{% endblock %}
+{% block title %}About Expearls — Explore Sri Lanka{% endblock %}
+
 {% block content %}
-    <div class="max-w-4xl mx-auto py-12 px-6">
-        <div class="text-center mb-10">
-            <h1 class="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Expearls</h1>
-            <p class="text-lg text-gray-600">Your personal travel companion for exploring Sri Lanka.</p>
-        </div>
-        <!-- Tab Navigation -->
-        <div class="flex justify-center space-x-4 mb-6">
-            <button class="tab-button px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded active-tab"
-                    data-tab="about">🧭 About</button>
-            <button class="tab-button px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded"
-                    data-tab="terms">📄 Terms</button>
-            <button class="tab-button px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded"
-                    data-tab="privacy">🔒 Privacy</button>
-        </div>
-        <!-- Tab Content -->
-        <div id="about" class="tab-content space-y-6">
-            <h2 class="text-2xl font-semibold text-gray-800">About Expearls</h2>
-            <p class="text-gray-700">
-                Expearls is a modern travel guide designed to help you explore the beauty, culture, and hidden gems of Sri Lanka.
-                Whether you're discovering ancient temples, trekking to waterfalls, or finding the best local food, Expearls is your trusted companion.
-            </p>
-            <ul class="list-disc pl-6 text-gray-700">
-                <li>Discover landmarks and hidden gems</li>
-                <li>Track your travels and earn rewards</li>
-                <li>Get real-time location-based recommendations</li>
-                <li>Built with ❤️ in Sri Lanka using open-source tools</li>
-            </ul>
-            <p class="text-gray-600">
-                Questions? Email us at <a href="mailto:example@gmail.com" class="text-green-600 underline">example@gmail.com</a>
-            </p>
-        </div>
-        <div id="terms" class="tab-content hidden space-y-6">
-            <h2 class="text-2xl font-semibold text-gray-800">Terms of Service</h2>
-            <p class="text-gray-700">Effective Date: October 4, 2025</p>
-            <p class="text-gray-700">Welcome to Expearls!</p>
-            <p class="text-gray-700">
-                By accessing or using Expearls ("the App", "we", "our"), you agree to be bound by these Terms of Service ("Terms"). If you do not agree, please do not use the App.
-            </p>
-            <ol class="list-decimal pl-6 text-gray-700 space-y-2">
-                <li>
-                    <strong>Use of the App</strong>
-                    <br>
-                    Expearls is a platform for discovering and sharing places. Users can register accounts, submit content, check in at locations, and participate in community challenges.
-                </li>
-                <li>
-                    <strong>User Accounts</strong>
-                    <br>
-                    You must be at least 13 years old to use Expearls. You are responsible for maintaining the confidentiality of your account. You agree not to impersonate others or use the platform for illegal or abusive activities.
-                </li>
-                <li>
-                    <strong>User-Generated Content</strong>
-                    <br>
-                    You retain ownership of your content, but grant Expearls a license to use, display, and distribute it as part of the service. You must not upload harmful, illegal, or offensive content.
-                </li>
-                <li>
-                    <strong>Moderation</strong>
-                    <br>
-                    We reserve the right to remove content or suspend accounts that violate our guidelines or these Terms.
-                </li>
-                <li>
-                    <strong>Payments and Subscriptions</strong>
-                    <br>
-                    If you choose to use premium features or paid services, fees and billing terms will be disclosed prior to purchase. All purchases are final unless otherwise stated.
-                </li>
-                <li>
-                    <strong>Intellectual Property</strong>
-                    <br>
-                    All site content and code (excluding user content) is the intellectual property of Expearls. You may not reproduce or repurpose it without permission.
-                </li>
-                <li>
-                    <strong>Disclaimer</strong>
-                    <br>
-                    The App is provided “as is” without warranties. While we strive for accuracy, we are not liable for errors, loss of data, or service interruptions.
-                </li>
-                <li>
-                    <strong>Termination</strong>
-                    <br>
-                    We may suspend or terminate accounts at our discretion if users violate these Terms.
-                </li>
-                <li>
-                    <strong>Changes</strong>
-                    <br>
-                    We may update these Terms from time to time. Continued use after changes constitutes acceptance.
-                </li>
-                <li>
-                    <strong>Contact</strong>
-                    <br>
-                    For questions about these Terms, contact us at: <a href="mailto:example@gmail.com" class="text-green-600 underline">example@gmail.com</a>
-                </li>
-            </ol>
-        </div>
-        <div id="privacy" class="tab-content hidden space-y-6">
-            <h2 class="text-2xl font-semibold text-gray-800">Privacy Policy</h2>
-            <p class="text-gray-700">Effective Date: October 4, 2025</p>
-            <p class="text-gray-700">
-                At Expearls ("we", "our", or "us"), your privacy is important. This Privacy Policy explains how we collect, use, and protect your information.
-            </p>
-            <ol class="list-decimal pl-6 text-gray-700 space-y-2">
-                <li>
-                    <strong>Information We Collect</strong>
-                    <br>
-                    <ul class="list-disc pl-6">
-                        <li>Account info (email, username, password)</li>
-                        <li>Location data (for check-ins)</li>
-                        <li>Uploaded content (photos, comments)</li>
-                        <li>App usage data (anonymous, optional)</li>
-                    </ul>
-                </li>
-                <li>
-                    <strong>How We Use Your Information</strong>
-                    <br>
-                    <ul class="list-disc pl-6">
-                        <li>To provide app features</li>
-                        <li>To display user-generated content</li>
-                        <li>To improve user experience</li>
-                        <li>To send notifications and updates</li>
-                    </ul>
-                </li>
-                <li>
-                    <strong>Cookies & Tracking</strong>
-                    <br>
-                    Expearls does not use commercial third-party trackers or advertising cookies. We may use local storage or cache data for offline PWA functionality.
-                </li>
-                <li>
-                    <strong>Data Sharing</strong>
-                    <br>
-                    We do not sell or share your personal data with third parties. We may use open data providers like OpenStreetMap for mapping features.
-                </li>
-                <li>
-                    <strong>Data Retention & Deletion</strong>
-                    <br>
-                    You can request account deletion or data removal at any time by contacting us. Some data may be retained as required by law or for security purposes.
-                </li>
-                <li>
-                    <strong>Security</strong>
-                    <br>
-                    We use standard security measures to protect your data. However, no method of transmission or storage is completely secure.
-                </li>
-                <li>
-                    <strong>Children's Privacy</strong>
-                    <br>
-                    Expearls is not intended for children under 13. We do not knowingly collect data from minors without parental consent.
-                </li>
-                <li>
-                    <strong>Your Rights</strong>
-                    <br>
-                    You have the right to access, update, or delete your personal data. Contact us for any privacy-related requests.
-                </li>
-                <li>
-                    <strong>Changes to This Policy</strong>
-                    <br>
-                    We may update this Privacy Policy occasionally. You will be notified of significant changes.
-                </li>
-                <li>
-                    <strong>Contact</strong>
-                    <br>
-                    For any questions or concerns about your privacy, please email: <a href="mailto:example@gmail.com" class="text-green-600 underline">example@gmail.com</a>
-                </li>
-            </ol>
-        </div>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .about-page { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* Hero */
+  .hero-about {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-about::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-about::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 80px;
+    background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px;
+    background: #86efac;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:.5; transform:scale(1.4); }
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+  }
+  .stat-item + .stat-item {
+    border-left: 1px solid #e5e7eb;
+  }
+
+  /* Timeline */
+  .timeline-line {
+    position: absolute;
+    left: 24px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, #bbf7d0, #6ee7b7, #34d399, #10b981);
+  }
+  .timeline-dot {
+    width: 48px; height: 48px;
+    background: #ecfdf5;
+    border: 2px solid #34d399;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    transition: all .3s;
+  }
+  .timeline-item:hover .timeline-dot {
+    background: #34d399;
+    transform: scale(1.1);
+  }
+  .timeline-item:hover .timeline-dot i {
+    color: #fff !important;
+  }
+
+  /* FAQ */
+  .faq-item { border-bottom: 1px solid #e5e7eb; }
+  .faq-btn {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .faq-icon {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all .3s;
+  }
+  .faq-btn.open .faq-icon {
+    background: #22c55e;
+    border-color: #22c55e;
+    transform: rotate(45deg);
+  }
+  .faq-btn.open .faq-icon i { color: #fff; }
+  .faq-answer {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height .35s ease, padding .35s ease;
+  }
+  .faq-answer.open {
+    max-height: 400px;
+    padding-bottom: 20px;
+  }
+
+  /* Tabs */
+  .policy-tab {
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-size: .875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .2s;
+    border: 1.5px solid #e5e7eb;
+    background: transparent;
+    color: #6b7280;
+  }
+  .policy-tab.active {
+    background: #16a34a;
+    border-color: #16a34a;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(22,163,74,.25);
+  }
+
+  /* Team card */
+  .value-card {
+    border-radius: 16px;
+    padding: 28px;
+    transition: transform .3s, box-shadow .3s;
+    border: 1px solid #f3f4f6;
+    background: #fff;
+  }
+  .value-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,.08);
+  }
+  .value-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+
+  /* Entrance animation */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+
+<div class="about-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-about pt-20 pb-32 px-4 text-center">
+    <div class="max-w-3xl mx-auto relative z-10">
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-6 tracking-wide uppercase">
+        <span class="hero-dot"></span> Sri Lanka's Travel Community
+      </span>
+      <h1 class="display-font text-5xl md:text-6xl font-black text-white leading-tight mb-6">
+        We're Building the<br>
+        <em class="text-green-300 not-italic">Soul of Sri Lanka</em><br>
+        Travel
+      </h1>
+      <p class="text-green-100 text-lg font-light max-w-xl mx-auto leading-relaxed mb-10">
+        Expearls is a community-powered travel platform where locals and explorers discover, share, and celebrate the island's hidden gems — and earn rewards for every adventure.
+      </p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <a href="{% url 'places:home' %}" class="px-7 py-3 bg-green-400 hover:bg-green-300 text-green-950 font-semibold rounded-full text-sm transition-all shadow-lg shadow-green-900/30">
+          Start Exploring
+        </a>
+        <a href="#faqs" class="px-7 py-3 bg-white bg-opacity-10 hover:bg-opacity-20 text-white font-medium rounded-full text-sm transition-all border border-white border-opacity-20">
+          Read FAQs
+        </a>
+      </div>
     </div>
+  </section>
+
+  <!-- ══ STATS ══ -->
+  <section class="max-w-4xl mx-auto px-4 -mt-8 mb-20 relative z-10">
+    <div class="stats-bar grid grid-cols-2 md:grid-cols-4">
+      <div class="stat-item text-center py-8 px-4 fade-up">
+        <div class="display-font text-3xl font-bold text-gray-900">{{ total_places|default:"100+" }}</div>
+        <div class="text-sm text-gray-500 mt-1">Places Listed</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4 fade-up" style="transition-delay:.1s">
+        <div class="display-font text-3xl font-bold text-gray-900">{{ total_users|default:"500+" }}</div>
+        <div class="text-sm text-gray-500 mt-1">Explorers</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4 fade-up" style="transition-delay:.2s">
+        <div class="display-font text-3xl font-bold text-gray-900">{{ total_trails|default:"20+" }}</div>
+        <div class="text-sm text-gray-500 mt-1">Curated Trails</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4 fade-up" style="transition-delay:.3s">
+        <div class="display-font text-3xl font-bold text-gray-900">9</div>
+        <div class="text-sm text-gray-500 mt-1">Provinces Covered</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ STORY / TIMELINE ══ -->
+  <section class="max-w-4xl mx-auto px-4 mb-24">
+    <div class="text-center mb-14 fade-up">
+      <span class="text-green-600 text-xs font-semibold uppercase tracking-widest">Our Story</span>
+      <h2 class="display-font text-4xl font-bold text-gray-900 mt-2">Rooted in Sri Lanka,<br>Built for Explorers</h2>
+    </div>
+
+    <div class="relative pl-16">
+      <div class="timeline-line"></div>
+
+      <div class="timeline-item flex gap-6 mb-12 fade-up">
+        <div class="timeline-dot -ml-16">
+          <i class="fas fa-users text-green-600 text-sm"></i>
+        </div>
+        <div class="pt-2">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Who We Are</h3>
+          <p class="text-gray-600 leading-relaxed">We're creators, wanderers, and tech enthusiasts who believe Sri Lanka deserves a platform that truly captures its magic. From ancient temples to hidden waterfalls, we're obsessed with the untold side of travel on this extraordinary island.</p>
+        </div>
+      </div>
+
+      <div class="timeline-item flex gap-6 mb-12 fade-up">
+        <div class="timeline-dot -ml-16">
+          <i class="fas fa-bullseye text-green-600 text-sm"></i>
+        </div>
+        <div class="pt-2">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Our Mission</h3>
+          <p class="text-gray-600 leading-relaxed">To unlock the full potential of travel in Sri Lanka by blending community knowledge with rewarding exploration. We want every traveler — local or foreign — to feel like they have a local best friend in their pocket.</p>
+        </div>
+      </div>
+
+      <div class="timeline-item flex gap-6 mb-12 fade-up">
+        <div class="timeline-dot -ml-16">
+          <i class="fas fa-eye text-green-600 text-sm"></i>
+        </div>
+        <div class="pt-2">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">Our Vision</h3>
+          <p class="text-gray-600 leading-relaxed">A world where travel is immersive, respectful, and local-first. We envision Expearls as the go-to gateway for discovering authentic Sri Lankan stories, places, and people — responsibly and joyfully.</p>
+        </div>
+      </div>
+
+      <div class="timeline-item flex gap-6 fade-up">
+        <div class="timeline-dot -ml-16">
+          <i class="fas fa-hammer text-green-600 text-sm"></i>
+        </div>
+        <div class="pt-2">
+          <h3 class="text-lg font-semibold text-gray-900 mb-2">What We're Building</h3>
+          <ul class="text-gray-600 space-y-2">
+            <li class="flex items-start gap-2"><i class="fas fa-check-circle text-green-500 mt-0.5 text-sm flex-shrink-0"></i> A community platform for discovering real local experiences</li>
+            <li class="flex items-start gap-2"><i class="fas fa-check-circle text-green-500 mt-0.5 text-sm flex-shrink-0"></i> A gamified reward system — earn points for every check-in and contribution</li>
+            <li class="flex items-start gap-2"><i class="fas fa-check-circle text-green-500 mt-0.5 text-sm flex-shrink-0"></i> Curated trails and challenges across all nine provinces</li>
+            <li class="flex items-start gap-2"><i class="fas fa-check-circle text-green-500 mt-0.5 text-sm flex-shrink-0"></i> A platform that gives back to the places and people it features</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ VALUES ══ -->
+  <section class="bg-gray-50 py-20 px-4 mb-0">
+    <div class="max-w-5xl mx-auto">
+      <div class="text-center mb-12 fade-up">
+        <span class="text-green-600 text-xs font-semibold uppercase tracking-widest">What Drives Us</span>
+        <h2 class="display-font text-4xl font-bold text-gray-900 mt-2">Our Core Values</h2>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="value-card fade-up">
+          <div class="value-icon bg-green-50"><span>🌿</span></div>
+          <h3 class="font-semibold text-gray-900 mb-2">Community First</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Every place, trail, and review is contributed by real people who care about sharing their knowledge with fellow explorers.</p>
+        </div>
+        <div class="value-card fade-up" style="transition-delay:.1s">
+          <div class="value-icon bg-blue-50"><span>🔍</span></div>
+          <h3 class="font-semibold text-gray-900 mb-2">Authentic Discovery</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">We celebrate the off-the-beaten-path — the hidden gem, the local secret, the story that guidebooks miss.</p>
+        </div>
+        <div class="value-card fade-up" style="transition-delay:.2s">
+          <div class="value-icon bg-yellow-50"><span>🏆</span></div>
+          <h3 class="font-semibold text-gray-900 mb-2">Rewarded Exploration</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Check in, earn points, unlock badges, and climb the leaderboard. Adventure should feel as good as it looks.</p>
+        </div>
+        <div class="value-card fade-up" style="transition-delay:.3s">
+          <div class="value-icon bg-red-50"><span>🤝</span></div>
+          <h3 class="font-semibold text-gray-900 mb-2">Respect for Culture</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">We promote responsible tourism that honours the communities, traditions, and environments we visit.</p>
+        </div>
+        <div class="value-card fade-up" style="transition-delay:.4s">
+          <div class="value-icon bg-purple-50"><span>📍</span></div>
+          <h3 class="font-semibold text-gray-900 mb-2">Local Expertise</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Our users are the experts. Locals who know every temple, waterfall, and street-food cart power our recommendations.</p>
+        </div>
+        <div class="value-card fade-up" style="transition-delay:.5s">
+          <div class="value-icon bg-orange-50"><span>🔒</span></div>
+          <h3 class="font-semibold text-gray-900 mb-2">Trust & Safety</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Verified check-ins, moderated content, and a trust-score system keep our community accurate and safe.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ FAQ ══ -->
+  <section id="faqs" class="py-20 px-4 bg-white">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-12 fade-up">
+        <span class="text-green-600 text-xs font-semibold uppercase tracking-widest">Got Questions?</span>
+        <h2 class="display-font text-4xl font-bold text-gray-900 mt-2">Frequently Asked Questions</h2>
+        <p class="text-gray-500 mt-3">Everything you need to know about Expearls.</p>
+      </div>
+
+      <div class="space-y-0 fade-up">
+
+        {% for q, a in faqs %}
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left text-sm sm:text-base">{{ q }}</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed pb-1">{{ a }}</p>
+          </div>
+        </div>
+        {% empty %}
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left">What is Expearls?</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed">Expearls is a community-powered travel platform for exploring Sri Lanka. Users can discover places, check in, earn points and badges, follow curated trails, and contribute their own local knowledge to help others explore the island authentically.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left">How do I earn points and badges?</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed">You earn points by checking in at places (with optional photo proof for bonus points), adding new places, writing reviews, completing trails, and finishing challenges. Badges are unlocked automatically when you hit milestones — like visiting 5 places or completing your first trail.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left">Is Expearls free to use?</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed">Yes — Expearls is completely free to join and use. Discovering places, checking in, earning rewards, and browsing trails all cost nothing. We may introduce optional premium features in the future, but the core experience will always be free.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left">How do I submit a new place?</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed">After logging in, click "Add Place" from the navigation. Fill in the name, description, location coordinates, category, and an optional photo. Your submission goes to our review team and, once approved, earns you 50 points and appears publicly on the platform.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left">What is a Trail?</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed">A Trail is a curated collection of places linked into a journey — like "Colombo City Walk" or "Hill Country Waterfalls". When you check in at every place on a trail, you complete it and earn a bonus reward. Anyone can create and share their own trails.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left">How does check-in verification work?</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed">Check-ins have three trust tiers — Unverified, Likely Verified, and Verified. Uploading a photo and sharing your GPS location at the time of check-in increases your trust score and earns bonus points. Our system also detects reused photos to keep things fair.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left">Can I delete my account?</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed">Yes. You can request account deletion at any time by contacting us at <a href="mailto:expearlsadmin@gmail.com" class="text-green-600 underline">expearlsadmin@gmail.com</a>. We'll remove your personal data within 30 days, though some anonymised content may be retained as required by our policies.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left">How do I report incorrect information?</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed">If you spot an error on a place listing or a review that violates our community guidelines, email us at <a href="mailto:expearlsadmin@gmail.com" class="text-green-600 underline">expearlsadmin@gmail.com</a> with the place name and details. Our moderation team reviews all reports promptly.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left">Is my personal data safe?</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed">We take privacy seriously. We do not sell your data to third parties, do not use commercial tracking cookies, and you control what is publicly visible on your profile (location, email, phone). See our full Privacy Policy below for details.</p>
+          </div>
+        </div>
+
+        <div class="faq-item">
+          <button class="faq-btn" onclick="toggleFaq(this)">
+            <span class="font-medium text-gray-800 text-left">How do I contact the Expearls team?</span>
+            <div class="faq-icon"><i class="fas fa-plus text-green-600 text-xs"></i></div>
+          </button>
+          <div class="faq-answer">
+            <p class="text-gray-500 text-sm leading-relaxed">The best way to reach us is by email at <a href="mailto:expearlsadmin@gmail.com" class="text-green-600 underline">expearlsadmin@gmail.com</a>. We aim to respond within 48 hours on business days.</p>
+          </div>
+        </div>
+
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ POLICIES ══ -->
+  <section class="bg-gray-50 py-20 px-4">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-10 fade-up">
+        <span class="text-green-600 text-xs font-semibold uppercase tracking-widest">Legal</span>
+        <h2 class="display-font text-4xl font-bold text-gray-900 mt-2">Policies</h2>
+      </div>
+
+      <div class="flex justify-center gap-3 mb-10 fade-up flex-wrap">
+        <button class="policy-tab active" onclick="switchPolicy(this,'terms')">Terms of Service</button>
+        <button class="policy-tab" onclick="switchPolicy(this,'privacy')">Privacy Policy</button>
+      </div>
+
+      <!-- Terms -->
+      <div id="policy-terms" class="policy-panel bg-white rounded-2xl p-8 shadow-sm fade-up">
+        <p class="text-xs text-gray-400 mb-6">Effective Date: October 4, 2025</p>
+        <div class="space-y-5 text-sm text-gray-600 leading-relaxed">
+          <div><h4 class="font-semibold text-gray-900 mb-1">1. Use of the App</h4><p>Expearls is a platform for discovering and sharing places. Users can register accounts, submit content, check in at locations, and participate in community challenges.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">2. User Accounts</h4><p>You must be at least 13 years old to use Expearls. You are responsible for maintaining the confidentiality of your account and agree not to impersonate others or use the platform for illegal or abusive activities.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">3. User-Generated Content</h4><p>You retain ownership of your content, but grant Expearls a license to use, display, and distribute it as part of the service. You must not upload harmful, illegal, or offensive content.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">4. Moderation</h4><p>We reserve the right to remove content or suspend accounts that violate our guidelines or these Terms.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">5. Intellectual Property</h4><p>All site content and code (excluding user content) is the intellectual property of Expearls. You may not reproduce or repurpose it without permission.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">6. Disclaimer</h4><p>The App is provided "as is" without warranties. While we strive for accuracy, we are not liable for errors, loss of data, or service interruptions.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">7. Contact</h4><p>For questions, contact us at <a href="mailto:expearlsadmin@gmail.com" class="text-green-600 underline">expearlsadmin@gmail.com</a></p></div>
+        </div>
+      </div>
+
+      <!-- Privacy -->
+      <div id="policy-privacy" class="policy-panel bg-white rounded-2xl p-8 shadow-sm fade-up hidden">
+        <p class="text-xs text-gray-400 mb-6">Effective Date: October 4, 2025</p>
+        <div class="space-y-5 text-sm text-gray-600 leading-relaxed">
+          <div><h4 class="font-semibold text-gray-900 mb-1">1. Information We Collect</h4><p>Account info (email, username), location data for check-ins, uploaded content (photos, comments), and optional anonymous usage data.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">2. How We Use It</h4><p>To provide app features, display user content, improve user experience, and send relevant notifications.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">3. Cookies & Tracking</h4><p>Expearls does not use commercial third-party trackers or advertising cookies. We may use local storage for offline PWA functionality.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">4. Data Sharing</h4><p>We do not sell or share your personal data with third parties. We may use open data providers like OpenStreetMap for mapping features.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">5. Your Rights</h4><p>You have the right to access, update, or delete your personal data at any time. Contact us for any privacy-related requests.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">6. Security</h4><p>We use standard security measures to protect your data. However, no method of transmission or storage is completely secure.</p></div>
+          <div><h4 class="font-semibold text-gray-900 mb-1">7. Contact</h4><p>For privacy questions: <a href="mailto:expearlsadmin@gmail.com" class="text-green-600 underline">expearlsadmin@gmail.com</a></p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ CTA ══ -->
+  <section class="bg-gradient-to-br from-green-700 to-emerald-900 py-20 px-4 text-center">
+    <div class="max-w-2xl mx-auto fade-up">
+      <h2 class="display-font text-4xl font-bold text-white mb-4">Ready to Explore?</h2>
+      <p class="text-green-200 mb-8 text-lg">Join thousands of explorers discovering the real Sri Lanka — one check-in at a time.</p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="{% url 'register' %}" class="px-8 py-3.5 bg-white text-green-800 font-semibold rounded-full text-sm hover:bg-green-50 transition-all shadow-lg">
+          Create Free Account
+        </a>
+        <a href="{% url 'places:home' %}" class="px-8 py-3.5 border border-green-400 text-green-100 font-medium rounded-full text-sm hover:bg-green-800 transition-all">
+          Browse Places
+        </a>
+      </div>
+      <p class="text-green-400 text-xs mt-6">Questions? <a href="mailto:expearlsadmin@gmail.com" class="underline hover:text-green-200">expearlsadmin@gmail.com</a></p>
+    </div>
+  </section>
+
+</div>
+
 {% endblock %}
+
 {% block extra_js %}
-    <script>
-    // Tab switcher logic
-    const tabButtons = document.querySelectorAll('.tab-button');
-    const tabContents = document.querySelectorAll('.tab-content');
+<script>
+// ── FAQ accordion ─────────────────────────────────────────
+function toggleFaq(btn) {
+  const answer = btn.nextElementSibling;
+  const isOpen = btn.classList.contains('open');
 
-    tabButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetTab = btn.dataset.tab;
+  // Close all
+  document.querySelectorAll('.faq-btn.open').forEach(b => {
+    b.classList.remove('open');
+    b.nextElementSibling.classList.remove('open');
+  });
 
-            // Remove active class from all buttons
-            tabButtons.forEach(b => b.classList.remove('active-tab', 'bg-green-500', 'text-white'));
-            // Hide all tab contents
-            tabContents.forEach(content => content.classList.add('hidden'));
+  // Open clicked (if it was closed)
+  if (!isOpen) {
+    btn.classList.add('open');
+    answer.classList.add('open');
+  }
+}
 
-            // Show selected tab and highlight button
-            document.getElementById(targetTab).classList.remove('hidden');
-            btn.classList.add('active-tab', 'bg-green-500', 'text-white');
-        });
-    });
-    </script>
+// ── Policy tab switcher ───────────────────────────────────
+function switchPolicy(btn, id) {
+  document.querySelectorAll('.policy-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.policy-panel').forEach(p => p.classList.add('hidden'));
+  btn.classList.add('active');
+  document.getElementById('policy-' + id).classList.remove('hidden');
+}
+
+// ── Scroll entrance animations ────────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
 {% endblock %}

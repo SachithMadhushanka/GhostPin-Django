@@ -1,691 +1,602 @@
 {% extends 'base.html' %}
-{% block title %}Check-ins at {{ place.name }} - Expearls{% endblock %}
+{% block title %}Check-ins at {{ place.name }} — Expearls{% endblock %}
+
 {% block content %}
-    <!-- CSRF Token for AJAX requests -->
-    {% csrf_token %}
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                        <i class="fas fa-map-marker-alt text-red-600 mr-2"></i>
-                        Check-ins at {{ place.name }}
-                    </h1>
-                    <p class="text-gray-600">
-                        {{ total_count }} visitor{{ total_count|pluralize }} {{ total_count|pluralize:"has,have" }} checked in at this location
-                    </p>
-                </div>
-                <div class="flex space-x-3">
-                    <a href="{% url 'places:place_detail' place.slug %}"
-                       class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
-                        <i class="fas fa-eye mr-2"></i> View Place
-                    </a>
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'places:check_in' place.slug %}"
-                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            <i class="fas fa-map-pin mr-2"></i> Check In Here
-                        </a>
-                    {% endif %}
-                </div>
-            </div>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .ci-page { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* ── Hero ── */
+  .hero-ci {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative; overflow: hidden;
+  }
+  .hero-ci::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-ci::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 64px; background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px; background: #86efac; border-radius: 50%;
+    display: inline-block; margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(1.4); }
+  }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    background: #fff; border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.10);
+  }
+  .stat-item + .stat-item { border-left: 1px solid #e5e7eb; }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: .68rem; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; color: #16a34a;
+  }
+
+  /* ── Place summary card ── */
+  .place-card {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    overflow: hidden;
+  }
+  .place-thumb {
+    width: 280px; flex-shrink: 0;
+  }
+  @media (max-width: 768px) { .place-thumb { width: 100%; height: 220px; } }
+  .place-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .place-thumb-placeholder {
+    width: 100%; height: 100%; min-height: 220px;
+    background: linear-gradient(135deg,#0a3d2e,#34d399);
+    display: flex; align-items: center; justify-content: center; font-size: 3.5rem;
+  }
+  .place-body { flex: 1; padding: 28px; }
+
+  .stat-mini-grid {
+    display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 18px;
+  }
+  @media (max-width: 480px) { .stat-mini-grid { grid-template-columns: repeat(2,1fr); } }
+  .stat-mini-box {
+    text-align: center; padding: 12px 8px; border-radius: 14px;
+  }
+  .stat-mini-box .val { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; }
+  .stat-mini-box .lbl { font-size: .68rem; color: #9ca3af; margin-top: 2px; }
+
+  .tag-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 50px; font-size: .73rem; font-weight: 500;
+  }
+  .tag-cat      { background: #d1fae5; color: #065f46; }
+  .tag-diff     { background: #fef3c7; color: #92400e; }
+  .tag-coords   { background: #f3f4f6; color: #6b7280; }
+
+  /* ── Controls bar ── */
+  .controls-bar {
+    background: #fff; border-radius: 18px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    padding: 16px 20px;
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
+  }
+  .exp-select {
+    appearance: none; -webkit-appearance: none;
+    border: 1.5px solid #e5e7eb; border-radius: 50px;
+    padding: 7px 30px 7px 14px;
+    font-family: 'DM Sans', sans-serif; font-size: .8rem; color: #374151;
+    background-color: #f9fafb; cursor: pointer; outline: none; transition: border-color .2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2316a34a'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 11px center;
+  }
+  .exp-select:focus { border-color: #34d399; }
+
+  .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 50px;
+    font-size: .75rem; font-weight: 500;
+    border: 1.5px solid #e5e7eb;
+    background: #f9fafb; color: #6b7280;
+    cursor: pointer; transition: all .18s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .chip:hover { border-color: #34d399; color: #16a34a; background: #f0fdf4; }
+  .chip.active { background: #16a34a; border-color: #16a34a; color: #fff; }
+
+  /* ── Check-in card ── */
+  .checkin-card {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    overflow: hidden;
+    transition: transform .25s, box-shadow .25s;
+  }
+  .checkin-card:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(0,0,0,.09); }
+
+  /* Card header */
+  .card-hdr {
+    padding: 16px 22px; border-bottom: 1px solid #f9fafb;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  }
+  .user-avatar-link {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: linear-gradient(135deg,#059669,#10b981);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: .95rem;
+    text-decoration: none; flex-shrink: 0;
+    transition: opacity .15s;
+  }
+  .user-avatar-link:hover { opacity: .85; }
+  .user-name-link {
+    font-weight: 600; color: #111827; text-decoration: none;
+    transition: color .15s; font-size: .95rem;
+  }
+  .user-name-link:hover { color: #16a34a; }
+  .user-time { font-size: .75rem; color: #9ca3af; display: flex; align-items: center; gap: 5px; margin-top: 2px; }
+
+  .badge-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 50px; font-size: .7rem; font-weight: 600;
+  }
+  .badge-verified { background: #dcfce7; color: #15803d; }
+  .badge-photo    { background: #dbeafe; color: #1d4ed8; }
+
+  .detail-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .75rem; color: #6b7280; text-decoration: none;
+    padding: 5px 12px; border-radius: 50px; border: 1.5px solid #e5e7eb;
+    transition: all .15s;
+  }
+  .detail-link:hover { border-color: #34d399; color: #16a34a; background: #f0fdf4; }
+
+  /* Card body */
+  .card-body { padding: 20px 22px; }
+  .card-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 18px; }
+  @media (max-width: 640px) { .card-grid { grid-template-columns: 1fr; } }
+
+  .checkin-photo {
+    width: 100%; height: 220px; object-fit: cover;
+    border-radius: 14px; cursor: pointer;
+    transition: transform .3s, box-shadow .3s;
+    display: block;
+  }
+  .checkin-photo:hover { transform: scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+
+  .detail-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 0; border-bottom: 1px solid #f9fafb; font-size: .84rem;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .lbl { color: #6b7280; }
+
+  .notes-box {
+    background: #f9fafb; border-left: 3px solid #d1fae5;
+    border-radius: 0 12px 12px 0; padding: 14px 16px; margin-top: 14px;
+  }
+  .notes-box p { font-size: .85rem; color: #374151; font-style: italic; line-height: 1.6; }
+
+  /* ── Empty ── */
+  .empty-box {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    text-align: center; padding: 72px 32px;
+  }
+  .empty-icon-wrap {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: #f0fdf4; border: 2px solid #d1fae5;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px; font-size: 36px;
+  }
+
+  /* ── Photo modal ── */
+  .photo-modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,.85);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; padding: 20px;
+  }
+  .photo-modal-bg img { max-width: 100%; max-height: 90vh; border-radius: 14px; display: block; }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(255,255,255,.15); border: none; color: #fff;
+    cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .modal-close:hover { background: rgba(255,255,255,.3); }
+  .modal-nav {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 40px; height: 40px; border-radius: 50%;
+    background: rgba(255,255,255,.15); border: none; color: #fff;
+    cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .modal-nav:hover { background: rgba(255,255,255,.3); }
+  .modal-nav.prev { left: 16px; }
+  .modal-nav.next { right: 16px; }
+  .modal-caption {
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,.65); color: #fff;
+    padding: 8px 18px; border-radius: 50px; font-size: .78rem;
+    font-family: 'DM Sans', sans-serif; white-space: nowrap;
+  }
+
+  /* ── Load more ── */
+  .load-more-btn {
+    width: 100%; padding: 14px;
+    border-radius: 14px; border: 1.5px dashed #d1fae5;
+    background: #f9fafb; color: #16a34a;
+    font-family: 'DM Sans', sans-serif; font-size: .85rem; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+  }
+  .load-more-btn:hover { background: #f0fdf4; border-color: #34d399; }
+
+  /* ── Fade entrance ── */
+  .fade-up {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+
+{% csrf_token %}
+
+<div class="ci-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-ci pt-14 pb-24 px-4">
+    <div class="max-w-5xl mx-auto relative z-10">
+      <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-5 tracking-wide uppercase">
+            <span class="hero-dot"></span> Community Check-ins
+          </span>
+          <h1 class="display-font text-4xl md:text-5xl font-black text-white leading-tight mb-3">
+            Check-ins at<br><em class="text-green-300 not-italic">{{ place.name }}</em>
+          </h1>
+          <p class="text-green-100 font-light">
+            {{ total_count }} visitor{{ total_count|pluralize }} {{ total_count|pluralize:"has,have" }} checked in at this location.
+          </p>
         </div>
-        <!-- Place Summary Card -->
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-            <div class="flex flex-col md:flex-row">
-                <!-- Place Image -->
-                <div class="md:w-1/3 h-64 md:h-auto">
-                    {% if place.image %}
-                        <img src="{{ place.image.url }}"
-                             alt="{{ place.name }}"
-                             class="w-full h-full object-cover">
-                    {% else %}
-                        <div class="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-4xl">
-                            🏛️
-                        </div>
-                    {% endif %}
-                </div>
-                <!-- Place Details -->
-                <div class="md:w-2/3 p-6">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-3">{{ place.name }}</h2>
-                    <p class="text-gray-600 mb-4">{{ place.description|truncatewords:30 }}</p>
-                    <!-- Stats Grid -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                        <div class="text-center p-3 bg-blue-50 rounded-lg">
-                            <div class="text-2xl font-bold text-blue-600">{{ checkins.count|default:0 }}</div>
-                            <div class="text-sm text-gray-600">Check-ins</div>
-                        </div>
-                        <div class="text-center p-3 bg-green-50 rounded-lg">
-                            <div class="text-2xl font-bold text-green-600">{{ unique_visitors|default:checkins.count }}</div>
-                            <div class="text-sm text-gray-600">Visitors</div>
-                        </div>
-                        <div class="text-center p-3 bg-yellow-50 rounded-lg">
-                            <div class="text-2xl font-bold text-yellow-600">{{ place.average_rating|floatformat:1|default:"N/A" }}</div>
-                            <div class="text-sm text-gray-600">Rating</div>
-                        </div>
-                        <div class="text-center p-3 bg-purple-50 rounded-lg">
-                            <div class="text-2xl font-bold text-purple-600">{{ verified_checkins|default:0 }}</div>
-                            <div class="text-sm text-gray-600">Verified</div>
-                        </div>
-                    </div>
-                    <!-- Tags -->
-                    <div class="flex flex-wrap gap-2">
-                        <span class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">
-                            <i class="fas fa-tag mr-1"></i>
-                            {% for cat in place.category.all %}
-                                {{ cat.name }}
-                                {% if not forloop.last %},{% endif %}
-                            {% endfor %}
-                        </span>
-                        <span class="bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded-full">
-                            <i class="fas fa-signal mr-1"></i>
-                            {{ place.get_difficulty_display }}
-                        </span>
-                        <span class="bg-gray-100 text-gray-800 text-sm px-3 py-1 rounded-full">
-                            <i class="fas fa-map-marker-alt mr-1"></i>
-                            {{ place.latitude|floatformat:4 }}, {{ place.longitude|floatformat:4 }}
-                        </span>
-                    </div>
-                </div>
-            </div>
+        <div class="flex gap-3 flex-wrap">
+          <a href="{% url 'places:place_detail' place.slug %}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white bg-opacity-10 hover:bg-opacity-20 text-white text-sm font-medium border border-white border-opacity-20 transition-all">
+            <i class="fas fa-eye text-xs"></i> View Place
+          </a>
+          {% if user.is_authenticated %}
+          <a href="{% url 'places:check_in' place.slug %}" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-green-400 hover:bg-green-300 text-green-950 text-sm font-semibold transition-all shadow-lg shadow-green-900/30">
+            <i class="fas fa-map-pin text-xs"></i> Check In Here
+          </a>
+          {% endif %}
         </div>
-        <!-- Filters and Sorting -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <h3 class="text-lg font-semibold text-gray-900">
-                    <i class="fas fa-filter text-purple-600 mr-2"></i>
-                    Filter & Sort Check-ins
-                </h3>
-                <div class="flex flex-wrap gap-3">
-                    <!-- Sort Options -->
-                    <select id="sort-select"
-                            class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            onchange="sortCheckins()">
-                        <option value="newest">Newest First</option>
-                        <option value="oldest">Oldest First</option>
-                        <option value="verified">Verified First</option>
-                        <option value="photos">With Photos</option>
-                        <!-- <option value="rating">Highest Rated</option> -->
-                    </select>
-                    <!-- Filter Buttons -->
-                    <button class="filter-btn active"
-                            data-filter="all"
-                            onclick="filterCheckins('all')">All ({{ total_count }})</button>
-                    <button class="filter-btn"
-                            data-filter="verified"
-                            onclick="filterCheckins('verified')">Verified ({{ verified_checkins|default:0 }})</button>
-                    <button class="filter-btn"
-                            data-filter="photos"
-                            onclick="filterCheckins('photos')">With Photos ({{ photo_checkins|default:0 }})</button>
-                    <button class="filter-btn"
-                            data-filter="recent"
-                            onclick="filterCheckins('recent')">Recent (7 days)</button>
-                </div>
-            </div>
-        </div>
-        <!-- Check-ins List -->
-        {% if checkins %}
-            <div class="space-y-8" id="checkins-list">
-                {% for checkin in checkins %}
-                    <div class="checkin-item bg-white rounded-lg shadow-lg overflow-hidden"
-                         data-verified="{{ checkin.location_verified|yesno:'true,false' }}"
-                         data-has-photo="{{ checkin.photo_proof|yesno:'true,false' }}"
-                         data-date="{{ checkin.created_at|date:'Y-m-d' }}">
-                        <!-- data-rating="{{ checkin.rating|default:0 }}" -->
-                        <!-- Check-in Header -->
-                        <div class="p-6 border-b border-gray-100">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-4">
-                                    <!-- Clickable User Avatar -->
-                                    <a href="{% url 'places:profile' checkin.user.username %}"
-                                       class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 hover:opacity-90 transition">
-                                        {{ checkin.user.username|first|upper }}
-                                    </a>
-                                    <!-- User Info -->
-                                    <div>
-                                        <h3 class="text-lg font-semibold text-gray-900">
-                                            <a href="{% url 'places:profile' checkin.user.username %}"
-                                               class="hover:text-blue-600 transition-colors">
-                                                {{ checkin.user.username }}
-                                            </a>
-                                        </h3>
-                                        <p class="text-gray-600 text-sm">
-                                            <i class="fas fa-calendar mr-1"></i>
-                                            {{ checkin.created_at|date:"F j, Y" }} at {{ checkin.created_at|date:"g:i a" }}
-                                            <span class="mx-2">•</span>
-                                            <i class="fas fa-clock mr-1"></i>
-                                            {{ checkin.created_at|timesince }} ago
-                                        </p>
-                                    </div>
-                                </div>
-                                <!-- Status Badges -->
-                                <div class="flex items-center space-x-2">
-                                    {% if checkin.location_verified %}
-                                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                            <i class="fas fa-check-circle mr-1"></i>
-                                            Verified
-                                        </span>
-                                    {% endif %}
-                                    {% if checkin.photo_proof %}
-                                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                            <i class="fas fa-camera mr-1"></i>
-                                            Photo
-                                        </span>
-                                    {% endif %}
-                                    <a href="{% url 'places:checkin_detail' checkin.pk %}"
-                                       class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                        <i class="fas fa-external-link-alt mr-1"></i>
-                                        View Details
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Check-in Content -->
-                        <div class="p-6">
-                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <!-- Left Column: Photo -->
-                                {% if checkin.photo_proof %}
-                                    <div class="lg:col-span-1">
-                                        <div class="relative">
-                                            <img src="{{ checkin.photo_proof.url }}"
-                                                 alt="Check-in photo by {{ checkin.user.username }}"
-                                                 class="checkin-photo w-full h-64 object-cover rounded-lg shadow-md cursor-pointer hover:shadow-lg transition-shadow"
-                                                 onclick="openPhotoModal(this.src, '{{ checkin.user.username }}', '{{ checkin.created_at|date:"F j, Y" }}')">
-                                            <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-200 rounded-lg flex items-center justify-center">
-                                                <i class="fas fa-search-plus text-white text-2xl opacity-0 hover:opacity-100 transition-opacity"></i>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                <!-- Right Column: Details -->
-                                <div class="{% if checkin.photo_proof %}lg:col-span-2{% else %}lg:col-span-3{% endif %}">
-                                    <!-- Check-in Details Grid -->
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                                        <div class="space-y-3">
-                                            <!-- <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                                            <span class="text-gray-600 font-medium">Points Earned</span>
-                                            <span class="font-bold text-green-600">
-                                                <i class="fas fa-coins mr-1"></i>
-                                                +{{ checkin.points_earned|default:checkin.points_awarded|default:10 }}
-                                            </span>
-</div> -->
-                                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                                                <span class="text-gray-600 font-medium">Location Verified</span>
-                                                {% if checkin.location_verified %}
-                                                    <span class="text-green-600 font-semibold">
-                                                        <i class="fas fa-check-circle mr-1"></i>
-                                                        Yes
-                                                    </span>
-                                                {% else %}
-                                                    <span class="text-red-600 font-semibold">
-                                                        <i class="fas fa-times-circle mr-1"></i>
-                                                        No
-                                                    </span>
-                                                {% endif %}
-                                            </div>
-                                            <!-- {% if checkin.weather %}
-                                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                                                <span class="text-gray-600 font-medium">Weather</span>
-                                                <span class="font-semibold text-gray-900">
-                                                    <i class="fas fa-cloud-sun text-yellow-500 mr-1"></i>
-                                                    {{ checkin.weather }}
-                                                </span>
-                                            </div>
-                                        {% endif %} -->
-                                        </div>
-                                        <div class="space-y-3">
-                                            <!-- {% if checkin.rating %}
-                                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                                                <span class="text-gray-600 font-medium">Rating</span>
-                                                <div class="flex items-center space-x-1">
-                                                    {% for i in "12345" %}
-                                                        {% if forloop.counter <= checkin.rating %}
-                                                            <i class="fas fa-star text-yellow-400"></i>
-                                                        {% else %}
-                                                            <i class="far fa-star text-gray-300"></i>
-                                                        {% endif %}
-                                                    {% endfor %}
-                                                </div>
-                                            </div>
-{% endif %} -->
-                                            <!-- {% if checkin.visit_duration %}
-                                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                                                <span class="text-gray-600 font-medium">Visit Duration</span>
-                                                <span class="font-semibold text-gray-900">
-                                                    <i class="fas fa-clock mr-1"></i>
-                                                    {{ checkin.visit_duration }} minutes
-                                                </span>
-                                            </div>
-{% endif %} -->
-                                            <!-- {% if checkin.companions %}
-                                            <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                                                <span class="text-gray-600 font-medium">Companions</span>
-                                                <span class="font-semibold text-gray-900">
-                                                    <i class="fas fa-users mr-1"></i>
-                                                    {{ checkin.companions }}
-                                                </span>
-                                            </div>
-                                        {% endif %} -->
-                                        </div>
-                                    </div>
-                                    <!-- Notes Section -->
-                                    {% if checkin.notes %}
-                                        <div class="bg-gray-50 rounded-lg p-4 mb-4">
-                                            <h4 class="font-semibold text-gray-900 mb-2">
-                                                <i class="fas fa-sticky-note text-yellow-600 mr-2"></i>
-                                                Visitor Notes
-                                            </h4>
-                                            <p class="text-gray-700 italic">"{{ checkin.notes }}"</p>
-                                        </div>
-                                    {% endif %}
-                                    <!-- Interaction Buttons -->
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-4">
-                                            <!-- Like Button -->
-                                            <!-- <button class="flex items-center space-x-2 text-gray-600 hover:text-red-600 transition-colors" onclick="likeCheckin('{{ checkin.id }}')">
-                                            <i class="far fa-heart"></i>
-                                            <span class="text-sm">{{ checkin.likes|default:0 }}</span>
-</button> -->
-                                            <!-- Comment Count -->
-                                            <!-- <a href="{% url 'places:checkin_detail' checkin.pk %}#comments" class="flex items-center space-x-2 text-gray-600 hover:text-blue-600 transition-colors">
-                                            <i class="far fa-comment"></i>
-                                            <span class="text-sm">{{ checkin.comments_count|default:0 }} comment{{ checkin.comments_count|default:0|pluralize }}</span>
-</a> -->
-                                            <!-- Share Button -->
-                                            <!-- <button class="flex items-center space-x-2 text-gray-600 hover:text-green-600 transition-colors" onclick="shareCheckin('{{ checkin.id }}')">
-                                            <i class="fas fa-share"></i>
-                                            <span class="text-sm">Share</span>
-                                        </button> -->
-                                        </div>
-                                        <!-- Timestamp -->
-                                        <div class="text-sm text-gray-500">
-                                            <i class="fas fa-clock mr-1"></i>
-                                            {{ checkin.created_at|timesince }} ago
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            <!-- Load More Button -->
-            {% if has_more %}
-                <div class="text-center mt-8">
-                    <button id="load-more-btn"
-                            onclick="loadMoreCheckins()"
-                            class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors">
-                        <i class="fas fa-plus mr-2"></i>
-                        Load More Check-ins
-                    </button>
-                </div>
-            {% endif %}
+      </div>
+    </div>
+  </section>
+
+  <div class="max-w-5xl mx-auto px-4 -mt-8 pb-20 relative z-10">
+
+    <!-- ══ STATS BAR ══ -->
+    <div class="stats-bar grid grid-cols-4 mb-8 fade-up">
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-gray-900">{{ checkins.count|default:0 }}</div>
+        <div class="text-sm text-gray-500 mt-1">Check-ins</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-green-600">{{ unique_visitors|default:checkins.count }}</div>
+        <div class="text-sm text-gray-500 mt-1">Visitors</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-yellow-500">{{ place.average_rating|floatformat:1|default:"—" }}</div>
+        <div class="text-sm text-gray-500 mt-1">Avg Rating</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-blue-500">{{ verified_checkins|default:0 }}</div>
+        <div class="text-sm text-gray-500 mt-1">Verified</div>
+      </div>
+    </div>
+
+    <!-- ══ PLACE SUMMARY ══ -->
+    <div class="place-card flex flex-col md:flex-row mb-8 fade-up" style="transition-delay:.07s">
+      <div class="place-thumb">
+        {% if place.image %}
+          <img src="{{ place.image.url }}" alt="{{ place.name }}">
         {% else %}
-            <!-- Empty State -->
-            <div class="bg-white rounded-lg shadow-lg p-12 text-center">
-                <i class="fas fa-map-pin text-8xl text-gray-300 mb-6"></i>
-                <h3 class="text-2xl font-bold text-gray-900 mb-4">No Check-ins Yet</h3>
-                <p class="text-gray-600 mb-8 max-w-md mx-auto">
-                    Be the first to check in at {{ place.name }}! Share your experience and earn points.
-                </p>
-                <div class="space-x-4">
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'places:check_in' place.slug %}"
-                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            <i class="fas fa-map-pin mr-2"></i>
-                            Check In Here
-                        </a>
-                    {% else %}
-                        <a href="{% url 'login' %}?next={% url 'places:check_in' place.slug %}"
-                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            <i class="fas fa-sign-in-alt mr-2"></i>
-                            Login to Check In
-                        </a>
-                    {% endif %}
-                    <a href="{% url 'places:place_detail' place.slug %}"
-                       class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
-                        <i class="fas fa-eye mr-2"></i>
-                        View Place Details
-                    </a>
-                </div>
-            </div>
+          <div class="place-thumb-placeholder">🏛️</div>
         {% endif %}
-    </div>
-    <!-- Photo Modal -->
-    <div id="photo-modal"
-         class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="max-w-4xl max-h-full p-4 relative">
-            <img id="modal-photo"
-                 src=""
-                 alt="Full size photo"
-                 class="max-w-full max-h-full rounded-lg">
-            <!-- Photo Info -->
-            <div class="absolute bottom-4 left-4 bg-black bg-opacity-75 text-white px-4 py-2 rounded-lg">
-                <div id="modal-photo-info" class="text-sm"></div>
-            </div>
-            <!-- Close Button -->
-            <button class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center"
-                    onclick="closePhotoModal()">
-                <i class="fas fa-times"></i>
-            </button>
-            <!-- Navigation Arrows (if multiple photos) -->
-            <button class="absolute left-4 top-1/2 transform -translate-y-1/2 text-white text-2xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center"
-                    onclick="previousPhoto()">
-                <i class="fas fa-chevron-left"></i>
-            </button>
-            <button class="absolute right-4 top-1/2 transform -translate-y-1/2 text-white text-2xl hover:text-gray-300 bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center"
-                    onclick="nextPhoto()">
-                <i class="fas fa-chevron-right"></i>
-            </button>
+      </div>
+      <div class="place-body">
+        <p class="section-label mb-2">About This Place</p>
+        <h2 class="display-font text-2xl font-bold text-gray-900 mb-3">{{ place.name }}</h2>
+        <p class="text-gray-500 text-sm leading-relaxed mb-5">{{ place.description|truncatewords:30 }}</p>
+        <div class="flex flex-wrap gap-2 mb-0">
+          <span class="tag-pill tag-cat">
+            <i class="fas fa-tag" style="font-size:.6rem"></i>
+            {% for cat in place.category.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+          </span>
+          <span class="tag-pill tag-diff">
+            <i class="fas fa-signal" style="font-size:.6rem"></i>{{ place.get_difficulty_display }}
+          </span>
+          <span class="tag-pill tag-coords">
+            <i class="fas fa-map-marker-alt" style="font-size:.6rem"></i>{{ place.latitude|floatformat:4 }}, {{ place.longitude|floatformat:4 }}
+          </span>
         </div>
+      </div>
     </div>
+
+    <!-- ══ CONTROLS ══ -->
+    <div class="controls-bar mb-8 fade-up" style="transition-delay:.12s">
+      <div class="filter-chips">
+        <button class="chip active" data-filter="all"      onclick="filterCheckins('all',this)">All <span id="cnt-all">{{ total_count }}</span></button>
+        <button class="chip"        data-filter="verified" onclick="filterCheckins('verified',this)">
+          <i class="fas fa-check-circle" style="font-size:.65rem"></i> Verified <span id="cnt-verified">{{ verified_checkins|default:0 }}</span>
+        </button>
+        <button class="chip"        data-filter="photos"   onclick="filterCheckins('photos',this)">
+          <i class="fas fa-camera" style="font-size:.65rem"></i> Photos <span id="cnt-photos">{{ photo_checkins|default:0 }}</span>
+        </button>
+        <button class="chip"        data-filter="recent"   onclick="filterCheckins('recent',this)">
+          <i class="fas fa-clock" style="font-size:.65rem"></i> Recent (7d)
+        </button>
+      </div>
+      <select id="sort-select" class="exp-select" onchange="sortCheckins()">
+        <option value="newest">Newest First</option>
+        <option value="oldest">Oldest First</option>
+        <option value="verified">Verified First</option>
+        <option value="photos">With Photos</option>
+      </select>
+    </div>
+
+    <!-- ══ CHECK-IN LIST ══ -->
+    {% if checkins %}
+    <div class="space-y-6" id="checkins-list">
+      {% for checkin in checkins %}
+      <div class="checkin-card checkin-item fade-up"
+           id="ci-{{ checkin.pk }}"
+           style="transition-delay:{{ forloop.counter0 }}0ms"
+           data-verified="{{ checkin.location_verified|yesno:'true,false' }}"
+           data-has-photo="{{ checkin.photo_proof|yesno:'true,false' }}"
+           data-date="{{ checkin.created_at|date:'Y-m-d' }}">
+
+        <!-- Header -->
+        <div class="card-hdr">
+          <div class="flex items-center gap-12px" style="gap:12px">
+            <a href="{% url 'places:profile' checkin.user.username %}" class="user-avatar-link">
+              {{ checkin.user.username|first|upper }}
+            </a>
+            <div>
+              <a href="{% url 'places:profile' checkin.user.username %}" class="user-name-link">{{ checkin.user.username }}</a>
+              <div class="user-time">
+                <i class="fas fa-calendar" style="font-size:.6rem"></i>
+                {{ checkin.created_at|date:"M j, Y" }} &nbsp;·&nbsp;
+                <i class="fas fa-clock" style="font-size:.6rem"></i>
+                {{ checkin.created_at|timesince }} ago
+              </div>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            {% if checkin.location_verified %}
+              <span class="badge-pill badge-verified"><i class="fas fa-check-circle" style="font-size:.65rem"></i> Verified</span>
+            {% endif %}
+            {% if checkin.photo_proof %}
+              <span class="badge-pill badge-photo"><i class="fas fa-camera" style="font-size:.65rem"></i> Photo</span>
+            {% endif %}
+            <a href="{% url 'places:checkin_detail' checkin.pk %}" class="detail-link">
+              <i class="fas fa-external-link-alt" style="font-size:.6rem"></i> Details
+            </a>
+          </div>
+        </div>
+
+        <!-- Body -->
+        <div class="card-body">
+          {% if checkin.photo_proof %}
+          <div class="card-grid">
+            <div>
+              <img src="{{ checkin.photo_proof.url }}"
+                   alt="Check-in photo by {{ checkin.user.username }}"
+                   class="checkin-photo"
+                   onclick="openPhotoModal(this.src, '{{ checkin.user.username }}', '{{ checkin.created_at|date:'M j, Y' }}')">
+            </div>
+            <div>
+              <div class="detail-row"><span class="lbl">Location Verified</span>
+                {% if checkin.location_verified %}<span style="color:#16a34a;font-weight:600"><i class="fas fa-check-circle mr-1"></i>Yes</span>
+                {% else %}<span style="color:#dc2626;font-weight:600"><i class="fas fa-times-circle mr-1"></i>No</span>{% endif %}
+              </div>
+              <div class="detail-row"><span class="lbl">Points Awarded</span>
+                <span style="color:#16a34a;font-weight:700">+{{ checkin.points_awarded }}</span>
+              </div>
+              {% if checkin.notes %}
+              <div class="notes-box mt-3">
+                <p class="section-label mb-2">Visitor Note</p>
+                <p>"{{ checkin.notes }}"</p>
+              </div>
+              {% endif %}
+            </div>
+          </div>
+          {% else %}
+          <div>
+            <div class="detail-row"><span class="lbl">Location Verified</span>
+              {% if checkin.location_verified %}<span style="color:#16a34a;font-weight:600"><i class="fas fa-check-circle mr-1"></i>Yes</span>
+              {% else %}<span style="color:#dc2626;font-weight:600"><i class="fas fa-times-circle mr-1"></i>No</span>{% endif %}
+            </div>
+            <div class="detail-row"><span class="lbl">Points Awarded</span>
+              <span style="color:#16a34a;font-weight:700">+{{ checkin.points_awarded }}</span>
+            </div>
+            {% if checkin.notes %}
+            <div class="notes-box">
+              <p class="section-label mb-2">Visitor Note</p>
+              <p>"{{ checkin.notes }}"</p>
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if has_more %}
+    <div class="mt-6 fade-up">
+      <button class="load-more-btn" id="load-more-btn" onclick="loadMoreCheckins()">
+        <i class="fas fa-plus" style="font-size:.75rem"></i> Load More Check-ins
+      </button>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="empty-box fade-up">
+      <div class="empty-icon-wrap">📍</div>
+      <h3 class="display-font text-3xl font-bold text-gray-900 mb-3">No Check-ins Yet</h3>
+      <p class="text-gray-500 mb-8 max-w-sm mx-auto">Be the first to check in at {{ place.name }}! Share your experience and earn points.</p>
+      <div class="flex flex-wrap justify-center gap-4">
+        {% if user.is_authenticated %}
+          <a href="{% url 'places:check_in' place.slug %}" class="inline-flex items-center gap-2 px-7 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full text-sm transition-all shadow-lg shadow-green-900/20">
+            <i class="fas fa-map-pin text-sm"></i> Check In Here
+          </a>
+        {% else %}
+          <a href="{% url 'login' %}?next={% url 'places:check_in' place.slug %}" class="inline-flex items-center gap-2 px-7 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full text-sm transition-all shadow-lg shadow-green-900/20">
+            <i class="fas fa-sign-in-alt text-sm"></i> Login to Check In
+          </a>
+        {% endif %}
+        <a href="{% url 'places:place_detail' place.slug %}" class="inline-flex items-center gap-2 px-7 py-3 border border-gray-200 text-gray-600 hover:border-green-400 hover:text-green-600 rounded-full text-sm font-medium transition-all">
+          <i class="fas fa-eye text-sm"></i> View Place Details
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- ══ PHOTO MODAL ══ -->
+<div id="photo-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px;flex-direction:column"
+     onclick="if(event.target===this)closePhotoModal()">
+  <div style="position:relative;max-width:90vw">
+    <img id="modal-photo" src="" alt="Full size photo" style="max-width:100%;max-height:85vh;border-radius:14px;display:block">
+    <button class="modal-close" onclick="closePhotoModal()"><i class="fas fa-times"></i></button>
+    <button class="modal-nav prev" onclick="previousPhoto()"><i class="fas fa-chevron-left"></i></button>
+    <button class="modal-nav next" onclick="nextPhoto()"><i class="fas fa-chevron-right"></i></button>
+    <div class="modal-caption" id="modal-caption"></div>
+  </div>
+</div>
+
 {% endblock %}
+
 {% block extra_js %}
-    <style>
-    .filter-btn {
-        padding: 0.5rem 0.75rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #4B5563;
-        background-color: #F3F4F6;
-        border-radius: 0.5rem;
-        transition: background-color 0.2s ease;
-        border: none;
-        cursor: pointer;
-    }
-    .filter-btn:hover {
-        background-color: #E5E7EB;
-    }
-    .filter-btn.active {
-        background-color: #2563EB;
-        color: white;
-    }
-    .filter-btn.active:hover {
-        background-color: #1D4ED8;
-    }
-    .checkin-item.hidden {
-        display: none;
-    }
-    .checkin-item {
-        transition: all 0.3s ease;
-    }
-    .checkin-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-    }
-    </style>
-    <script>
-    let currentPage = 1;
-    let isLoading = false;
-    let currentPhotoIndex = 0;
-    let allPhotos = [];
-    
-    // Photo modal functionality
-    function openPhotoModal(src, username, date) {
-        const modal = document.getElementById('photo-modal');
-        const modalPhoto = document.getElementById('modal-photo');
-        const modalInfo = document.getElementById('modal-photo-info');
-        
-        modalPhoto.src = src;
-        modalInfo.innerHTML = `Photo by <strong>${username}</strong> on ${date}`;
-        modal.classList.remove('hidden');
-        
-        // Collect all photos for navigation
-        allPhotos = Array.from(document.querySelectorAll('.checkin-photo')).map(img => ({
-            src: img.src,
-            username: img.alt.split(' by ')[1]?.split(' on ')[0] || 'Unknown',
-            date: img.alt.split(' on ')[1] || 'Unknown date'
-        }));
-        
-        currentPhotoIndex = allPhotos.findIndex(photo => photo.src === src);
-    }
-    
-    function closePhotoModal() {
-        const modal = document.getElementById('photo-modal');
-        modal.classList.add('hidden');
-    }
-    
-    function previousPhoto() {
-        if (currentPhotoIndex > 0) {
-            currentPhotoIndex--;
-            updateModalPhoto();
-        }
-    }
-    
-    function nextPhoto() {
-        if (currentPhotoIndex < allPhotos.length - 1) {
-            currentPhotoIndex++;
-            updateModalPhoto();
-        }
-    }
-    
-    function updateModalPhoto() {
-        const modalPhoto = document.getElementById('modal-photo');
-        const modalInfo = document.getElementById('modal-photo-info');
-        const photo = allPhotos[currentPhotoIndex];
-        
-        modalPhoto.src = photo.src;
-        modalInfo.innerHTML = `Photo by <strong>${photo.username}</strong> on ${photo.date}`;
-    }
-    
-    // Filter functionality
-    function filterCheckins(type) {
-        const checkins = document.querySelectorAll('.checkin-item');
-        const filterBtns = document.querySelectorAll('.filter-btn');
-        
-        // Update active filter button
-        filterBtns.forEach(btn => {
-            btn.classList.remove('active');
-            if (btn.dataset.filter === type) {
-                btn.classList.add('active');
-            }
-        });
-        
-        // Show/hide check-ins based on filter
-        checkins.forEach(checkin => {
-            let shouldShow = false;
-            
-            switch (type) {
-                case 'all':
-                    shouldShow = true;
-                    break;
-                case 'verified':
-                    shouldShow = checkin.dataset.verified === 'true';
-                    break;
-                case 'photos':
-                    shouldShow = checkin.dataset.hasPhoto === 'true';
-                    break;
-                case 'recent':
-                    const checkinDate = new Date(checkin.dataset.date);
-                    const weekAgo = new Date();
-                    weekAgo.setDate(weekAgo.getDate() - 7);
-                    shouldShow = checkinDate >= weekAgo;
-                    break;
-            }
-            
-            if (shouldShow) {
-                checkin.classList.remove('hidden');
-                checkin.style.display = 'block';
-            } else {
-                checkin.classList.add('hidden');
-                checkin.style.display = 'none';
-            }
-        });
-        
-        // Update counts
-        updateFilterCounts();
-    }
-    
-    // Sort functionality
-    function sortCheckins() {
-        const sortValue = document.getElementById('sort-select').value;
-        const checkinsContainer = document.getElementById('checkins-list');
-        const checkins = Array.from(checkinsContainer.children);
-        
-        checkins.sort((a, b) => {
-            switch (sortValue) {
-                case 'newest':
-                    return new Date(b.dataset.date) - new Date(a.dataset.date);
-                case 'oldest':
-                    return new Date(a.dataset.date) - new Date(b.dataset.date);
-                case 'verified':
-                    return (b.dataset.verified === 'true') - (a.dataset.verified === 'true');
-                case 'photos':
-                    return (b.dataset.hasPhoto === 'true') - (a.dataset.hasPhoto === 'true');
-                case 'rating':
-                    return parseInt(b.dataset.rating) - parseInt(a.dataset.rating);
-                default:
-                    return 0;
-            }
-        });
-        
-        // Re-append sorted elements
-        checkins.forEach(checkin => checkinsContainer.appendChild(checkin));
-    }
-    
-    // Update filter counts
-    function updateFilterCounts() {
-        const allCheckins      = document.querySelectorAll('.checkin-item');
-        const verifiedCheckins = document.querySelectorAll('.checkin-item[data-verified="true"]');
-        const photoCheckins    = document.querySelectorAll('.checkin-item[data-has-photo="true"]');
-    
-        const weekAgo = new Date();
-        weekAgo.setDate(weekAgo.getDate() - 7);
-        const recentCheckins = Array.from(allCheckins).filter(c =>
-            new Date(c.dataset.date) >= weekAgo
-        );
-    
-        document.querySelector('[data-filter="all"]').textContent      = `All (${allCheckins.length})`;
-        document.querySelector('[data-filter="verified"]').textContent = `Verified (${verifiedCheckins.length})`;
-        document.querySelector('[data-filter="photos"]').textContent   = `With Photos (${photoCheckins.length})`;
-        document.querySelector('[data-filter="recent"]').textContent   = `Recent (${recentCheckins.length})`;
-    }
-    
-    // Like check-in
-    function likeCheckin(checkinId) {
-        // Like feature not yet implemented — button is hidden in template
-        console.log('Like feature coming soon');
-    }
-    
-    // Share check-in
-    // function shareCheckin(checkinId) {
-    //     const url = `${window.location.origin}/checkin/${checkinId}/`;
-        
-    //     if (navigator.share) {
-    //         navigator.share({
-    //             title: 'Check out this check-in on Expearls',
-    //             url: url
-    //         });
-    //     } else {
-    //         // Fallback: copy to clipboard
-    //         navigator.clipboard.writeText(url).then(() => {
-    //             alert('Link copied to clipboard!');
-    //         });
-    //     }
-    // }
-    
-    // Load more check-ins
-    function loadMoreCheckins() {
-        if (isLoading) return;
-        
-        isLoading = true;
-        const loadMoreBtn = document.getElementById('load-more-btn');
-        const originalText = loadMoreBtn.innerHTML;
-        
-        loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Loading...';
-        loadMoreBtn.disabled = true;
-        
-        fetch(`${window.location.pathname}?page=${currentPage + 1}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => response.text())
-        .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newCheckins = doc.querySelectorAll('.checkin-item');
-            const checkinsContainer = document.getElementById('checkins-list');
-            
-            if (newCheckins.length > 0) {
-                newCheckins.forEach((checkin, index) => {
-                    checkin.style.opacity = '0';
-                    checkin.style.transform = 'translateY(20px)';
-                    checkinsContainer.appendChild(checkin);
-                    
-                    setTimeout(() => {
-                        checkin.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                        checkin.style.opacity = '1';
-                        checkin.style.transform = 'translateY(0)';
-                    }, index * 100);
-                });
-                
-                currentPage++;
-                
-                // Check if there are more pages
-                const hasMore = doc.querySelector('#load-more-btn');
-                if (!hasMore) {
-                    loadMoreBtn.style.display = 'none';
-                }
-            } else {
-                loadMoreBtn.style.display = 'none';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading more check-ins:', error);
-        })
-        .finally(() => {
-            isLoading = false;
-            loadMoreBtn.innerHTML = originalText;
-            loadMoreBtn.disabled = false;
-        });
-    }
-    
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closePhotoModal();
-        } else if (e.key === 'ArrowLeft') {
-            previousPhoto();
-        } else if (e.key === 'ArrowRight') {
-            nextPhoto();
-        }
-    });
-    
-    // Close modal when clicking outside
-    document.getElementById('photo-modal').addEventListener('click', function(e) {
-        if (e.target === this) {
-            closePhotoModal();
-        }
-    });
-    
-    // Initialize page
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize filter counts
-        updateFilterCounts();
-        
-        // Add smooth scrolling
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.querySelector(this.getAttribute('href')).scrollIntoView({
-                    behavior: 'smooth'
-                });
-            });
-        });
-        
-        // Animate check-ins on load
-        const checkins = document.querySelectorAll('.checkin-item');
-        checkins.forEach((checkin, index) => {
-            checkin.style.opacity = '0';
-            checkin.style.transform = 'translateY(20px)';
-            
-            setTimeout(() => {
-                checkin.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-                checkin.style.opacity = '1';
-                checkin.style.transform = 'translateY(0)';
-            }, index * 100);
-        });
-    });
-    </script>
+<script>
+let currentPage = 1, isLoading = false;
+let currentPhotoIndex = 0, allPhotos = [];
+
+// ── Fade observer ──
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.07 });
+document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
+
+// ── Filter chips ──
+function filterCheckins(type, btn) {
+  document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+  document.querySelectorAll('.checkin-item').forEach(card => {
+    let show = true;
+    if (type === 'verified') show = card.dataset.verified === 'true';
+    else if (type === 'photos') show = card.dataset.hasPhoto === 'true';
+    else if (type === 'recent') show = new Date(card.dataset.date) >= weekAgo;
+    card.style.display = show ? '' : 'none';
+  });
+}
+
+// ── Sort ──
+function sortCheckins() {
+  const val = document.getElementById('sort-select').value;
+  const container = document.getElementById('checkins-list');
+  const items = Array.from(container.children);
+  items.sort((a, b) => {
+    if (val === 'newest') return new Date(b.dataset.date) - new Date(a.dataset.date);
+    if (val === 'oldest') return new Date(a.dataset.date) - new Date(b.dataset.date);
+    if (val === 'verified') return (b.dataset.verified === 'true') - (a.dataset.verified === 'true');
+    if (val === 'photos') return (b.dataset.hasPhoto === 'true') - (a.dataset.hasPhoto === 'true');
+    return 0;
+  });
+  items.forEach(item => container.appendChild(item));
+}
+
+// ── Photo modal ──
+function openPhotoModal(src, username, date) {
+  allPhotos = Array.from(document.querySelectorAll('.checkin-photo')).map(img => ({
+    src: img.src, username: img.alt.replace('Check-in photo by ', ''), date: ''
+  }));
+  currentPhotoIndex = allPhotos.findIndex(p => p.src === src);
+  document.getElementById('modal-photo').src = src;
+  document.getElementById('modal-caption').textContent = `Photo by ${username}${date ? ' · ' + date : ''}`;
+  const modal = document.getElementById('photo-modal');
+  modal.style.display = 'flex';
+}
+function closePhotoModal() {
+  document.getElementById('photo-modal').style.display = 'none';
+}
+function previousPhoto() {
+  if (currentPhotoIndex > 0) { currentPhotoIndex--; updateModal(); }
+}
+function nextPhoto() {
+  if (currentPhotoIndex < allPhotos.length - 1) { currentPhotoIndex++; updateModal(); }
+}
+function updateModal() {
+  const p = allPhotos[currentPhotoIndex];
+  document.getElementById('modal-photo').src = p.src;
+  document.getElementById('modal-caption').textContent = `Photo by ${p.username}`;
+}
+
+// ── Load more ──
+function loadMoreCheckins() {
+  if (isLoading) return;
+  isLoading = true;
+  const btn = document.getElementById('load-more-btn');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:.75rem"></i> Loading…';
+  btn.disabled = true;
+
+  fetch(`${window.location.pathname}?page=${currentPage + 1}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+    .then(r => r.text())
+    .then(html => {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const newItems = doc.querySelectorAll('.checkin-item');
+      const container = document.getElementById('checkins-list');
+      newItems.forEach((item, i) => {
+        item.style.opacity = '0'; item.style.transform = 'translateY(20px)';
+        container.appendChild(item);
+        setTimeout(() => {
+          item.style.transition = 'opacity .5s ease, transform .5s ease';
+          item.style.opacity = '1'; item.style.transform = 'translateY(0)';
+        }, i * 80);
+      });
+      currentPage++;
+      if (!doc.querySelector('#load-more-btn')) btn.closest('div').remove();
+    })
+    .catch(e => console.error(e))
+    .finally(() => { isLoading = false; btn.innerHTML = orig; btn.disabled = false; });
+}
+
+// ── Keyboard shortcuts ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePhotoModal();
+  if (e.key === 'ArrowLeft') previousPhoto();
+  if (e.key === 'ArrowRight') nextPhoto();
+});
+</script>
 {% endblock %}

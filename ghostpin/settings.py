@@ -40,9 +40,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',  # Static files framework
     'pwa',  # Progressive Web App support
     'places',  # Places app
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',  # enables logout token blacklisting
+    'corsheaders',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware', # Security middleware for various security enhancements
     'django.contrib.sessions.middleware.SessionMiddleware', # Manages sessions across requests
     'django.middleware.common.CommonMiddleware', # Common HTTP features
@@ -87,7 +92,44 @@ DATABASES = {
         'PORT': '5432',
     }
 }
-
+ 
+# ── DRF ───────────────────────────────────────────────────────
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',  # keeps Django admin working
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
+ 
+# ── JWT ───────────────────────────────────────────────────────
+from datetime import timedelta
+ 
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME':  timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
+    'ROTATE_REFRESH_TOKENS':  True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+ 
+# ── CORS ─────────────────────────────────────────────────────
+# Development — allow everything:
+CORS_ALLOW_ALL_ORIGINS = True
+ 
+# Production — lock down to your app's origin:
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:8081',   # Expo dev server
+#     'https://yourapp.com',
+# ]
+ 
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -133,7 +175,19 @@ STATIC_ROOT = BASE_DIR / 'staticfiles' # Directory where static files will be co
 MEDIA_URL = '/media/'   # URL to access media files
 MEDIA_ROOT = BASE_DIR / 'media' # Directory where media files are stored
 
+# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# During development — emails print in your terminal:
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# In production — real Gmail sending:
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'expearlsadmin@gmail.com'
+# EMAIL_HOST_PASSWORD = 'your-gmail-app-password'
+# DEFAULT_FROM_EMAIL = 'Expearls <expearlsadmin@gmail.com>'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

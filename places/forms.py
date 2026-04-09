@@ -86,16 +86,6 @@ class PlaceForm(forms.ModelForm):
                     "accept": "image/*",
                 }
             ),
-            # 'category': forms.SelectMultiple(attrs={
-            #     'class': 'category-multi-select w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
-            # }),
-            # 'category': forms.Select(attrs={
-            #     'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500'
-            #  }),
-            # 'category_icon': forms.Select(attrs={
-            #     'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
-            #     'placeholder': '📍 (emoji icon for this place)'
-            # }),
             "difficulty": forms.Select(
                 attrs={
                     "class": "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
@@ -207,15 +197,7 @@ class CheckInForm(forms.ModelForm):
 
 class TrailForm(forms.ModelForm):
     """
-    Full TrailForm including all fields referenced by create_trail_v5 / edit_trail.
-
-    Fields added vs a minimal form:
-        cover_image    — ImageField: rendered as the drag-drop widget in the template
-        distance       — FloatField: auto-filled by OSRM JS, or entered manually
-        allow_comments — BooleanField: "Allow comments" checkbox in Additional Options
-        category       — M2M: TomSelect widget in the template
-
-    enctype="multipart/form-data" must be set on the <form> tag (already is in create_trail_v5).
+    Full TrailForm including all fields referenced by create_trail / edit_trail.
     """
 
     class Meta:
@@ -252,7 +234,7 @@ class TrailForm(forms.ModelForm):
                 attrs={
                     "class": "w-full border border-gray-300 rounded-lg px-3 py-2 "
                     "focus:ring-2 focus:ring-purple-500",
-                    "id": "id_difficulty",  # required by JS recalcDistance listener
+                    "id": "id_difficulty",
                 }
             ),
             "estimated_duration": forms.TextInput(
@@ -260,7 +242,7 @@ class TrailForm(forms.ModelForm):
                     "class": "w-full border border-gray-300 rounded-lg px-3 py-2 "
                     "focus:ring-2 focus:ring-blue-500",
                     "placeholder": "HH:MM:SS",
-                    "id": "id_estimated_duration",  # required by JS auto-fill
+                    "id": "id_estimated_duration",
                 }
             ),
             "distance": forms.NumberInput(
@@ -269,16 +251,14 @@ class TrailForm(forms.ModelForm):
                     "focus:ring-2 focus:ring-purple-500",
                     "step": "0.01",
                     "placeholder": "km",
-                    "id": "id_distance",  # required by JS auto-fill
+                    "id": "id_distance",
                 }
             ),
             "category": forms.SelectMultiple(
                 attrs={
-                    "id": "id_category",  # required by TomSelect init
+                    "id": "id_category",
                 }
             ),
-            # cover_image rendered manually in template as drag-drop widget;
-            # the real <input type="file"> is hidden but must be present for upload.
             "cover_image": forms.ClearableFileInput(
                 attrs={
                     "accept": "image/*",
@@ -306,8 +286,6 @@ class TrailForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Make non-essential fields optional at the form level
-        # (model already has null=True / blank=True for these)
         self.fields["distance"].required = False
         self.fields["estimated_duration"].required = False
         self.fields["cover_image"].required = False
@@ -333,7 +311,17 @@ class UserProfileForm(forms.ModelForm):
             "avatar",
             "bio",
             "location",
-            "website",
+            # Social / contact
+            "phone_number",
+            "show_phone",
+            "website_url",
+            "youtube_url",
+            "facebook_url",
+            "instagram_url",
+            "tiktok_url",
+            "linkedin_url",
+            "x_url",
+            # Privacy
             "expert_areas",
             "show_email",
             "show_location",
@@ -362,42 +350,74 @@ class UserProfileForm(forms.ModelForm):
                     "placeholder": "Your city or region",
                 }
             ),
-            "website": forms.URLInput(
+            "phone_number": forms.TextInput(
+                attrs={
+                    "class": "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500",
+                    "placeholder": "+94 77 123 4567",
+                }
+            ),
+            "website_url": forms.URLInput(
                 attrs={
                     "class": "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500",
                     "placeholder": "https://yourwebsite.com",
                 }
             ),
-            # 👇 Remove 'expert_areas' from widgets — it's already defined above
-            "show_email": forms.CheckboxInput(
+            "youtube_url": forms.URLInput(
                 attrs={
-                    "class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    "class": "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500",
+                    "placeholder": "https://youtube.com/@yourchannel",
                 }
+            ),
+            "facebook_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500",
+                    "placeholder": "https://facebook.com/yourprofile",
+                }
+            ),
+            "instagram_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500",
+                    "placeholder": "https://instagram.com/yourhandle",
+                }
+            ),
+            "tiktok_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500",
+                    "placeholder": "https://tiktok.com/@yourhandle",
+                }
+            ),
+            "linkedin_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500",
+                    "placeholder": "https://linkedin.com/in/yourprofile",
+                }
+            ),
+            "x_url": forms.URLInput(
+                attrs={
+                    "class": "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500",
+                    "placeholder": "https://x.com/yourhandle",
+                }
+            ),
+            "show_phone": forms.CheckboxInput(
+                attrs={"class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"}
+            ),
+            "show_email": forms.CheckboxInput(
+                attrs={"class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"}
             ),
             "show_location": forms.CheckboxInput(
-                attrs={
-                    "class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                }
+                attrs={"class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"}
             ),
             "allow_messages": forms.CheckboxInput(
-                attrs={
-                    "class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                }
+                attrs={"class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"}
             ),
             "email_notifications": forms.CheckboxInput(
-                attrs={
-                    "class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                }
+                attrs={"class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"}
             ),
             "push_notifications": forms.CheckboxInput(
-                attrs={
-                    "class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                }
+                attrs={"class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"}
             ),
             "weekly_digest": forms.CheckboxInput(
-                attrs={
-                    "class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                }
+                attrs={"class": "h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"}
             ),
         }
 
@@ -452,7 +472,6 @@ class ChallengeForm(forms.ModelForm):
         input_formats=["%Y-%m-%dT%H:%M"],
     )
 
-    # Human-friendly criteria fields (converted to JSON on save)
     criteria_visit_count = forms.IntegerField(
         min_value=1,
         max_value=100,
@@ -519,7 +538,6 @@ class ChallengeForm(forms.ModelForm):
 
     def save(self, commit=True):
         challenge = super().save(commit=False)
-        # Build the JSON criteria dict from the helper fields
         challenge.criteria = {
             "visit_count": self.cleaned_data.get("criteria_visit_count") or 1,
             "require_photo": self.cleaned_data.get("criteria_require_photo", False),
@@ -539,14 +557,14 @@ class ChallengeForm(forms.ModelForm):
         ):
             c = self.instance.criteria
             self.fields["criteria_visit_count"].initial = c.get("visit_count", 5)
-            self.fields["criteria_require_photo"].initial = c.get(
-                "require_photo", False
-            )
-            self.fields["criteria_require_review"].initial = c.get(
-                "require_review", False
-            )
+            self.fields["criteria_require_photo"].initial = c.get("require_photo", False)
+            self.fields["criteria_require_review"].initial = c.get("require_review", False)
             self.fields["criteria_category"].initial = c.get("category", "")
 
+
+# ─────────────────────────────────────────────────────────
+# Tour Package Form
+# ─────────────────────────────────────────────────────────
 
 class TourPackageForm(forms.ModelForm):
     """
@@ -559,47 +577,118 @@ class TourPackageForm(forms.ModelForm):
         queryset=Trail.objects.filter(is_public=True).order_by('name'),
         widget=forms.CheckboxSelectMultiple,
         required=False,
-        help_text="Select all trails that are part of this tour."
+        help_text="Select all trails that are part of this tour.",
     )
 
     offerings = forms.ModelMultipleChoiceField(
         queryset=TourOffering.objects.all(),
         widget=forms.CheckboxSelectMultiple,
         required=False,
-        help_text="What is included in the tour package?"
+        help_text="What is included in the tour package?",
     )
 
     class Meta:
         model  = TourPackage
         fields = [
+            # Core
             'name', 'description', 'image',
+            # Logistics
             'duration_hours', 'price_lkr',
+            # Event date & time
+            'event_date', 'event_time',
+            # Route
+            'starting_location', 'ending_location',
+            # Packing list
+            'what_to_bring',
+            # Relationships
             'trails', 'offerings',
-            'contact_numbers', 'is_active',
+            # Booking
+            'contact_numbers',
+            # Meta
+            'is_active',
         ]
         widgets = {
             'name': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
                 'placeholder': 'e.g. Horton Plains Adventure Tour',
             }),
             'description': forms.Textarea(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
                 'rows': 4,
                 'placeholder': 'Describe the tour experience, highlights, and what to expect…',
             }),
             'duration_hours': forms.NumberInput(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
                 'step': '0.5',
                 'min': '0.5',
                 'placeholder': '9',
             }),
             'price_lkr': forms.NumberInput(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
                 'step': '100',
                 'min': '0',
                 'placeholder': '5900',
             }),
+            # ── Event date & time ─────────────────────────────
+            'event_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
+            }),
+            'event_time': forms.TimeInput(attrs={
+                'type': 'time',
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
+            }),
+            # ── Route ─────────────────────────────────────────
+            'starting_location': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
+                'placeholder': 'e.g. Colombo Fort Railway Station',
+            }),
+            'ending_location': forms.TextInput(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
+                'placeholder': 'Leave blank if same as starting point',
+            }),
+            # ── What to bring ─────────────────────────────────
+            'what_to_bring': forms.Textarea(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
+                'rows': 5,
+                'placeholder': 'One item per line:\nSunscreen\nWater bottle (1.5L+)\nComfortable walking shoes\nLight rain jacket',
+            }),
+            # ── Booking ───────────────────────────────────────
             'contact_numbers': forms.Textarea(attrs={
+                'class': 'w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500',
                 'rows': 3,
                 'placeholder': '+94 77 123 4567\n+94 71 987 6543',
             }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded',
+            }),
         }
+        labels = {
+            'event_date':        'Event Date',
+            'event_time':        'Start Time',
+            'starting_location': 'Starting Location',
+            'ending_location':   'Ending Location',
+            'what_to_bring':     'What to Bring',
+            'contact_numbers':   'Contact Numbers',
+            'duration_hours':    'Duration (hours)',
+            'price_lkr':         'Price per Person (LKR)',
+        }
+        help_texts = {
+            'event_date':       'Leave blank if this tour runs on demand.',
+            'event_time':       'Optional — the time participants should arrive/depart.',
+            'ending_location':  'Leave blank if the tour ends at the starting point.',
+            'what_to_bring':    'Enter one item per line.',
+            'contact_numbers':  'Enter one phone number per line.',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # New fields are optional — no migration-breaking required=True
+        self.fields['event_date'].required = False
+        self.fields['event_time'].required = False
+        self.fields['starting_location'].required = False
+        self.fields['ending_location'].required = False
+        self.fields['what_to_bring'].required = False
 
     def clean_name(self):
         name = self.cleaned_data.get('name', '').strip()

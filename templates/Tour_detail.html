@@ -1,125 +1,509 @@
 {% extends 'base.html' %}
 {% block title %}{{ tour.name }} — Expearls{% endblock %}
 
+{% block main_class %}p-0 pb-24{% endblock %}
+
 {% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-<!-- Full-width hero -->
-<div class="relative h-80 md:h-96 overflow-hidden bg-gradient-to-br from-emerald-800 via-green-700 to-teal-800">
+<style>
+  /* ══ Design tokens (mirrors about.html) ══ */
+  .tour-page { font-family: 'DM Sans', sans-serif; background: #f9fafb; color: #111827; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* ── Hero (same gradient language as about.html) ── */
+  .tour-hero {
+    position: relative;
+    height: 92vh; min-height: 560px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+  }
+  .tour-hero-img {
+    width: 100%; height: 100%; object-fit: cover;
+    transform: scale(1.04);
+    animation: slowZoom 20s ease-out forwards;
+  }
+  @keyframes slowZoom { to { transform: scale(1); } }
+
+  /* Radial overlays — same as about.html hero::before */
+  .tour-hero::before {
+    content: '';
+    position: absolute; inset: 0; z-index: 1;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .tour-hero-overlay {
+    position: absolute; inset: 0; z-index: 2;
+    background: linear-gradient(to bottom,
+      rgba(0,0,0,0.06) 0%,
+      rgba(0,0,0,0.01) 35%,
+      rgba(0,0,0,0.55) 72%,
+      rgba(0,0,0,0.82) 100%);
+  }
+  /* Wave bottom — same as about.html hero::after */
+  .tour-hero::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0; z-index: 5;
+    height: 80px; background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+
+  /* Hero nav */
+  .hero-nav {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.5rem 2.5rem;
+  }
+  .hero-nav-btn {
+    display: inline-flex; align-items: center; gap: .5rem;
+    color: rgba(255,255,255,.9); font-size: .78rem; font-weight: 500;
+    letter-spacing: .07em; text-transform: uppercase; text-decoration: none;
+    background: rgba(255,255,255,.12); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.2); padding: .5rem 1rem;
+    border-radius: 100px; transition: all .2s; cursor: pointer;
+  }
+  .hero-nav-btn:hover { background: rgba(255,255,255,.22); color: #fff; }
+  .hero-nav-actions { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: flex-end; }
+
+  /* Hero content */
+  .hero-content {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 6;
+    padding: 3rem 2.5rem 3.5rem;
+  }
+  .hero-breadcrumb {
+    display: flex; align-items: center; gap: .5rem;
+    font-size: .74rem; font-weight: 500; letter-spacing: .06em;
+    text-transform: uppercase; color: rgba(255,255,255,.55);
+    margin-bottom: 1rem;
+  }
+  .hero-breadcrumb a { color: rgba(255,255,255,.7); text-decoration: none; transition: color .15s; }
+  .hero-breadcrumb a:hover { color: #fff; }
+  .hero-title {
+    font-size: clamp(2.2rem, 5.5vw, 4rem); font-weight: 900; color: #fff;
+    line-height: 1.08; text-shadow: 0 2px 24px rgba(0,0,0,.3); margin-bottom: 1.2rem;
+  }
+  .hero-pills { display: flex; flex-wrap: wrap; gap: .6rem; }
+  .hero-pill {
+    display: inline-flex; align-items: center; gap: .45rem;
+    font-size: .74rem; font-weight: 500; padding: .4rem 1rem;
+    border-radius: 100px; backdrop-filter: blur(8px);
+  }
+  .pill-ghost { background: rgba(255,255,255,.12); color: rgba(255,255,255,.85); border: 1px solid rgba(255,255,255,.2); }
+  .pill-gold  { background: rgba(200,168,75,.25); color: #fcd34d; border: 1px solid rgba(200,168,75,.4); }
+
+  /* ── Page layout ── */
+  .page-wrap { max-width: 1100px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+  /* ── Cards ── */
+  .card {
+    background: #fff; border-radius: 20px; overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 8px 32px rgba(0,0,0,.05);
+    margin-top: 2rem;
+  }
+  .card-body { padding: 2rem; }
+  .section-label {
+    font-size: .68rem; font-weight: 500; letter-spacing: .14em;
+    text-transform: uppercase; color: #4a8a6a; margin-bottom: .4rem; display: block;
+  }
+  .section-title {
+    font-size: 1.4rem; font-weight: 700; color: #0a3d2e; margin-bottom: 1.2rem;
+  }
+  .section-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: .9rem; margin-right: .6rem; flex-shrink: 0;
+  }
+  .icon-green  { background: #ecfdf5; color: #16a34a; }
+  .icon-amber  { background: #fffbeb; color: #d97706; }
+
+  /* ── Route card ── */
+  .route-wrap {
+    display: flex; align-items: stretch; gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .route-point {
+    flex: 1; min-width: 160px;
+    display: flex; align-items: center; gap: .85rem;
+    padding: 1.1rem 1.3rem; border-radius: 14px; border: 1px solid;
+  }
+  .route-start { background: #ecfdf5; border-color: rgba(74,138,106,.2); }
+  .route-end   { background: #f0fdfa; border-color: rgba(20,184,166,.2); }
+  .route-dot {
+    width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .9rem; flex-shrink: 0;
+  }
+  .dot-green { background: #16a34a; color: #fff; }
+  .dot-teal  { background: #0d9488; color: #fff; }
+  .route-point-label { font-size: .62rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .2rem; }
+  .route-point-name  { font-size: .93rem; font-weight: 700; color: #111827; }
+  .route-arrow { font-size: 1.5rem; color: #d1d5db; display: flex; align-items: center; padding: 0 .25rem; }
+
+  /* ── Timeline (itinerary) ── */
+  .timeline { position: relative; padding-left: 3.5rem; }
+  .timeline-line {
+    position: absolute; left: 1.5rem; top: 0; bottom: 0; width: 2px;
+    background: linear-gradient(180deg, #bbf7d0, #6ee7b7, #34d399, #10b981);
+  }
+  .timeline-item { position: relative; margin-bottom: 1.5rem; }
+  .timeline-item:last-child { margin-bottom: 0; }
+  .timeline-dot {
+    position: absolute; left: -2.9rem; top: .75rem;
+    width: 2rem; height: 2rem; border-radius: 50%;
+    background: #16a34a; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .72rem; font-weight: 700; border: 2px solid #fff;
+    box-shadow: 0 2px 8px rgba(22,163,74,.35); z-index: 1;
+    transition: all .3s;
+  }
+  .timeline-item:hover .timeline-dot { transform: scale(1.15); box-shadow: 0 4px 16px rgba(22,163,74,.4); }
+  .timeline-card {
+    background: #f9fafb; border-radius: 14px; padding: 1.2rem 1.4rem;
+    border: 1px solid #f3f4f6; transition: border-color .2s, box-shadow .2s;
+  }
+  .timeline-item:hover .timeline-card { border-color: #bbf7d0; box-shadow: 0 4px 16px rgba(0,0,0,.05); }
+  .timeline-card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: .5rem; }
+  .timeline-card-title  { font-weight: 700; font-size: .93rem; color: #0a3d2e; }
+  .timeline-card-km     { font-size: .72rem; color: #6b7280; background: #f3f4f6; border-radius: 50px; padding: .2rem .65rem; }
+  .timeline-card-desc   { font-size: .88rem; color: #374151; line-height: 1.7; white-space: pre-line; }
+  .highlight-chips { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .75rem; }
+  .highlight-chip {
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-size: .68rem; font-weight: 500;
+    background: #ecfdf5; color: #166534; border: 1px solid rgba(22,163,74,.2);
+    border-radius: 100px; padding: .25rem .65rem;
+  }
+
+  /* ── Trails list ── */
+  .trail-row {
+    display: flex; align-items: center; gap: 1rem;
+    padding: .85rem 1rem; border-radius: 12px; border: 1px solid #f3f4f6;
+    margin-bottom: .6rem; transition: all .2s;
+  }
+  .trail-row:last-child { margin-bottom: 0; }
+  .trail-row:hover { border-color: #bbf7d0; background: #f0fdf4; }
+  .trail-num {
+    width: 2rem; height: 2rem; border-radius: 50%;
+    background: #ecfdf5; border: 1.5px solid #bbf7d0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .72rem; font-weight: 700; color: #16a34a; flex-shrink: 0;
+    transition: all .2s;
+  }
+  .trail-row:hover .trail-num { background: #16a34a; color: #fff; border-color: #16a34a; }
+  .trail-info { flex: 1; min-width: 0; }
+  .trail-name { font-weight: 600; font-size: .92rem; color: #0a3d2e; }
+  .trail-desc { font-size: .76rem; color: #6b7280; margin-top: .15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .diff-badge {
+    font-size: .68rem; font-weight: 600; padding: .25rem .7rem;
+    border-radius: 100px;
+  }
+  .diff-easy     { background: #ecfdf5; color: #16a34a; }
+  .diff-moderate { background: #fefce8; color: #ca8a04; }
+  .diff-hard     { background: #fef2f2; color: #dc2626; }
+  .trail-link { font-size: .74rem; font-weight: 600; color: #16a34a; text-decoration: none; white-space: nowrap; }
+  .trail-link:hover { color: #0a3d2e; }
+
+  /* ── Offerings grid ── */
+  .offerings-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .85rem; }
+  .offering-tile {
+    display: flex; align-items: center; gap: .85rem;
+    padding: .9rem 1.1rem; background: #ecfdf5;
+    border-radius: 12px; border: 1px solid rgba(74,138,106,.15);
+  }
+  .offering-icon {
+    width: 34px; height: 34px; background: #fff; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08); flex-shrink: 0; font-size: .88rem; color: #16a34a;
+  }
+  .offering-name { font-size: .84rem; font-weight: 600; color: #065f46; }
+
+  /* ── Bring list ── */
+  .bring-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: .75rem; }
+  .bring-item {
+    display: flex; align-items: center; gap: .75rem;
+    padding: .75rem 1rem; background: #fffbeb;
+    border-radius: 12px; border: 1px solid rgba(217,119,6,.15);
+  }
+  .bring-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: #fef9c3; border: 1.5px solid rgba(217,119,6,.3);
+    display: flex; align-items: center; justify-content: center;
+    font-size: .6rem; color: #d97706; flex-shrink: 0;
+  }
+  .bring-text { font-size: .84rem; font-weight: 500; color: #78350f; }
+
+  /* ── More tours ── */
+  .more-tours-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.2rem; }
+  .more-tour-card {
+    border-radius: 16px; overflow: hidden; background: #fff;
+    border: 1px solid rgba(0,0,0,.07); text-decoration: none; display: block;
+    transition: transform .25s, box-shadow .25s;
+  }
+  .more-tour-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.1); }
+  .more-tour-img { width: 100%; height: 130px; object-fit: cover; display: block; }
+  .more-tour-placeholder {
+    width: 100%; height: 130px;
+    background: linear-gradient(135deg, #0a3d2e, #4a8a6a);
+    display: flex; align-items: center; justify-content: center; font-size: 2.5rem;
+  }
+  .more-tour-body { padding: .9rem 1rem; }
+  .more-tour-name { font-weight: 700; font-size: .9rem; color: #0a3d2e; margin-bottom: .3rem; transition: color .2s; }
+  .more-tour-card:hover .more-tour-name { color: #16a34a; }
+  .more-tour-meta { display: flex; align-items: center; justify-content: space-between; font-size: .72rem; color: #6b7280; }
+  .more-tour-price { font-weight: 700; color: #16a34a; }
+  .more-tour-date { font-size: .7rem; color: #6b7280; margin-top: .25rem; }
+
+  /* ── Sidebar ── */
+  .sidebar { position: sticky; top: 1.5rem; }
+
+  /* Booking card */
+  .booking-card {
+    background: #fff; border-radius: 20px; padding: 1.8rem;
+    box-shadow: 0 8px 40px rgba(0,0,0,.12); border: 1px solid #f3f4f6;
+  }
+  .booking-price-block { text-align: center; padding-bottom: 1.4rem; border-bottom: 1px solid #f3f4f6; margin-bottom: 1.4rem; }
+  .booking-price-label { font-size: .68rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: #6b7280; margin-bottom: .4rem; }
+  .booking-price-num   { font-size: 2.6rem; font-weight: 900; color: #0a3d2e; line-height: 1; }
+  .booking-price-dur   { font-size: .8rem; color: #6b7280; margin-top: .4rem; display: flex; align-items: center; justify-content: center; gap: .4rem; }
+
+  .event-box {
+    background: #ecfdf5; border-radius: 12px; padding: .9rem 1.1rem;
+    border: 1px solid rgba(74,138,106,.18); margin-bottom: 1.2rem;
+  }
+  .event-box-label { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #4a8a6a; margin-bottom: .35rem; display: flex; align-items: center; gap: .4rem; }
+  .event-box-date  { font-size: .9rem; font-weight: 700; color: #0a3d2e; }
+  .event-box-time  { font-size: .8rem; color: #374151; margin-top: .25rem; display: flex; align-items: center; gap: .4rem; }
+
+  .contact-label { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #6b7280; margin-bottom: .7rem; display: flex; align-items: center; gap: .4rem; }
+  .contact-link {
+    display: flex; align-items: center; gap: .85rem;
+    padding: .75rem 1rem; border-radius: 12px;
+    border: 1.5px solid #e5e7eb; margin-bottom: .5rem;
+    text-decoration: none; color: #111827; transition: all .2s;
+  }
+  .contact-link:hover { border-color: #16a34a; background: #ecfdf5; }
+  .contact-icon {
+    width: 34px; height: 34px; background: #ecfdf5; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .85rem; color: #16a34a; flex-shrink: 0; transition: all .2s;
+  }
+  .contact-link:hover .contact-icon { background: #16a34a; color: #fff; }
+  .contact-num { font-weight: 600; font-size: .88rem; }
+
+  .wa-btn {
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+    width: 100%; padding: .85rem; border-radius: 12px;
+    background: #16a34a; color: #fff; font-weight: 700; font-size: .9rem;
+    text-decoration: none; transition: background .2s; margin: 1.2rem 0 .75rem;
+    box-shadow: 0 4px 16px rgba(22,163,74,.3);
+  }
+  .wa-btn:hover { background: #15803d; color: #fff; }
+
+  .booking-note { font-size: .74rem; color: #9ca3af; text-align: center; line-height: 1.5; }
+
+  /* Stats card */
+  .stats-card {
+    background: #fff; border-radius: 20px; padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
+    border: 1px solid #f3f4f6; margin-top: 1.2rem;
+  }
+  .stats-card-title { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #6b7280; margin-bottom: 1.1rem; }
+  .stat-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: .55rem 0; border-bottom: 1px solid #f9fafb; font-size: .85rem;
+  }
+  .stat-row:last-child { border-bottom: none; }
+  .stat-row-key { color: #6b7280; display: flex; align-items: center; gap: .6rem; }
+  .stat-row-val { font-weight: 600; color: #111827; text-align: right; max-width: 55%; }
+
+  /* Admin actions */
+  .admin-btn {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-size: .72rem; font-weight: 600; padding: .45rem 1rem;
+    border-radius: 8px; text-decoration: none; transition: all .2s;
+  }
+  .admin-edit   { background: rgba(255,255,255,.9); color: #374151; }
+  .admin-edit:hover { background: #fff; }
+  .admin-delete { background: #dc2626; color: #fff; border: none; cursor: pointer; }
+  .admin-delete:hover { background: #b91c1c; }
+
+  /* Fade-up — from about.html */
+  .fade-up { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 768px) {
+    .hero-nav { padding: 1rem 1.2rem; }
+    .hero-content { padding: 2rem 1.2rem 2.5rem; }
+    .card-body { padding: 1.2rem; }
+    .route-arrow { display: none; }
+    .route-wrap { flex-direction: column; }
+  }
+</style>
+
+<div class="tour-page">
+
+<!-- ── HERO ── -->
+<div class="tour-hero">
   {% if tour.image %}
-    <img src="{{ tour.image.url }}" alt="{{ tour.name }}"
-         class="absolute inset-0 w-full h-full object-cover">
-    <div class="absolute inset-0 bg-black bg-opacity-40"></div>
-  {% else %}
-    <div class="absolute inset-0 opacity-10"
-         style="background-image: url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"></div>
+    <img class="tour-hero-img" src="{{ tour.image.url }}" alt="{{ tour.name }}">
   {% endif %}
+  <div class="tour-hero-overlay"></div>
 
-  <!-- Breadcrumb + title overlay -->
-  <div class="absolute inset-0 flex flex-col justify-end">
-    <div class="max-w-6xl mx-auto w-full px-6 pb-8">
-      <nav class="text-white text-opacity-70 text-sm mb-3 flex items-center gap-2">
-        <a href="{% url 'places:tour_list' %}" class="hover:text-white transition-colors">Tours</a>
-        <i class="fas fa-chevron-right text-xs opacity-50"></i>
-        <span class="text-white font-medium">{{ tour.name }}</span>
-      </nav>
-      <h1 class="text-3xl md:text-5xl font-black text-white leading-tight drop-shadow-lg">
-        {{ tour.name }}
-      </h1>
-      <div class="flex flex-wrap items-center gap-4 mt-3">
-        <span class="flex items-center gap-1.5 text-emerald-200 text-sm font-semibold">
-          <i class="fas fa-clock"></i> {{ tour.duration_display }}
-        </span>
-        <span class="flex items-center gap-1.5 text-emerald-200 text-sm font-semibold">
-          <i class="fas fa-route"></i> {{ trails.count }} trail{% if trails.count != 1 %}s{% endif %}
-        </span>
-        <span class="flex items-center gap-1.5 text-white text-sm font-semibold bg-white bg-opacity-20 rounded-full px-3 py-1">
-          <i class="fas fa-tag"></i> LKR {{ tour.price_lkr|floatformat:0 }} / person
-        </span>
-      </div>
+  <!-- Nav -->
+  <nav class="hero-nav">
+    <a href="{% url 'places:tour_list' %}" class="hero-nav-btn">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      Tours
+    </a>
+    {% if user.is_staff %}
+    <div class="hero-nav-actions">
+      <a href="{% url 'places:edit_tour' slug=tour.slug %}" class="hero-nav-btn"><i class="fas fa-edit"></i> Edit</a>
+      <form method="post" action="{% url 'places:delete_tour' slug=tour.slug %}" onsubmit="return confirm('Delete this tour? This cannot be undone.')" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" class="hero-nav-btn" style="background:rgba(220,38,38,.25);border-color:rgba(220,38,38,.4);color:#fca5a5">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+      </form>
+    </div>
+    {% endif %}
+  </nav>
+
+  <!-- Content -->
+  <div class="hero-content">
+    <div class="hero-breadcrumb">
+      <a href="{% url 'places:tour_list' %}">Tours</a>
+      <i class="fas fa-chevron-right" style="font-size:.6rem"></i>
+      <span style="color:rgba(255,255,255,.85)">{{ tour.name }}</span>
+    </div>
+    <h1 class="hero-title display-font">{{ tour.name }}</h1>
+    <div class="hero-pills">
+      <span class="hero-pill pill-ghost"><i class="fas fa-clock"></i> {{ tour.duration_display }}</span>
+      <span class="hero-pill pill-ghost"><i class="fas fa-route"></i> {{ trails.count }} trail{% if trails.count != 1 %}s{% endif %}</span>
+      <span class="hero-pill pill-gold"><i class="fas fa-tag"></i> LKR {{ tour.price_lkr|floatformat:0 }} / person</span>
+      {% if tour.event_date %}
+      <span class="hero-pill pill-ghost"><i class="fas fa-calendar-alt"></i> {{ tour.event_date|date:"M d, Y" }}{% if tour.event_time %} &bull; {{ tour.event_time|time:"g:i A" }}{% endif %}</span>
+      {% endif %}
     </div>
   </div>
-
-  {% if user.is_staff %}
-  <div class="absolute top-5 right-5 flex gap-2">
-    <a href="{% url 'places:edit_tour' slug=tour.slug %}"
-       class="flex items-center gap-1.5 bg-white bg-opacity-90 hover:bg-white text-gray-800
-              text-xs font-semibold px-3 py-2 rounded-lg transition-colors shadow">
-      <i class="fas fa-edit"></i> Edit Tour
-    </a>
-    <form method="post" action="{% url 'places:delete_tour' slug=tour.slug %}"
-          onsubmit="return confirm('Delete this tour? This cannot be undone.')">
-      {% csrf_token %}
-      <button class="flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white
-                     text-xs font-semibold px-3 py-2 rounded-lg transition-colors shadow">
-        <i class="fas fa-trash"></i> Delete
-      </button>
-    </form>
-  </div>
-  {% endif %}
 </div>
 
-<!-- Main content -->
-<div class="max-w-6xl mx-auto px-4 py-10">
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+<!-- ── PAGE BODY ── -->
+<div class="page-wrap">
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:2.5rem;align-items:start" class="lg-grid">
 
-    <!-- ── Left: description + trails + offerings ────── -->
-    <div class="lg:col-span-2 space-y-8">
+    <!-- LEFT COLUMN -->
+    <div>
 
-      <!-- Description -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
-        <h2 class="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center">
-            <i class="fas fa-info-circle text-green-600 text-sm"></i>
-          </span>
-          About This Tour
-        </h2>
-        <p class="text-gray-600 leading-relaxed whitespace-pre-line">{{ tour.description }}</p>
+      <!-- About -->
+      <div class="card fade-up">
+        <div class="card-body">
+          <span class="section-label">About This Tour</span>
+          <h2 class="section-title display-font" style="display:flex;align-items:center">
+            <span class="section-icon icon-green"><i class="fas fa-info-circle"></i></span>
+            Overview
+          </h2>
+          <p style="font-size:.97rem;line-height:1.85;color:#374151;white-space:pre-line">{{ tour.description }}</p>
+        </div>
       </div>
+
+      <!-- Route -->
+      {% if tour.starting_location or tour.ending_location %}
+      <div class="card fade-up">
+        <div class="card-body">
+          <span class="section-label">Route</span>
+          <h2 class="section-title display-font" style="display:flex;align-items:center;margin-bottom:1.4rem">
+            <span class="section-icon icon-green"><i class="fas fa-map-signs"></i></span>
+            Getting There
+          </h2>
+          <div class="route-wrap">
+            {% if tour.starting_location %}
+            <div class="route-point route-start">
+              <div class="route-dot dot-green"><i class="fas fa-map-marker-alt"></i></div>
+              <div>
+                <div class="route-point-label" style="color:#4a8a6a">Starting Point</div>
+                <div class="route-point-name">{{ tour.starting_location }}</div>
+              </div>
+            </div>
+            {% endif %}
+            {% if tour.starting_location and tour.ending_location %}
+            <div class="route-arrow">→</div>
+            {% endif %}
+            {% if tour.ending_location %}
+            <div class="route-point route-end">
+              <div class="route-dot dot-teal"><i class="fas fa-flag-checkered"></i></div>
+              <div>
+                <div class="route-point-label" style="color:#0d9488">Ending Point</div>
+                <div class="route-point-name">{{ tour.ending_location }}</div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Itinerary -->
+      {% if tour.itinerary_days.all %}
+      <div class="card fade-up">
+        <div class="card-body">
+          <span class="section-label">Day by Day</span>
+          <h2 class="section-title display-font" style="display:flex;align-items:center;margin-bottom:1.8rem">
+            <span class="section-icon icon-green"><i class="fas fa-calendar-check"></i></span>
+            Itinerary
+            <span style="margin-left:auto;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:400;color:#6b7280;background:#f3f4f6;padding:.3rem .85rem;border-radius:50px">
+              {{ tour.itinerary_days.count }} day{% if tour.itinerary_days.count != 1 %}s{% endif %}
+            </span>
+          </h2>
+          <div class="timeline">
+            <div class="timeline-line"></div>
+            {% for day in tour.itinerary_days.all %}
+            <div class="timeline-item">
+              <div class="timeline-dot">{{ day.day_number }}</div>
+              <div class="timeline-card">
+                <div class="timeline-card-header">
+                  <h3 class="timeline-card-title">Day {{ day.day_number }}{% if day.title %} — {{ day.title }}{% endif %}</h3>
+                  {% if day.distance_km %}<span class="timeline-card-km"><i class="fas fa-ruler-horizontal" style="margin-right:.3rem"></i>{{ day.distance_km }} km</span>{% endif %}
+                </div>
+                {% if day.description %}<p class="timeline-card-desc">{{ day.description }}</p>{% endif %}
+                {% if day.highlights %}
+                <div class="highlight-chips">
+                  {% for highlight in day.highlights_list %}
+                  <span class="highlight-chip"><i class="fas fa-star" style="font-size:.55rem;color:#16a34a"></i>{{ highlight }}</span>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      {% endif %}
 
       <!-- Included Trails -->
       {% if trails %}
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
-        <h2 class="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
-          <span class="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center">
-            <i class="fas fa-route text-green-600 text-sm"></i>
-          </span>
-          Included Trails
-          <span class="ml-auto text-xs font-normal text-gray-400 bg-gray-100 rounded-full px-2.5 py-1">
-            {{ trails.count }} trail{% if trails.count != 1 %}s{% endif %}
-          </span>
-        </h2>
-
-        <div class="space-y-3">
+      <div class="card fade-up">
+        <div class="card-body">
+          <span class="section-label">Included Trails</span>
+          <h2 class="section-title display-font" style="display:flex;align-items:center;margin-bottom:1.4rem">
+            <span class="section-icon icon-green"><i class="fas fa-route"></i></span>
+            Trails
+            <span style="margin-left:auto;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:400;color:#6b7280;background:#f3f4f6;padding:.3rem .85rem;border-radius:50px">
+              {{ trails.count }} trail{% if trails.count != 1 %}s{% endif %}
+            </span>
+          </h2>
           {% for trail in trails %}
-          <div class="flex items-center gap-4 p-3.5 rounded-xl border border-gray-100 hover:border-green-200
-                      hover:bg-green-50 transition-all group">
-            <!-- Order dot -->
-            <div class="w-7 h-7 rounded-full bg-green-100 text-green-700 text-xs font-bold
-                        flex items-center justify-center flex-shrink-0 group-hover:bg-green-600 group-hover:text-white transition-colors">
-              {{ forloop.counter }}
+          <div class="trail-row">
+            <div class="trail-num">{{ forloop.counter }}</div>
+            <div class="trail-info">
+              <div class="trail-name">{{ trail.name }}</div>
+              {% if trail.description %}<div class="trail-desc">{{ trail.description|truncatewords:12 }}</div>{% endif %}
             </div>
-
-            <div class="flex-1 min-w-0">
-              <div class="font-semibold text-gray-800 text-sm truncate">{{ trail.name }}</div>
-              {% if trail.description %}
-              <div class="text-gray-400 text-xs mt-0.5 truncate">{{ trail.description|truncatewords:12 }}</div>
-              {% endif %}
-            </div>
-
-            <div class="flex items-center gap-3 flex-shrink-0">
-              {% if trail.difficulty %}
-              <span class="text-xs px-2 py-0.5 rounded-full font-medium
-                {% if trail.difficulty == 'easy' %}bg-green-100 text-green-700
-                {% elif trail.difficulty == 'moderate' %}bg-yellow-100 text-yellow-700
-                {% else %}bg-red-100 text-red-700{% endif %}">
-                {{ trail.get_difficulty_display }}
-              </span>
-              {% endif %}
-              <a href="{% url 'places:trail_detail' pk=trail.pk %}"
-                 class="text-xs text-green-600 hover:text-green-800 font-semibold whitespace-nowrap">
-                View <i class="fas fa-arrow-right text-xs ml-0.5"></i>
-              </a>
-            </div>
+            {% if trail.difficulty %}
+            <span class="diff-badge diff-{{ trail.difficulty }}">{{ trail.get_difficulty_display }}</span>
+            {% endif %}
+            <a href="{% url 'places:trail_detail' pk=trail.pk %}" class="trail-link">View <i class="fas fa-arrow-right" style="font-size:.65rem"></i></a>
           </div>
           {% endfor %}
         </div>
@@ -128,146 +512,171 @@
 
       <!-- What's Included -->
       {% if offerings %}
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
-        <h2 class="text-lg font-bold text-gray-900 mb-5 flex items-center gap-2">
-          <span class="w-7 h-7 bg-green-100 rounded-lg flex items-center justify-center">
-            <i class="fas fa-check-circle text-green-600 text-sm"></i>
-          </span>
-          What's Included
-        </h2>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {% for offering in offerings %}
-          <div class="flex items-center gap-3 p-3 rounded-xl bg-green-50 border border-green-100">
-            <div class="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center flex-shrink-0">
-              {% if offering.icon %}
-              <i class="{{ offering.icon }} text-green-600 text-sm"></i>
-              {% else %}
-              <i class="fas fa-check text-green-600 text-sm"></i>
-              {% endif %}
+      <div class="card fade-up">
+        <div class="card-body">
+          <span class="section-label">Package Includes</span>
+          <h2 class="section-title display-font" style="display:flex;align-items:center;margin-bottom:1.4rem">
+            <span class="section-icon icon-green"><i class="fas fa-check-circle"></i></span>
+            What's Included
+          </h2>
+          <div class="offerings-grid">
+            {% for offering in offerings %}
+            <div class="offering-tile">
+              <div class="offering-icon">
+                <i class="{{ offering.icon|default:'fas fa-check' }}"></i>
+              </div>
+              <span class="offering-name">{{ offering.name }}</span>
             </div>
-            <span class="text-sm font-semibold text-gray-700">{{ offering.name }}</span>
+            {% endfor %}
           </div>
-          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- What to Bring -->
+      {% if tour.what_to_bring_list %}
+      <div class="card fade-up">
+        <div class="card-body">
+          <span class="section-label">Checklist</span>
+          <h2 class="section-title display-font" style="display:flex;align-items:center;margin-bottom:1.4rem">
+            <span class="section-icon icon-amber"><i class="fas fa-backpack"></i></span>
+            What to Bring
+          </h2>
+          <div class="bring-grid">
+            {% for item in tour.what_to_bring_list %}
+            <div class="bring-item">
+              <div class="bring-check"><i class="fas fa-check"></i></div>
+              <span class="bring-text">{{ item }}</span>
+            </div>
+            {% endfor %}
+          </div>
         </div>
       </div>
       {% endif %}
 
     </div>
+    <!-- /LEFT COLUMN -->
 
-    <!-- ── Right: booking sidebar ────────────────────── -->
-    <div class="lg:col-span-1 space-y-5">
+    <!-- RIGHT: Sidebar -->
+    <div class="sidebar">
 
       <!-- Booking card -->
-      <div class="bg-white rounded-2xl shadow-md border border-gray-100 p-6 sticky top-6">
-        <div class="text-center mb-5 pb-5 border-b border-gray-100">
-          <div class="text-xs text-gray-400 uppercase tracking-widest mb-1">Price per person</div>
-          <div class="text-4xl font-black text-green-700">
-            LKR {{ tour.price_lkr|floatformat:0 }}
-          </div>
-          <div class="text-sm text-gray-400 mt-1 flex items-center justify-center gap-1.5">
-            <i class="fas fa-clock text-gray-300"></i> {{ tour.duration_display }}
-          </div>
+      <div class="booking-card fade-up">
+        <div class="booking-price-block">
+          <p class="booking-price-label">Price per person</p>
+          <div class="booking-price-num display-font">LKR {{ tour.price_lkr|floatformat:0 }}</div>
+          <div class="booking-price-dur"><i class="fas fa-clock" style="color:#d1d5db"></i> {{ tour.duration_display }}</div>
         </div>
 
-        <!-- Contact numbers -->
-        {% if tour.contact_list %}
-        <div class="mb-5">
-          <p class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-            <i class="fas fa-phone-alt mr-1.5 text-green-500"></i> Book via Phone
-          </p>
-          <div class="space-y-2">
-            {% for number in tour.contact_list %}
-            <a href="tel:{{ number|cut:' ' }}"
-               class="flex items-center gap-3 p-3 rounded-xl border-2 border-green-100 hover:border-green-400
-                      hover:bg-green-50 transition-all group">
-              <div class="w-8 h-8 bg-green-100 group-hover:bg-green-600 rounded-full flex items-center justify-center transition-colors">
-                <i class="fas fa-phone text-green-600 group-hover:text-white text-xs transition-colors"></i>
-              </div>
-              <span class="font-semibold text-gray-800 text-sm">{{ number }}</span>
-            </a>
-            {% endfor %}
-          </div>
+        {% if tour.event_date %}
+        <div class="event-box">
+          <div class="event-box-label"><i class="fas fa-calendar-alt"></i> Event Date</div>
+          <div class="event-box-date">{{ tour.event_date|date:"l, F j, Y" }}</div>
+          {% if tour.event_time %}
+          <div class="event-box-time"><i class="fas fa-clock" style="color:#4a8a6a;font-size:.75rem"></i> {{ tour.event_time|time:"g:i A" }}</div>
+          {% endif %}
         </div>
         {% endif %}
 
-        <!-- WhatsApp (first number) -->
         {% if tour.contact_list %}
-        <a href="https://wa.me/{{ tour.contact_list.0|cut:' '|cut:'+' }}"
-           target="_blank" rel="noopener"
-           class="w-full flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600
-                  text-white font-bold py-3 rounded-xl transition-colors active:scale-95 mb-3">
-          <i class="fab fa-whatsapp text-lg"></i> WhatsApp Us
+        <div style="margin-bottom:1.2rem">
+          <div class="contact-label"><i class="fas fa-phone-alt" style="color:#16a34a"></i> Book via Phone</div>
+          {% for number in tour.contact_list %}
+          <a href="tel:{{ number|cut:' ' }}" class="contact-link">
+            <div class="contact-icon"><i class="fas fa-phone"></i></div>
+            <span class="contact-num">{{ number }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if tour.contact_list %}
+        <a href="https://wa.me/{{ tour.contact_list.0|cut:' '|cut:'+' }}" target="_blank" rel="noopener" class="wa-btn">
+          <i class="fab fa-whatsapp" style="font-size:1.1rem"></i> WhatsApp Us
         </a>
         {% endif %}
 
-        <p class="text-xs text-gray-400 text-center leading-relaxed">
-          Contact us to check availability and book your spot.
-        </p>
+        <p class="booking-note">Contact us to check availability and secure your spot.</p>
       </div>
 
-      <!-- Quick stats -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-        <h3 class="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Tour At a Glance</h3>
-        <div class="space-y-3">
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-gray-500 flex items-center gap-2">
-              <i class="fas fa-clock w-4 text-center text-green-500"></i> Duration
-            </span>
-            <span class="font-semibold text-gray-800">{{ tour.duration_display }}</span>
-          </div>
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-gray-500 flex items-center gap-2">
-              <i class="fas fa-route w-4 text-center text-green-500"></i> Trails
-            </span>
-            <span class="font-semibold text-gray-800">{{ trails.count }}</span>
-          </div>
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-gray-500 flex items-center gap-2">
-              <i class="fas fa-check-circle w-4 text-center text-green-500"></i> Included
-            </span>
-            <span class="font-semibold text-gray-800">{{ offerings.count }} items</span>
-          </div>
-          {% if tour.created_by %}
-          <div class="flex items-center justify-between text-sm">
-            <span class="text-gray-500 flex items-center gap-2">
-              <i class="fas fa-user-tie w-4 text-center text-green-500"></i> Curated by
-            </span>
-            <span class="font-semibold text-gray-800">{{ tour.created_by.get_full_name|default:tour.created_by.username }}</span>
-          </div>
-          {% endif %}
+      <!-- Quick stats card -->
+      <div class="stats-card fade-up" style="transition-delay:.1s">
+        <p class="stats-card-title">Tour at a Glance</p>
+        <div class="stat-row">
+          <span class="stat-row-key"><i class="fas fa-clock" style="color:#16a34a;width:14px;text-align:center"></i> Duration</span>
+          <span class="stat-row-val">{{ tour.duration_display }}</span>
         </div>
+        {% if tour.event_date %}
+        <div class="stat-row">
+          <span class="stat-row-key"><i class="fas fa-calendar" style="color:#16a34a;width:14px;text-align:center"></i> Date</span>
+          <span class="stat-row-val">{{ tour.event_date|date:"M j, Y" }}</span>
+        </div>
+        {% endif %}
+        {% if tour.event_time %}
+        <div class="stat-row">
+          <span class="stat-row-key"><i class="fas fa-clock" style="color:#16a34a;width:14px;text-align:center"></i> Time</span>
+          <span class="stat-row-val">{{ tour.event_time|time:"g:i A" }}</span>
+        </div>
+        {% endif %}
+        {% if tour.starting_location %}
+        <div class="stat-row">
+          <span class="stat-row-key"><i class="fas fa-map-marker-alt" style="color:#16a34a;width:14px;text-align:center"></i> Starts at</span>
+          <span class="stat-row-val">{{ tour.starting_location }}</span>
+        </div>
+        {% endif %}
+        {% if tour.ending_location %}
+        <div class="stat-row">
+          <span class="stat-row-key"><i class="fas fa-flag-checkered" style="color:#16a34a;width:14px;text-align:center"></i> Ends at</span>
+          <span class="stat-row-val">{{ tour.ending_location }}</span>
+        </div>
+        {% endif %}
+        <div class="stat-row">
+          <span class="stat-row-key"><i class="fas fa-route" style="color:#16a34a;width:14px;text-align:center"></i> Trails</span>
+          <span class="stat-row-val">{{ trails.count }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-row-key"><i class="fas fa-check-circle" style="color:#16a34a;width:14px;text-align:center"></i> Included</span>
+          <span class="stat-row-val">{{ offerings.count }} items</span>
+        </div>
+        {% if tour.what_to_bring_list %}
+        <div class="stat-row">
+          <span class="stat-row-key"><i class="fas fa-backpack" style="color:#d97706;width:14px;text-align:center"></i> To bring</span>
+          <span class="stat-row-val">{{ tour.what_to_bring_list|length }} items</span>
+        </div>
+        {% endif %}
+        {% if tour.created_by %}
+        <div class="stat-row">
+          <span class="stat-row-key"><i class="fas fa-user-tie" style="color:#16a34a;width:14px;text-align:center"></i> Curated by</span>
+          <span class="stat-row-val">{{ tour.created_by.get_full_name|default:tour.created_by.username }}</span>
+        </div>
+        {% endif %}
       </div>
 
     </div>
-  </div>
+    <!-- /Sidebar -->
 
-  <!-- Other tours -->
+  </div><!-- /grid -->
+
+  <!-- More Tours -->
   {% if other_tours %}
-  <div class="mt-14">
-    <h2 class="text-xl font-bold text-gray-900 mb-6">More Tours</h2>
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+  <div style="margin-top:4rem" class="fade-up">
+    <span class="section-label" style="display:block;margin-bottom:.5rem">Discover More</span>
+    <h2 class="section-title display-font" style="font-size:1.8rem;margin-bottom:1.5rem">More Tours</h2>
+    <div class="more-tours-grid">
       {% for t in other_tours %}
-      <a href="{% url 'places:tour_detail' slug=t.slug %}"
-         class="group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100
-                hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-        <div class="h-36 bg-gradient-to-br from-green-600 to-teal-700 overflow-hidden">
-          {% if t.image %}
-          <img src="{{ t.image.url }}" alt="{{ t.name }}"
-               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-          {% else %}
-          <div class="w-full h-full flex items-center justify-center">
-            <i class="fas fa-mountain text-white text-3xl opacity-30"></i>
+      <a href="{% url 'places:tour_detail' slug=t.slug %}" class="more-tour-card">
+        {% if t.image %}
+          <img class="more-tour-img" src="{{ t.image.url }}" alt="{{ t.name }}">
+        {% else %}
+          <div class="more-tour-placeholder"><i class="fas fa-mountain" style="color:rgba(255,255,255,.4);font-size:2rem"></i></div>
+        {% endif %}
+        <div class="more-tour-body">
+          <p class="more-tour-name">{{ t.name }}</p>
+          <div class="more-tour-meta">
+            <span><i class="fas fa-clock" style="margin-right:.3rem"></i>{{ t.duration_display }}</span>
+            <span class="more-tour-price">LKR {{ t.price_lkr|floatformat:0 }}</span>
           </div>
-          {% endif %}
-        </div>
-        <div class="p-4">
-          <h3 class="font-bold text-gray-900 text-sm leading-snug group-hover:text-green-700 transition-colors mb-1">
-            {{ t.name }}
-          </h3>
-          <div class="flex items-center justify-between text-xs text-gray-400">
-            <span><i class="fas fa-clock mr-1"></i>{{ t.duration_display }}</span>
-            <span class="font-semibold text-green-700">LKR {{ t.price_lkr|floatformat:0 }}</span>
-          </div>
+          {% if t.event_date %}<div class="more-tour-date"><i class="fas fa-calendar-alt" style="margin-right:.3rem;color:#16a34a"></i>{{ t.event_date|date:"M j, Y" }}</div>{% endif %}
         </div>
       </a>
       {% endfor %}
@@ -275,5 +684,25 @@
   </div>
   {% endif %}
 
-</div>
+</div><!-- /page-wrap -->
+
+</div><!-- /tour-page -->
+
+<style>
+  @media (max-width: 1023px) {
+    .lg-grid { grid-template-columns: 1fr !important; }
+    .sidebar { position: static !important; }
+  }
+</style>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Fade-up observer (from about.html)
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
 {% endblock %}

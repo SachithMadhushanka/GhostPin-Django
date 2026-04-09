@@ -1,280 +1,583 @@
 {% extends 'base.html' %}
-{% block title %}Add New Place - Expearls{% endblock %}
+{% block title %}Add New Place — Expearls{% endblock %}
+
 {% block content %}
-    <div class="max-w-2xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">📍 Add New Place</h1>
-            <p class="text-gray-600">
-                Help fellow travelers uncover Sri Lanka’s beauty by adding your favorite spots. From cultural treasures and natural wonders to delicious food and peaceful campsites, your contribution enriches the Expearls guide. All submissions are subject to review.
-            </p>
-        </div>
-        <!-- Form -->
-        <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
-            <form method="post" enctype="multipart/form-data" class="space-y-6">
-                {% csrf_token %}
-                {% if form.errors %}
-                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                        <h3 class="text-sm font-medium text-red-800 mb-2">Please correct the following errors:</h3>
-                        <ul class="text-sm text-red-700 list-disc list-inside space-y-1">
-                            {% for field, errors in form.errors.items %}
-                                {% for error in errors %}
-                                    <li>
-                                        <strong>{{ field|title }}:</strong> {{ error }}
-                                    </li>
-                                {% endfor %}
-                            {% endfor %}
-                            {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-                <!-- Place Name -->
-                <div>
-                    <label for="{{ form.name.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">Place Name *</label>
-                    {{ form.name }}
-                    {% if form.name.errors %}<p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>{% endif %}
-                </div>
-                <!-- Description -->
-                <div>
-                    <label for="{{ form.description.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">Description *</label>
-                    {{ form.description }}
-                    <p class="mt-1 text-sm text-gray-500">Tell us about this place. What makes it special?</p>
-                    {% if form.description.errors %}<p class="mt-1 text-sm text-red-600">{{ form.description.errors.0 }}</p>{% endif %}
-                </div>
-                <!-- Category -->
-                <!-- Category field -->
-                <div>
-                    <label for="{{ form.category.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">Category *</label>
-                    {{ form.category }}
-                    {% if form.category.errors %}<p class="mt-1 text-sm text-red-600">{{ form.category.errors.0 }}</p>{% endif %}
-                </div>
-                <!-- Category Icon -->
-                <!-- <div>
-                <label for="{{ form.category_icon.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
-                    Category Icon *
-                </label>
-                {{ form.category_icon }}
-                {% if form.category_icon.errors %}
-                    <p class="mt-1 text-sm text-red-600">{{ form.category_icon.errors.0 }}</p>
-                {% endif %}
-</div> -->
-                <!-- Difficulty -->
-                <div>
-                    <label for="{{ form.difficulty.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">Difficulty *</label>
-                    {{ form.difficulty }}
-                    {% if form.difficulty.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.difficulty.errors.0 }}</p>
-                    {% endif %}
-                </div>
-                <!-- Safety Rating -->
-                <div>
-                    <label for="{{ form.safety_rating.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">Safety Rating *</label>
-                    {{ form.safety_rating }}
-                    {% if form.safety_rating.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.safety_rating.errors.0 }}</p>
-                    {% endif %}
-                </div>
-                <!-- Best Time to Visit -->
-                <div>
-                    <label for="{{ form.best_time_to_visit.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">Best Time to Visit</label>
-                    {{ form.best_time_to_visit }}
-                    {% if form.best_time_to_visit.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.best_time_to_visit.errors.0 }}</p>
-                    {% endif %}
-                    <p class="mt-2 text-sm text-gray-500">When is the best time to visit this place?</p>
-                </div>
-                <!-- Accessibility Information -->
-                <div>
-                    <label for="{{ form.accessibility_info.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">
-                        Accessibility & Visitor Information
-                    </label>
-                    {{ form.accessibility_info }}
-                    {% if form.accessibility_info.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.accessibility_info.errors.0 }}</p>
-                    {% endif %}
-                    <p class="mt-2 text-sm text-gray-500">
-                        Include important information for visitors, such as wheelchair access, required attire (e.g., modest dress), entrance rules, or other cultural or religious considerations.
-                    </p>
-                </div>
-                <!-- Legends and Stories -->
-                <div>
-                    <label for="{{ form.legends_stories.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">Legends & Stories</label>
-                    {{ form.legends_stories }}
-                    {% if form.legends_stories.errors %}
-                        <p class="mt-1 text-sm text-red-600">{{ form.legends_stories.errors.0 }}</p>
-                    {% endif %}
-                    <p class="mt-2 text-sm text-gray-500">Share any legends, stories, or folklore associated with this place</p>
-                </div>
-                <!-- Location -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label for="{{ form.latitude.id_for_label }}"
-                               class="block text-sm font-medium text-gray-700 mb-2">Latitude *</label>
-                        {{ form.latitude }}
-                        {% if form.latitude.errors %}<p class="mt-1 text-sm text-red-600">{{ form.latitude.errors.0 }}</p>{% endif %}
-                    </div>
-                    <div>
-                        <label for="{{ form.longitude.id_for_label }}"
-                               class="block text-sm font-medium text-gray-700 mb-2">Longitude *</label>
-                        {{ form.longitude }}
-                        {% if form.longitude.errors %}<p class="mt-1 text-sm text-red-600">{{ form.longitude.errors.0 }}</p>{% endif %}
-                    </div>
-                </div>
-                <!-- Location Helper -->
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0">
-                            <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd">
-                                </path>
-                            </svg>
-                        </div>
-                        <div class="ml-3">
-                            <h3 class="text-sm font-medium text-blue-800">Need help finding coordinates?</h3>
-                            <div class="mt-2 text-sm text-blue-700">
-                                <p>You can find latitude and longitude coordinates by:</p>
-                                <ul class="list-disc list-inside mt-1 space-y-1">
-                                    <li>Right-clicking on Google Maps and selecting the coordinates</li>
-                                    <li>Using GPS coordinates from your phone</li>
-                                    <li>Searching online for "[Place Name] coordinates"</li>
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Map for Selecting Location -->
-                <div class="bg-gray-50 rounded-lg p-4 mt-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-3">
-                        <i class="fas fa-map text-green-600 mr-2"></i>
-                        Select Location on Map
-                    </h3>
-                    <div id="add-map" class="w-full h-64 rounded-lg"></div>
-                    <p class="mt-2 text-sm text-gray-600">Click on the map to set the location coordinates</p>
-                </div>
-                <!-- Image Upload -->
-                <div>
-                    <label for="{{ form.image.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">Image Upload</label>
-                    {{ form.image }}
-                    <p class="mt-1 text-sm text-gray-500">Upload a photo of the place. This helps others visualize the location.</p>
-                    {% if form.image.errors %}<p class="mt-1 text-sm text-red-600">{{ form.image.errors.0 }}</p>{% endif %}
-                </div>
-                <!-- Submit Button -->
-                <div class="flex items-center justify-between pt-6">
-                    <a href="{% url 'places:home' %}"
-                       class="text-gray-600 hover:text-gray-800 font-medium">Cancel</a>
-                    <button type="submit"
-                            class="btn-primary text-white px-8 py-3 rounded-lg font-semibold">
-                        Submit Place for Review
-                    </button>
-                </div>
-            </form>
-        </div>
-        <!-- Guidelines -->
-        <div class="mt-8 bg-gray-50 rounded-lg p-6">
-            <h3 class="text-lg font-medium text-gray-800 mb-4">📋 Submission Guidelines</h3>
-            <ul class="space-y-2 text-sm text-gray-600">
-                <li class="flex items-start">
-                    <span class="text-green-500 mr-2">✓</span>
-                    Ensure the place has genuine significance
-                </li>
-                <li class="flex items-start">
-                    <span class="text-green-500 mr-2">✓</span>
-                    Provide accurate coordinates and detailed description
-                </li>
-                <li class="flex items-start">
-                    <span class="text-green-500 mr-2">✓</span>
-                    Use your own photos or images with proper permissions
-                </li>
-                <li class="flex items-start">
-                    <span class="text-green-500 mr-2">✓</span>
-                    Be respectful and factual in your descriptions
-                </li>
-            </ul>
-        </div>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .add-place-page { font-family: 'DM Sans', sans-serif; }
+  .display-font   { font-family: 'Playfair Display', serif; }
+
+  /* ── Hero (mirrors about.html hero-about) ───────────────── */
+  .hero-add {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-add::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-add::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 80px;
+    background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px;
+    background: #86efac;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(1.4); }
+  }
+
+  /* ── Card shell ─────────────────────────────────────────── */
+  .form-card {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    border: 1px solid #f3f4f6;
+  }
+
+  /* ── Section headings inside form ──────────────────────── */
+  .form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #111827;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid #f0fdf4;
+    margin-bottom: 20px;
+  }
+  .form-section-icon {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* ── Form inputs (overrides base styles uniformly) ─────── */
+  .field-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+    letter-spacing: .01em;
+  }
+  .field-label .req { color: #16a34a; margin-left: 2px; }
+
+  .field-hint {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    margin-top: 5px;
+    line-height: 1.4;
+  }
+  .field-error {
+    font-size: 0.75rem;
+    color: #dc2626;
+    margin-top: 4px;
+  }
+
+  /* Input / select / textarea unified style */
+  .add-place-page input[type="text"],
+  .add-place-page input[type="number"],
+  .add-place-page input[type="file"],
+  .add-place-page select,
+  .add-place-page textarea {
+    width: 100%;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    color: #111827;
+    background: #fafafa;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+    outline: none;
+  }
+  .add-place-page input:focus,
+  .add-place-page select:focus,
+  .add-place-page textarea:focus {
+    border-color: #34d399;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(52,211,153,.12);
+  }
+  .add-place-page textarea { resize: vertical; min-height: 100px; }
+  .add-place-page input[type="file"] {
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+
+  /* ── Map container ──────────────────────────────────────── */
+  .map-wrapper {
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1.5px solid #d1fae5;
+  }
+  #add-map { width: 100%; height: 280px; }
+
+  /* ── Info / tip boxes ───────────────────────────────────── */
+  .tip-box {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+  .tip-box-blue {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+
+  /* ── Guideline list ─────────────────────────────────────── */
+  .guideline-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.875rem;
+    color: #4b5563;
+  }
+  .guideline-item:last-child { border-bottom: none; }
+  .guideline-check {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: #dcfce7;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ── Error alert ────────────────────────────────────────── */
+  .error-alert {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+
+  /* ── Submit button ──────────────────────────────────────── */
+  .btn-submit {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 13px 32px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .25s;
+    box-shadow: 0 4px 16px rgba(22,163,74,.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(22,163,74,.35);
+    background: linear-gradient(135deg, #15803d, #166534);
+  }
+  .btn-cancel {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color .2s;
+  }
+  .btn-cancel:hover { color: #111827; }
+
+  /* ── Entrance animation ─────────────────────────────────── */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .fade-up.visible { opacity:1; transform:translateY(0); }
+
+  /* ── Reward badge ───────────────────────────────────────── */
+  .reward-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+    border: 1.5px solid #86efac;
+    border-radius: 50px;
+    padding: 8px 18px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #15803d;
+  }
+</style>
+
+<div class="add-place-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-add pt-20 pb-32 px-4 text-center">
+    <div class="max-w-2xl mx-auto relative z-10">
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-6 tracking-wide uppercase">
+        <span class="hero-dot"></span> Community Contribution
+      </span>
+      <h1 class="display-font text-5xl md:text-6xl font-black text-white leading-tight mb-4">
+        Add a New<br>
+        <em class="text-green-300 not-italic">Hidden Gem</em>
+      </h1>
+      <p class="text-green-100 text-lg font-light max-w-lg mx-auto leading-relaxed mb-8">
+        Share a place you love and help fellow explorers discover the real Sri Lanka. All submissions are reviewed before going live.
+      </p>
+      <div class="reward-badge mx-auto">
+        <i class="fas fa-star text-yellow-400"></i>
+        Earn 50 points when your place is approved
+      </div>
     </div>
+  </section>
+
+  <!-- ══ MAIN CONTENT ══ -->
+  <section class="max-w-3xl mx-auto px-4 -mt-10 pb-20 relative z-10">
+
+    <!-- Error alert -->
+    {% if form.errors %}
+    <div class="error-alert mb-6 fade-up">
+      <div class="flex items-start gap-3">
+        <i class="fas fa-exclamation-circle text-red-500 mt-0.5"></i>
+        <div>
+          <p class="text-sm font-semibold text-red-800 mb-1">Please fix the following before submitting:</p>
+          <ul class="text-sm text-red-700 space-y-0.5 list-disc list-inside">
+            {% for field, errors in form.errors.items %}
+              {% for error in errors %}
+                <li><strong>{{ field|title }}:</strong> {{ error }}</li>
+              {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- ── SECTION 1: Basic Info ── -->
+      <div class="form-card p-8 mb-6 fade-up">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-info text-green-600"></i></div>
+          Basic Information
+        </div>
+
+        <!-- Name -->
+        <div class="mb-5">
+          <label for="{{ form.name.id_for_label }}" class="field-label">
+            Place Name <span class="req">*</span>
+          </label>
+          {{ form.name }}
+          {% if form.name.errors %}<p class="field-error">{{ form.name.errors.0 }}</p>{% endif %}
+        </div>
+
+        <!-- Description -->
+        <div class="mb-5">
+          <label for="{{ form.description.id_for_label }}" class="field-label">
+            Description <span class="req">*</span>
+          </label>
+          {{ form.description }}
+          <p class="field-hint">Tell us what makes this place special — history, atmosphere, why you love it.</p>
+          {% if form.description.errors %}<p class="field-error">{{ form.description.errors.0 }}</p>{% endif %}
+        </div>
+
+        <!-- Category -->
+        <div class="mb-5">
+          <label for="{{ form.category.id_for_label }}" class="field-label">
+            Category <span class="req">*</span>
+          </label>
+          {{ form.category }}
+          {% if form.category.errors %}<p class="field-error">{{ form.category.errors.0 }}</p>{% endif %}
+        </div>
+
+        <!-- Difficulty + Safety Rating side by side -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+          <div>
+            <label for="{{ form.difficulty.id_for_label }}" class="field-label">
+              Difficulty <span class="req">*</span>
+            </label>
+            {{ form.difficulty }}
+            {% if form.difficulty.errors %}<p class="field-error">{{ form.difficulty.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.safety_rating.id_for_label }}" class="field-label">
+              Safety Rating <span class="req">*</span>
+            </label>
+            {{ form.safety_rating }}
+            {% if form.safety_rating.errors %}<p class="field-error">{{ form.safety_rating.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <!-- Best Time to Visit -->
+        <div>
+          <label for="{{ form.best_time_to_visit.id_for_label }}" class="field-label">
+            Best Time to Visit
+          </label>
+          {{ form.best_time_to_visit }}
+          <p class="field-hint">When is the ideal time of year or day to experience this place?</p>
+          {% if form.best_time_to_visit.errors %}<p class="field-error">{{ form.best_time_to_visit.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <!-- ── SECTION 2: Visitor Details ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.1s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-walking text-green-600"></i></div>
+          Visitor Details
+        </div>
+
+        <!-- Accessibility -->
+        <div class="mb-5">
+          <label for="{{ form.accessibility_info.id_for_label }}" class="field-label">
+            Accessibility & Visitor Information
+          </label>
+          {{ form.accessibility_info }}
+          <p class="field-hint">Wheelchair access, dress code, cultural rules, entrance fees, or anything visitors should know before arriving.</p>
+          {% if form.accessibility_info.errors %}<p class="field-error">{{ form.accessibility_info.errors.0 }}</p>{% endif %}
+        </div>
+
+        <!-- Legends & Stories -->
+        <div>
+          <label for="{{ form.legends_stories.id_for_label }}" class="field-label">
+            Legends & Stories
+          </label>
+          {{ form.legends_stories }}
+          <p class="field-hint">Any folklore, myths, or local stories connected to this place? Bring the magic alive.</p>
+          {% if form.legends_stories.errors %}<p class="field-error">{{ form.legends_stories.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <!-- ── SECTION 3: Location ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.2s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-map-marker-alt text-green-600"></i></div>
+          Location
+        </div>
+
+        <!-- Lat / Lng -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+          <div>
+            <label for="{{ form.latitude.id_for_label }}" class="field-label">
+              Latitude <span class="req">*</span>
+            </label>
+            {{ form.latitude }}
+            {% if form.latitude.errors %}<p class="field-error">{{ form.latitude.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label for="{{ form.longitude.id_for_label }}" class="field-label">
+              Longitude <span class="req">*</span>
+            </label>
+            {{ form.longitude }}
+            {% if form.longitude.errors %}<p class="field-error">{{ form.longitude.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+
+        <!-- Tip box -->
+        <div class="tip-box-blue mb-5">
+          <div class="flex items-start gap-3">
+            <i class="fas fa-lightbulb text-blue-400 mt-0.5"></i>
+            <div>
+              <p class="text-sm font-semibold text-blue-800 mb-1">Need help finding coordinates?</p>
+              <ul class="text-sm text-blue-700 space-y-0.5 list-disc list-inside">
+                <li>Right-click a spot on Google Maps → copy the coordinates</li>
+                <li>Use GPS coordinates from your phone</li>
+                <li>Search "[Place Name] coordinates" online</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Map -->
+        <div>
+          <p class="field-label mb-3">Or click on the map to set coordinates</p>
+          <div class="map-wrapper">
+            <div id="add-map"></div>
+          </div>
+          <p class="field-hint mt-2">Click anywhere on the map — the coordinate fields above will update automatically. You can also drag the pin.</p>
+        </div>
+      </div>
+
+      <!-- ── SECTION 4: Photo ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.3s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-camera text-green-600"></i></div>
+          Photo
+        </div>
+
+        <div>
+          <label for="{{ form.image.id_for_label }}" class="field-label">Upload an Image</label>
+          {{ form.image }}
+          <p class="field-hint">A great photo helps others connect with this place. Only use photos you own or have permission to share.</p>
+          {% if form.image.errors %}<p class="field-error">{{ form.image.errors.0 }}</p>{% endif %}
+        </div>
+      </div>
+
+      <!-- ── ACTIONS ── -->
+      <div class="flex items-center justify-between fade-up" style="transition-delay:.4s">
+        <a href="{% url 'places:home' %}" class="btn-cancel">
+          <i class="fas fa-arrow-left text-xs"></i> Cancel
+        </a>
+        <button type="submit" class="btn-submit">
+          <i class="fas fa-paper-plane text-sm"></i>
+          Submit for Review
+        </button>
+      </div>
+
+    </form>
+
+    <!-- ── Submission Guidelines ── -->
+    <div class="form-card p-8 mt-8 fade-up" style="transition-delay:.5s">
+      <div class="form-section-title">
+        <div class="form-section-icon"><i class="fas fa-clipboard-list text-green-600"></i></div>
+        Submission Guidelines
+      </div>
+      <div>
+        <div class="guideline-item">
+          <div class="guideline-check"><i class="fas fa-check text-green-600 text-xs"></i></div>
+          Ensure the place has genuine significance for explorers
+        </div>
+        <div class="guideline-item">
+          <div class="guideline-check"><i class="fas fa-check text-green-600 text-xs"></i></div>
+          Provide accurate coordinates and a detailed description
+        </div>
+        <div class="guideline-item">
+          <div class="guideline-check"><i class="fas fa-check text-green-600 text-xs"></i></div>
+          Only upload photos you own or have permission to use
+        </div>
+        <div class="guideline-item">
+          <div class="guideline-check"><i class="fas fa-check text-green-600 text-xs"></i></div>
+          Be respectful, factual, and culturally sensitive in your descriptions
+        </div>
+      </div>
+
+      <div class="tip-box mt-6">
+        <div class="flex items-start gap-3">
+          <i class="fas fa-info-circle text-green-600 mt-0.5"></i>
+          <p class="text-sm text-green-800">
+            After approval your place goes live on the map and you'll receive <strong>50 points</strong> credited to your account. Our team typically reviews submissions within 2–3 business days.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+</div>
+
 {% endblock %}
+
 {% block extra_js %}
-    <!-- Tom Select JS -->
-    <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
-    <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        new TomSelect(".category-multi-select", {
-            plugins: ["remove_button"],  // allows removing selections easily
-            maxItems: null,  // unlimited selections
-            placeholder: "Select categories..."
-        });
+<!-- Tom Select -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (document.querySelector(".category-multi-select")) {
+    new TomSelect(".category-multi-select", {
+      plugins: ["remove_button"],
+      maxItems: null,
+      placeholder: "Select categories..."
     });
-    </script>
-    <script>
-    let addMap;
-    let addMarker;
+  }
+});
+</script>
 
-    function initAddMap() {
-        // Default center (can be changed to your region)
-        const defaultLat = 6.865349;  // Example: Sri Lanka
-        const defaultLng = 80.024414;
+<!-- Map -->
+<script>
+let addMap, addMarker;
 
-        addMap = L.map('add-map').setView([defaultLat, defaultLng], 5);
+function initAddMap() {
+  const defaultLat = 6.865349;
+  const defaultLng = 80.024414;
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(addMap);
+  addMap = L.map('add-map').setView([defaultLat, defaultLng], 7);
 
-        // Add marker when user clicks on map
-        addMap.on('click', function (e) {
-            const lat = e.latlng.lat.toFixed(6);
-            const lng = e.latlng.lng.toFixed(6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(addMap);
 
-            if (addMarker) {
-                addMarker.setLatLng(e.latlng);
-            } else {
-                addMarker = L.marker(e.latlng, { draggable: true }).addTo(addMap);
-                addMarker.on('dragend', updateCoordsFromMarker);
-            }
+  addMap.on('click', function (e) {
+    const lat = e.latlng.lat.toFixed(6);
+    const lng = e.latlng.lng.toFixed(6);
 
-            document.getElementById('{{ form.latitude.id_for_label }}').value = lat;
-            document.getElementById('{{ form.longitude.id_for_label }}').value = lng;
-        });
-
-        // Update map when coords are manually typed
-        document.getElementById('{{ form.latitude.id_for_label }}').addEventListener('change', updateMapFromInputs);
-        document.getElementById('{{ form.longitude.id_for_label }}').addEventListener('change', updateMapFromInputs);
+    if (addMarker) {
+      addMarker.setLatLng(e.latlng);
+    } else {
+      addMarker = L.marker(e.latlng, { draggable: true }).addTo(addMap);
+      addMarker.on('dragend', updateCoordsFromMarker);
     }
 
-    function updateCoordsFromMarker(e) {
-        const position = e.target.getLatLng();
-        document.getElementById('{{ form.latitude.id_for_label }}').value = position.lat.toFixed(6);
-        document.getElementById('{{ form.longitude.id_for_label }}').value = position.lng.toFixed(6);
+    document.getElementById('{{ form.latitude.id_for_label }}').value  = lat;
+    document.getElementById('{{ form.longitude.id_for_label }}').value = lng;
+  });
+
+  document.getElementById('{{ form.latitude.id_for_label }}').addEventListener('change', updateMapFromInputs);
+  document.getElementById('{{ form.longitude.id_for_label }}').addEventListener('change', updateMapFromInputs);
+}
+
+function updateCoordsFromMarker(e) {
+  const p = e.target.getLatLng();
+  document.getElementById('{{ form.latitude.id_for_label }}').value  = p.lat.toFixed(6);
+  document.getElementById('{{ form.longitude.id_for_label }}').value = p.lng.toFixed(6);
+}
+
+function updateMapFromInputs() {
+  const lat = parseFloat(document.getElementById('{{ form.latitude.id_for_label }}').value);
+  const lng = parseFloat(document.getElementById('{{ form.longitude.id_for_label }}').value);
+  if (!isNaN(lat) && !isNaN(lng)) {
+    const ll = [lat, lng];
+    addMap.setView(ll, 13);
+    if (addMarker) {
+      addMarker.setLatLng(ll);
+    } else {
+      addMarker = L.marker(ll, { draggable: true }).addTo(addMap);
+      addMarker.on('dragend', updateCoordsFromMarker);
     }
+  }
+}
 
-    function updateMapFromInputs() {
-        const lat = parseFloat(document.getElementById('{{ form.latitude.id_for_label }}').value);
-        const lng = parseFloat(document.getElementById('{{ form.longitude.id_for_label }}').value);
+document.addEventListener("DOMContentLoaded", initAddMap);
+</script>
 
-        if (!isNaN(lat) && !isNaN(lng)) {
-            const newLatLng = [lat, lng];
-            addMap.setView(newLatLng, 13);
-
-            if (addMarker) {
-                addMarker.setLatLng(newLatLng);
-            } else {
-                addMarker = L.marker(newLatLng, { draggable: true }).addTo(addMap);
-                addMarker.on('dragend', updateCoordsFromMarker);
-            }
-        }
+<!-- Scroll entrance animations -->
+<script>
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
     }
+  });
+}, { threshold: 0.1 });
 
-    document.addEventListener("DOMContentLoaded", function () {
-        initAddMap();
-    });
-    </script>
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
 {% endblock %}

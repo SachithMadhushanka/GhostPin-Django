@@ -1,472 +1,623 @@
-{% extends 'base.html' %} {% load static %} {% block title %}Join Expearls - Register{% endblock %} {% block content %}
-<div
-  class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8"
->
-  <div class="max-w-md w-full space-y-8">
-    <!-- Header -->
-    <div class="text-center">
-      <div class="flex justify-center mb-4">
-        <img
-          src="{% static 'icons/web-app-manifest-512x512.png' %}"
-          alt="Expearls Logo"
-          width="{{ place.image.width }}"
-          height="{{ place.image.height }}"
-          class="h-20 w-20 rounded-2xl shadow-lg object-cover"
-        />
-      </div>
-      <h2 class="text-3xl font-bold text-gray-900 mb-2">Join Expearls</h2>
-      <p class="text-gray-600">
-        From ancient cities to hidden waterfalls and remote camping spots,
-        uncover the untouched beauty of Sri Lanka with firsthand tips from the
-        Expearls community
-      </p>
-    </div>
-    <!-- Registration Form -->
-    <div class="bg-white rounded-lg shadow-xl p-8">
-      <form method="post" class="space-y-6">
-        {% csrf_token %}
-        <!-- Username -->
-        <div>
-          <label
-            for="id_username"
-            class="block text-sm font-medium text-gray-700 mb-2"
-          >
-            <i class="fas fa-user text-blue-600 mr-1"></i>
-            Username
-          </label>
-          <input
-            type="text"
-            name="username"
-            id="id_username"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Choose a unique username"
-          />
-          {% if form.username.errors %}
-          <p class="mt-1 text-sm text-red-600">{{ form.username.errors.0 }}</p>
-          {% endif %}
-          <p class="mt-1 text-xs text-gray-500">
-            This will be your public display name
-          </p>
-        </div>
-        <!-- Email -->
-        <div>
-          <label
-            for="id_email"
-            class="block text-sm font-medium text-gray-700 mb-2"
-          >
-            <i class="fas fa-envelope text-green-600 mr-1"></i>
-            Email Address
-          </label>
-          <input
-            type="email"
-            name="email"
-            id="id_email"
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="your.email@example.com"
-          />
-          {% if form.email.errors %}
-          <p class="mt-1 text-sm text-red-600">{{ form.email.errors.0 }}</p>
-          {% endif %}
-          <p class="mt-1 text-xs text-gray-500">
-            We'll use this for important notifications
-          </p>
-        </div>
-        <!-- Password -->
-        <div>
-          <label
-            for="id_password1"
-            class="block text-sm font-medium text-gray-700 mb-2"
-          >
-            <i class="fas fa-lock text-purple-600 mr-1"></i>
-            Password
-          </label>
-          <div class="relative">
-            <input
-              type="password"
-              name="password1"
-              id="id_password1"
-              required
-              class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Create a strong password"
-            />
-            <button
-              type="button"
-              class="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onclick="togglePassword('id_password1')"
-            >
-              <i
-                class="fas fa-eye text-gray-400 hover:text-gray-600"
-                id="eye-icon-1"
-              ></i>
-            </button>
-          </div>
-          {% if form.password1.errors %}
-          <p class="mt-1 text-sm text-red-600">{{ form.password1.errors.0 }}</p>
-          {% endif %}
-          <!-- Password Strength Indicator -->
-          <div class="mt-2">
-            <div class="flex items-center space-x-2">
-              <div class="flex-1 bg-gray-200 rounded-full h-2">
-                <div
-                  id="password-strength-bar"
-                  class="h-2 rounded-full transition-all duration-300"
-                ></div>
-              </div>
-              <span id="password-strength-text" class="text-xs text-gray-500"
-                >Weak</span
-              >
-            </div>
-            <div class="mt-1 text-xs text-gray-500">
-              <div id="password-requirements" class="space-y-1">
-                <div id="req-length" class="flex items-center">
-                  <i class="fas fa-times text-red-500 mr-1"></i>
-                  <span>At least 8 characters</span>
-                </div>
-                <div id="req-uppercase" class="flex items-center">
-                  <i class="fas fa-times text-red-500 mr-1"></i>
-                  <span>One uppercase letter</span>
-                </div>
-                <div id="req-lowercase" class="flex items-center">
-                  <i class="fas fa-times text-red-500 mr-1"></i>
-                  <span>One lowercase letter</span>
-                </div>
-                <div id="req-number" class="flex items-center">
-                  <i class="fas fa-times text-red-500 mr-1"></i>
-                  <span>One number</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <!-- Confirm Password -->
-        <div>
-          <label
-            for="id_password2"
-            class="block text-sm font-medium text-gray-700 mb-2"
-          >
-            <i class="fas fa-lock text-purple-600 mr-1"></i>
-            Confirm Password
-          </label>
-          <div class="relative">
-            <input
-              type="password"
-              name="password2"
-              id="id_password2"
-              required
-              class="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Confirm your password"
-            />
-            <button
-              type="button"
-              class="absolute inset-y-0 right-0 pr-3 flex items-center"
-              onclick="togglePassword('id_password2')"
-            >
-              <i
-                class="fas fa-eye text-gray-400 hover:text-gray-600"
-                id="eye-icon-2"
-              ></i>
-            </button>
-          </div>
-          {% if form.password2.errors %}
-          <p class="mt-1 text-sm text-red-600">{{ form.password2.errors.0 }}</p>
-          {% endif %}
-          <div id="password-match" class="mt-1 text-xs"></div>
-        </div>
-        <!-- Terms and Privacy -->
-        <div class="flex items-start">
-          <input
-            type="checkbox"
-            id="terms"
-            name="terms"
-            required
-            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
-          />
-          <label for="terms" class="ml-2 text-sm text-gray-600">
-            I agree to the
-            <a
-              href="{% url 'places:about' %}#terms"
-              class="text-blue-600 hover:text-blue-800 underline"
-              >Terms of Service</a
-            >
-            and
-            <a
-              href="{% url 'places:about' %}#privacy"
-              class="text-blue-600 hover:text-blue-800 underline"
-              >Privacy Policy</a
-            >
-          </label>
-        </div>
-        <!-- Newsletter Subscription -->
-        <div class="flex items-start">
-          <input
-            type="checkbox"
-            id="newsletter"
-            name="newsletter"
-            checked
-            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1"
-          />
-          <label for="newsletter" class="ml-2 text-sm text-gray-600">
-            Send me updates about new features and interesting places
-          </label>
-        </div>
-        <!-- Submit Button -->
-        <button
-          type="submit"
-          class="w-full bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 text-white font-semibold py-3 px-4 rounded-md transition-all duration-200 transform hover:scale-105"
-        >
-          <i class="fas fa-user-plus mr-2"></i>
-          Create Account
-        </button>
-      </form>
-      <!-- Social Registration -->
-      <!-- <div class="mt-6">
-                <div class="relative">
-                    <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-300"></div>
-                    </div>
-                    <div class="relative flex justify-center text-sm">
-                        <span class="px-2 bg-white text-gray-500">Or register with</span>
-                    </div>
-                </div>
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Join Expearls — Register{% endblock %}
 
-                <div class="mt-6 grid grid-cols-2 gap-3">
-                    <button class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
-                        <i class="fab fa-google text-red-500 mr-2"></i>
-                        Google
-                    </button>
-                    <button class="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors">
-                        <i class="fab fa-facebook text-blue-600 mr-2"></i>
-                        Facebook
-                    </button>
+{% block content %}
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .auth-page { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* ── Split layout ── */
+  .auth-wrap {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  @media (max-width: 860px) {
+    .auth-wrap { grid-template-columns: 1fr; }
+    .auth-panel { display: none; }
+  }
+
+  /* ── Left decorative panel ── */
+  .auth-panel {
+    background: linear-gradient(155deg, #0a3d2e 0%, #1a5c42 45%, #0f4a35 100%);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 44px 48px;
+  }
+  .auth-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 60%, rgba(134,239,172,.12) 0%, transparent 55%),
+      radial-gradient(circle at 85% 20%, rgba(255,255,255,.04) 0%, transparent 50%);
+  }
+  .panel-pattern {
+    position: absolute;
+    inset: 0;
+    opacity: .045;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .panel-logo { position: relative; z-index: 1; }
+  .panel-logo img {
+    height: 52px; width: 52px;
+    border-radius: 14px; object-fit: cover;
+    box-shadow: 0 4px 20px rgba(0,0,0,.3);
+  }
+  .panel-logo span {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem; font-weight: 700;
+    color: #fff; margin-top: 12px;
+  }
+  .panel-content { position: relative; z-index: 1; }
+  .panel-content h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    font-weight: 900; color: #fff;
+    line-height: 1.2; margin-bottom: 16px;
+  }
+  .panel-content h2 em { color: #86efac; font-style: normal; }
+  .panel-content p {
+    color: #a7f3d0; font-size: .9375rem;
+    line-height: 1.7; max-width: 340px; margin-bottom: 28px;
+  }
+  .value-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .value-item { display: flex; align-items: flex-start; gap: 12px; }
+  .value-check {
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(134,239,172,.2); border: 1px solid rgba(134,239,172,.4);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .value-check i { font-size: .5625rem; color: #86efac; }
+  .value-text { font-size: .875rem; color: #d1fae5; line-height: 1.5; }
+  .panel-quote {
+    position: relative; z-index: 1;
+    border-top: 1px solid rgba(255,255,255,.12);
+    padding-top: 20px;
+    color: rgba(255,255,255,.45);
+    font-size: .8125rem; line-height: 1.6;
+  }
+
+  /* ── Right form side ── */
+  .auth-form-side {
+    background: #f9fafb;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 24px;
+    overflow-y: auto;
+  }
+  .auth-form-box {
+    width: 100%;
+    max-width: 440px;
+    animation: fadeInUp .5s ease both;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .form-header { margin-bottom: 28px; }
+  .mobile-logo {
+    display: none; margin-bottom: 18px;
+    align-items: center; gap: 10px;
+  }
+  @media (max-width: 860px) { .mobile-logo { display: flex; } }
+  .mobile-logo img { height: 44px; width: 44px; border-radius: 12px; object-fit: cover; }
+  .form-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.875rem; font-weight: 900;
+    color: #111827; margin-bottom: 5px; line-height: 1.2;
+  }
+  .form-header p { font-size: .9375rem; color: #6b7280; }
+
+  /* ── Form card ── */
+  .form-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.08);
+    padding: 32px 28px;
+    border: 1px solid #f0f0f0;
+  }
+
+  /* ── Fields ── */
+  .field { margin-bottom: 20px; }
+  .field label {
+    display: flex; align-items: center; gap: 6px;
+    font-size: .8125rem; font-weight: 600;
+    color: #374151; margin-bottom: 7px;
+  }
+  .lbl-icon {
+    width: 20px; height: 20px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .field-wrap { position: relative; }
+  .field-wrap input {
+    width: 100%;
+    padding: 11px 16px 11px 42px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    font-size: .9375rem;
+    font-family: 'DM Sans', sans-serif;
+    color: #111827;
+    background: #fafafa;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+  }
+  .field-wrap input:focus {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 3px rgba(34,197,94,.12);
+    background: #fff;
+  }
+  .field-wrap input::placeholder { color: #9ca3af; }
+  .field-icon {
+    position: absolute; left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af; font-size: .875rem;
+    pointer-events: none; transition: color .2s;
+  }
+  .field-wrap:focus-within .field-icon { color: #16a34a; }
+  .field-suffix {
+    position: absolute; right: 14px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: #9ca3af; padding: 0; font-size: .875rem;
+  }
+  .field-suffix:hover { color: #374151; }
+  .field-hint { margin-top: 5px; font-size: .6875rem; color: #9ca3af; }
+  .field-error {
+    display: flex; align-items: center; gap: 5px;
+    margin-top: 6px; font-size: .75rem; color: #dc2626;
+  }
+
+  /* ── Password strength ── */
+  .strength-wrap { margin-top: 10px; }
+  .strength-bar-track {
+    height: 4px; background: #e5e7eb;
+    border-radius: 2px; overflow: hidden; margin-bottom: 5px;
+  }
+  #strength-bar {
+    height: 100%; width: 0%;
+    border-radius: 2px;
+    transition: width .3s ease, background .3s ease;
+  }
+  .strength-meta {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 8px;
+  }
+  #strength-label { font-size: .6875rem; font-weight: 600; }
+  .req-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; }
+  .req-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: .6875rem; color: #9ca3af;
+    transition: color .2s;
+  }
+  .req-item.met { color: #16a34a; }
+  .req-item i { font-size: .5625rem; width: 10px; text-align: center; }
+
+  /* ── Password match ── */
+  #pw-match { margin-top: 6px; font-size: .6875rem; display: flex; align-items: center; gap: 5px; }
+
+  /* ── Checkboxes ── */
+  .check-row {
+    display: flex; align-items: flex-start; gap: 10px;
+    margin-bottom: 14px;
+  }
+  .check-row input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: #16a34a;
+    flex-shrink: 0; margin-top: 2px; cursor: pointer;
+  }
+  .check-row label {
+    font-size: .8125rem; color: #6b7280; cursor: pointer; line-height: 1.5;
+  }
+  .check-row label a { color: #16a34a; text-decoration: none; font-weight: 500; }
+  .check-row label a:hover { text-decoration: underline; }
+
+  /* ── Submit ── */
+  .btn-submit {
+    width: 100%; padding: 13px;
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .9375rem; font-weight: 600;
+    border: none; border-radius: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .2s;
+    box-shadow: 0 4px 14px rgba(22,163,74,.3);
+    margin-top: 6px;
+  }
+  .btn-submit:hover {
+    background: linear-gradient(135deg, #15803d, #14532d);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(22,163,74,.35);
+  }
+  .btn-submit:active { transform: translateY(0); }
+
+  /* ── Divider ── */
+  .divider {
+    display: flex; align-items: center; gap: 10px; margin: 20px 0;
+  }
+  .divider::before, .divider::after {
+    content: ''; flex: 1; height: 1px; background: #e5e7eb;
+  }
+  .divider span { font-size: .75rem; color: #9ca3af; white-space: nowrap; }
+
+  .signin-link {
+    text-align: center; font-size: .875rem; color: #6b7280;
+    margin-top: 4px;
+  }
+  .signin-link a { color: #16a34a; font-weight: 600; text-decoration: none; margin-left: 4px; }
+  .signin-link a:hover { text-decoration: underline; }
+
+  .back-home {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 14px; font-size: .8125rem;
+    color: #9ca3af; text-decoration: none; transition: color .2s;
+  }
+  .back-home:hover { color: #16a34a; }
+
+  /* ── Features card ── */
+  .features-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.05);
+    padding: 24px 28px;
+    border: 1px solid #f0f0f0;
+    margin-top: 16px;
+  }
+  .features-card h3 {
+    font-size: .8125rem; font-weight: 700;
+    color: #374151; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 6px;
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+  .feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .feat-item { display: flex; align-items: flex-start; gap: 10px; }
+  .feat-icon {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; flex-shrink: 0;
+  }
+  .feat-name { font-size: .8125rem; font-weight: 600; color: #374151; line-height: 1.3; }
+  .feat-sub  { font-size: .6875rem; color: #9ca3af; margin-top: 1px; }
+</style>
+
+<div class="auth-page">
+  <div class="auth-wrap">
+
+    <!-- ══ LEFT PANEL ══ -->
+    <div class="auth-panel">
+      <div class="panel-pattern"></div>
+
+      <div class="panel-logo">
+        <img src="{% static 'icons/web-app-manifest-512x512.png' %}" alt="Expearls">
+        <span>Expearls</span>
+      </div>
+
+      <div class="panel-content">
+        <h2>Explore Sri Lanka<br>like a <em>Local</em></h2>
+        <p>Join thousands of adventurers uncovering ancient cities, hidden waterfalls, remote camping spots — and earning rewards along the way.</p>
+
+        <div class="value-list">
+          <div class="value-item">
+            <div class="value-check"><i class="fas fa-check"></i></div>
+            <span class="value-text">Check in at 100+ verified places across 9 provinces</span>
+          </div>
+          <div class="value-item">
+            <div class="value-check"><i class="fas fa-check"></i></div>
+            <span class="value-text">Earn points, unlock badges & climb the leaderboard</span>
+          </div>
+          <div class="value-item">
+            <div class="value-check"><i class="fas fa-check"></i></div>
+            <span class="value-text">Follow curated trails built by local explorers</span>
+          </div>
+          <div class="value-item">
+            <div class="value-check"><i class="fas fa-check"></i></div>
+            <span class="value-text">Contribute your own discoveries and earn 50 pts</span>
+          </div>
+          <div class="value-item">
+            <div class="value-check"><i class="fas fa-check"></i></div>
+            <span class="value-text">Always free — your core experience, forever</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-quote">
+        "The world is a book, and those who do not travel read only one page." — Saint Augustine
+      </div>
+    </div>
+
+    <!-- ══ RIGHT FORM SIDE ══ -->
+    <div class="auth-form-side">
+      <div class="auth-form-box">
+
+        <div class="form-header">
+          <div class="mobile-logo">
+            <img src="{% static 'icons/web-app-manifest-512x512.png' %}" alt="Expearls">
+            <span style="font-family:'Playfair Display',serif;font-weight:700;font-size:1.125rem;color:#111827">Expearls</span>
+          </div>
+          <h1>Create Account</h1>
+          <p>Start your Sri Lankan adventure today</p>
+        </div>
+
+        <div class="form-card">
+          <form method="post" novalidate>
+            {% csrf_token %}
+
+            <!-- Username -->
+            <div class="field">
+              <label for="id_username">
+                <span class="lbl-icon" style="background:#f0fdf4"><i class="fas fa-user" style="color:#16a34a;font-size:.5625rem"></i></span>
+                Username
+              </label>
+              <div class="field-wrap">
+                <i class="fas fa-user field-icon"></i>
+                <input
+                  type="text" name="username" id="id_username"
+                  placeholder="Choose a unique username"
+                  autocomplete="username"
+                  required
+                >
+              </div>
+              {% if form.username.errors %}
+              <div class="field-error"><i class="fas fa-exclamation-circle"></i> {{ form.username.errors.0 }}</div>
+              {% endif %}
+              <p class="field-hint">This will be your public display name</p>
+            </div>
+
+            <!-- Email -->
+            <div class="field">
+              <label for="id_email">
+                <span class="lbl-icon" style="background:#f0fdf4"><i class="fas fa-envelope" style="color:#059669;font-size:.5625rem"></i></span>
+                Email Address
+              </label>
+              <div class="field-wrap">
+                <i class="fas fa-envelope field-icon"></i>
+                <input
+                  type="email" name="email" id="id_email"
+                  placeholder="your.email@example.com"
+                  autocomplete="email"
+                  required
+                >
+              </div>
+              {% if form.email.errors %}
+              <div class="field-error"><i class="fas fa-exclamation-circle"></i> {{ form.email.errors.0 }}</div>
+              {% endif %}
+              <p class="field-hint">We'll use this for important notifications only</p>
+            </div>
+
+            <!-- Password -->
+            <div class="field">
+              <label for="id_password1">
+                <span class="lbl-icon" style="background:#faf5ff"><i class="fas fa-lock" style="color:#9333ea;font-size:.5625rem"></i></span>
+                Password
+              </label>
+              <div class="field-wrap">
+                <i class="fas fa-lock field-icon"></i>
+                <input
+                  type="password" name="password1" id="id_password1"
+                  placeholder="Create a strong password"
+                  autocomplete="new-password"
+                  required style="padding-right:44px"
+                >
+                <button type="button" class="field-suffix" onclick="togglePwd('id_password1','eye-1')" aria-label="Toggle">
+                  <i class="fas fa-eye" id="eye-1"></i>
+                </button>
+              </div>
+              {% if form.password1.errors %}
+              <div class="field-error"><i class="fas fa-exclamation-circle"></i> {{ form.password1.errors.0 }}</div>
+              {% endif %}
+
+              <!-- Strength indicator -->
+              <div class="strength-wrap" id="strength-wrap" style="display:none">
+                <div class="strength-bar-track"><div id="strength-bar"></div></div>
+                <div class="strength-meta">
+                  <span id="strength-label"></span>
                 </div>
-</div> -->
-      <!-- Login Link -->
-      <div class="mt-6 text-center">
-        <p class="text-sm text-gray-600">
-          Already have an account?
-          <a
-            href="{% url 'login' %}"
-            class="font-medium text-blue-600 hover:text-blue-800 transition-colors"
-            >Sign in here</a
-          >
-        </p>
+                <div class="req-grid">
+                  <div class="req-item" id="req-length"><i class="fas fa-times"></i><span>8+ characters</span></div>
+                  <div class="req-item" id="req-upper"><i class="fas fa-times"></i><span>Uppercase letter</span></div>
+                  <div class="req-item" id="req-lower"><i class="fas fa-times"></i><span>Lowercase letter</span></div>
+                  <div class="req-item" id="req-number"><i class="fas fa-times"></i><span>One number</span></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="field">
+              <label for="id_password2">
+                <span class="lbl-icon" style="background:#faf5ff"><i class="fas fa-lock" style="color:#9333ea;font-size:.5625rem"></i></span>
+                Confirm Password
+              </label>
+              <div class="field-wrap">
+                <i class="fas fa-lock field-icon"></i>
+                <input
+                  type="password" name="password2" id="id_password2"
+                  placeholder="Re-enter your password"
+                  autocomplete="new-password"
+                  required style="padding-right:44px"
+                >
+                <button type="button" class="field-suffix" onclick="togglePwd('id_password2','eye-2')" aria-label="Toggle">
+                  <i class="fas fa-eye" id="eye-2"></i>
+                </button>
+              </div>
+              {% if form.password2.errors %}
+              <div class="field-error"><i class="fas fa-exclamation-circle"></i> {{ form.password2.errors.0 }}</div>
+              {% endif %}
+              <div id="pw-match"></div>
+            </div>
+
+            <!-- Terms -->
+            <div class="check-row">
+              <input type="checkbox" id="terms" name="terms" required>
+              <label for="terms">
+                I agree to the
+                <a href="{% url 'places:about' %}#terms">Terms of Service</a>
+                and
+                <a href="{% url 'places:about' %}#privacy">Privacy Policy</a>
+              </label>
+            </div>
+
+            <!-- Newsletter -->
+            <div class="check-row">
+              <input type="checkbox" id="newsletter" name="newsletter" checked>
+              <label for="newsletter">Send me updates about new places and features</label>
+            </div>
+
+            <button type="submit" class="btn-submit">
+              <i class="fas fa-user-plus"></i>
+              Create My Account
+            </button>
+          </form>
+
+          <div class="divider"><span>Already exploring?</span></div>
+          <p class="signin-link">Have an account?<a href="{% url 'login' %}">Sign in here</a></p>
+        </div>
+
+        <!-- Features preview -->
+        <div class="features-card">
+          <h3>
+            <i class="fas fa-star" style="color:#fbbf24;font-size:.75rem"></i>
+            What you unlock
+          </h3>
+          <div class="feat-grid">
+            <div class="feat-item">
+              <div class="feat-icon" style="background:#f0fdf4"><i class="fas fa-map-marker-alt" style="color:#16a34a"></i></div>
+              <div><div class="feat-name">Discover Places</div><div class="feat-sub">100+ locations</div></div>
+            </div>
+            <div class="feat-item">
+              <div class="feat-icon" style="background:#fefce8"><i class="fas fa-trophy" style="color:#d97706"></i></div>
+              <div><div class="feat-name">Earn Rewards</div><div class="feat-sub">Points & badges</div></div>
+            </div>
+            <div class="feat-item">
+              <div class="feat-icon" style="background:#eff6ff"><i class="fas fa-users" style="color:#2563eb"></i></div>
+              <div><div class="feat-name">Community</div><div class="feat-sub">500+ explorers</div></div>
+            </div>
+            <div class="feat-item">
+              <div class="feat-icon" style="background:#f5f3ff"><i class="fas fa-route" style="color:#7c3aed"></i></div>
+              <div><div class="feat-name">Create Trails</div><div class="feat-sub">Build journeys</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="text-align:center">
+          <a href="{% url 'places:home' %}" class="back-home">
+            <i class="fas fa-arrow-left" style="font-size:.6875rem"></i>
+            Back to Home
+          </a>
+        </div>
+
       </div>
     </div>
-    <!-- Features Preview -->
-    <div class="bg-white rounded-lg shadow-lg p-6 mt-8">
-      <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">
-        <i class="fas fa-star text-yellow-500 mr-2"></i>
-        What you'll get with Expearls
-      </h3>
-      <div class="grid grid-cols-1 gap-4">
-        <div class="flex items-center space-x-3">
-          <div
-            class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center"
-          >
-            <i class="fas fa-map-marker-alt text-green-600"></i>
-          </div>
-          <div>
-            <div class="font-medium text-gray-900">Discover Places</div>
-            <div class="text-sm text-gray-600">
-              Explore thousands of locations
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center space-x-3">
-          <div
-            class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center"
-          >
-            <i class="fas fa-trophy text-blue-600"></i>
-          </div>
-          <div>
-            <div class="font-medium text-gray-900">Earn Points & Badges</div>
-            <div class="text-sm text-gray-600">
-              Get rewarded for your explorations
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center space-x-3">
-          <div
-            class="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center"
-          >
-            <i class="fas fa-users text-purple-600"></i>
-          </div>
-          <div>
-            <div class="font-medium text-gray-900">Join the Community</div>
-            <div class="text-sm text-gray-600">
-              Connect with fellow history enthusiasts
-            </div>
-          </div>
-        </div>
-        <div class="flex items-center space-x-3">
-          <div
-            class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center"
-          >
-            <i class="fas fa-route text-yellow-600"></i>
-          </div>
-          <div>
-            <div class="font-medium text-gray-900">Create Trails</div>
-            <div class="text-sm text-gray-600">Build your own trails</div>
-          </div>
-        </div>
-      </div>
-    </div>
+
   </div>
 </div>
-{% endblock %} {% block extra_js %}
+
+{% endblock %}
+
+{% block extra_js %}
 <script>
-  // Toggle password visibility
-  function togglePassword(inputId) {
-    const input = document.getElementById(inputId);
-    const eyeIcon = document.getElementById("eye-icon-" + inputId.slice(-1));
+function togglePwd(inputId, eyeId) {
+  const input = document.getElementById(inputId);
+  const icon  = document.getElementById(eyeId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.classList.replace('fa-eye','fa-eye-slash');
+  } else {
+    input.type = 'password';
+    icon.classList.replace('fa-eye-slash','fa-eye');
+  }
+}
 
-    if (input.type === "password") {
-      input.type = "text";
-      eyeIcon.classList.remove("fa-eye");
-      eyeIcon.classList.add("fa-eye-slash");
+const LEVELS = [
+  { w:'20%', bg:'#ef4444', text:'Too weak',  cls:'text-red-500' },
+  { w:'45%', bg:'#f97316', text:'Weak',       cls:'text-orange-500' },
+  { w:'65%', bg:'#eab308', text:'Fair',       cls:'text-yellow-600' },
+  { w:'85%', bg:'#22c55e', text:'Good',       cls:'text-green-600' },
+  { w:'100%',bg:'#16a34a', text:'Strong',     cls:'text-green-700' },
+];
+
+function checkStrength(pw) {
+  const checks = {
+    'req-length': pw.length >= 8,
+    'req-upper':  /[A-Z]/.test(pw),
+    'req-lower':  /[a-z]/.test(pw),
+    'req-number': /\d/.test(pw),
+  };
+  let score = Object.values(checks).filter(Boolean).length;
+
+  Object.entries(checks).forEach(([id, ok]) => {
+    const el = document.getElementById(id);
+    const ic = el.querySelector('i');
+    if (ok) {
+      el.classList.add('met');
+      ic.classList.replace('fa-times','fa-check');
     } else {
-      input.type = "password";
-      eyeIcon.classList.remove("fa-eye-slash");
-      eyeIcon.classList.add("fa-eye");
-    }
-  }
-
-  // Password strength checker
-  function checkPasswordStrength(password) {
-    if (password.length === 0) {
-      document.getElementById("password-strength-bar").style.width = "0%";
-      document.getElementById("password-strength-text").textContent = "";
-      return;
-    }
-    let strength = 0;
-    const requirements = {
-      length: password.length >= 8,
-      uppercase: /[A-Z]/.test(password),
-      lowercase: /[a-z]/.test(password),
-      number: /\d/.test(password),
-    };
-
-    // Update requirement indicators
-    Object.keys(requirements).forEach((req) => {
-      const element = document.getElementById("req-" + req);
-      const icon = element.querySelector("i");
-
-      if (requirements[req]) {
-        icon.classList.remove("fa-times", "text-red-500");
-        icon.classList.add("fa-check", "text-green-500");
-        strength++;
-      } else {
-        icon.classList.remove("fa-check", "text-green-500");
-        icon.classList.add("fa-times", "text-red-500");
-      }
-    });
-
-    // Update strength bar and text
-    const strengthBar = document.getElementById("password-strength-bar");
-    const strengthText = document.getElementById("password-strength-text");
-
-    const strengthLevels = [
-      { width: "25%", color: "bg-red-500", text: "Weak" },
-      { width: "50%", color: "bg-yellow-500", text: "Fair" },
-      { width: "75%", color: "bg-blue-500", text: "Good" },
-      { width: "100%", color: "bg-green-500", text: "Strong" },
-    ];
-
-    const levelIndex = Math.max(0, Math.min(strength - 1, 3));
-    const level = strengthLevels[levelIndex];
-
-    strengthBar.style.width = level.width;
-    strengthBar.className = `h-2 rounded-full transition-all duration-300 ${level.color}`;
-    strengthText.textContent = level.text;
-    strengthText.className = `text-xs ${level.color.replace("bg-", "text-")}`;
-  }
-
-  // Password confirmation checker
-  function checkPasswordMatch() {
-    const password1 = document.getElementById("id_password1").value;
-    const password2 = document.getElementById("id_password2").value;
-    const matchElement = document.getElementById("password-match");
-
-    if (password2.length > 0) {
-      if (password1 === password2) {
-        matchElement.innerHTML =
-          '<i class="fas fa-check text-green-500 mr-1"></i><span class="text-green-600">Passwords match</span>';
-      } else {
-        matchElement.innerHTML =
-          '<i class="fas fa-times text-red-500 mr-1"></i><span class="text-red-600">Passwords do not match</span>';
-      }
-    } else {
-      matchElement.innerHTML = "";
-    }
-  }
-
-  // Event listeners
-  document
-    .getElementById("id_password1")
-    .addEventListener("input", function (e) {
-      checkPasswordStrength(e.target.value);
-      checkPasswordMatch();
-    });
-
-  document
-    .getElementById("id_password2")
-    .addEventListener("input", checkPasswordMatch);
-
-  // Form validation
-  document.querySelector("form").addEventListener("submit", function (e) {
-    const password1 = document.getElementById("id_password1").value;
-    const password2 = document.getElementById("id_password2").value;
-    const terms = document.getElementById("terms").checked;
-
-    if (password1 !== password2) {
-      e.preventDefault();
-      alert("Passwords do not match. Please check and try again.");
-      return false;
-    }
-
-    if (!terms) {
-      e.preventDefault();
-      alert(
-        "Please accept the Terms of Service and Privacy Policy to continue.",
-      );
-      return false;
-    }
-
-    // Check password strength
-    const strengthText = document.getElementById(
-      "password-strength-text",
-    ).textContent;
-    if (strengthText === "Weak") {
-      if (
-        !confirm("Your password is weak. Are you sure you want to continue?")
-      ) {
-        e.preventDefault();
-        return false;
-      }
+      el.classList.remove('met');
+      ic.classList.replace('fa-check','fa-times');
     }
   });
 
-  // Username availability checker (mock)
-  let usernameTimeout;
-  document
-    .getElementById("id_username")
-    .addEventListener("input", function (e) {
-      clearTimeout(usernameTimeout);
-      const username = e.target.value;
+  const bar   = document.getElementById('strength-bar');
+  const label = document.getElementById('strength-label');
+  const lvl   = LEVELS[Math.max(0, score - 1)] || LEVELS[0];
+  bar.style.width      = lvl.w;
+  bar.style.background = lvl.bg;
+  label.textContent    = pw.length ? lvl.text : '';
+  label.className      = 'text-xs font-semibold ' + lvl.cls;
+}
 
-      if (username.length >= 3) {
-        usernameTimeout = setTimeout(() => {
-          // In a real implementation, this would make an AJAX call to check availability
-          console.log("Checking username availability:", username);
-        }, 500);
-      }
-    });
+function checkMatch() {
+  const p1 = document.getElementById('id_password1').value;
+  const p2 = document.getElementById('id_password2').value;
+  const el = document.getElementById('pw-match');
+  if (!p2) { el.innerHTML = ''; return; }
+  if (p1 === p2) {
+    el.innerHTML = '<i class="fas fa-check" style="color:#16a34a;font-size:.5625rem"></i><span style="color:#16a34a">Passwords match</span>';
+  } else {
+    el.innerHTML = '<i class="fas fa-times" style="color:#dc2626;font-size:.5625rem"></i><span style="color:#dc2626">Passwords don\'t match</span>';
+  }
+}
 
-  // Initialize password strength on page load
-  document.addEventListener("DOMContentLoaded", function () {
-    checkPasswordStrength("");
-  });
+document.getElementById('id_password1').addEventListener('input', function () {
+  const wrap = document.getElementById('strength-wrap');
+  if (this.value.length > 0) wrap.style.display = 'block';
+  else wrap.style.display = 'none';
+  checkStrength(this.value);
+  checkMatch();
+});
+document.getElementById('id_password2').addEventListener('input', checkMatch);
+
+document.querySelector('form').addEventListener('submit', function (e) {
+  const p1    = document.getElementById('id_password1').value;
+  const p2    = document.getElementById('id_password2').value;
+  const terms = document.getElementById('terms').checked;
+
+  if (!terms) {
+    e.preventDefault();
+    alert('Please accept the Terms of Service and Privacy Policy to continue.');
+    return;
+  }
+  if (p1 !== p2) {
+    e.preventDefault();
+    alert('Passwords do not match. Please check and try again.');
+    return;
+  }
+  const lbl = document.getElementById('strength-label').textContent;
+  if (lbl === 'Too weak' || lbl === 'Weak') {
+    if (!confirm('Your password is weak. Continue anyway?')) {
+      e.preventDefault();
+    }
+  }
+});
 </script>
 {% endblock %}

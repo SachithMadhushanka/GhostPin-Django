@@ -1,278 +1,322 @@
 {% extends 'base.html' %}
-{# FIX: removed {% load trail_tags %} — tag is unused here and had IndentationError #}
-{% block title %}Trails - Expearls{% endblock %}
+{% block title %}Trails — Expearls{% endblock %}
 {% block content %}
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-900 mb-4">
-                <i class="fas fa-hiking text-green-600 mr-3"></i>
-                Place Trails
-            </h1>
-            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
-                Discover curated trails of places created by our community.
-                Follow these routes to explore multiple connected locations.
-            </p>
-        </div>
-        <!-- Action Bar -->
-        <div class="mb-8 space-y-4">
-            <form method="get">
-                <div class="flex flex-col sm:flex-row gap-3 mb-3">
-                    <div class="relative flex-1">
-                        <input type="text"
-                               name="search"
-                               value="{{ search_query }}"
-                               placeholder="Search trails..."
-                               class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <i class="fas fa-search absolute left-3 top-3.5 text-gray-400"></i>
-                    </div>
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'places:create_trail' %}"
-                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2.5 rounded-lg transition-colors whitespace-nowrap text-center">
-                            <i class="fas fa-plus mr-2"></i> Create Trail
-                        </a>
-                    {% endif %}
-                </div>
-                <div class="flex flex-wrap gap-3 items-center">
-                    <select name="difficulty"
-                            class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 text-sm">
-                        <option value="">All Difficulties</option>
-                        <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>Easy</option>
-                        <option value="moderate" {% if selected_difficulty == 'moderate' %}selected{% endif %}>Moderate</option>
-                        <option value="challenging" {% if selected_difficulty == 'challenging' %}selected{% endif %}>Challenging</option>
-                    </select>
-                    <select name="category"
-                            class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 text-sm">
-                        <option value="">All Categories</option>
-                        {% for cat in category_choices %}
-                            <option value="{{ cat.slug }}" {% if selected_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
-                        {% endfor %}
-                    </select>
-                    <select name="sort"
-                            class="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-green-500 text-sm">
-                        <option value="created_at" {% if selected_sort == 'created_at' %}selected{% endif %}>Newest First</option>
-                        <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>Name A–Z</option>
-                        <option value="places" {% if selected_sort == 'places' %}selected{% endif %}>Most Places</option>
-                        <option value="difficulty" {% if selected_sort == 'difficulty' %}selected{% endif %}>Difficulty</option>
-                        <option value="popularity" {% if selected_sort == 'popularity' %}selected{% endif %}>Most Popular</option>
-                    </select>
-                    <button type="submit"
-                            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors text-sm">
-                        <i class="fas fa-filter mr-1"></i> Filter
-                    </button>
-                    {% if search_query or selected_difficulty or selected_category %}
-                        <a href="{% url 'places:trails' %}"
-                           class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors text-sm">
-                            <i class="fas fa-times mr-1"></i> Clear
-                        </a>
-                    {% endif %}
-                    <span class="ml-auto text-sm text-gray-500">
-                        {{ trails.paginator.count }} trail{{ trails.paginator.count|pluralize }} found
-                    </span>
-                </div>
-            </form>
-        </div>
-        <!-- Trails Grid -->
-        {% if trails %}
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {% for trail in trails %}
-                    <div class="bg-white rounded-lg shadow-lg overflow-hidden card-hover">
-                        <!-- Trail Header -->
-                        <div class="relative h-40 overflow-hidden">
-                            {% if trail.cover_image %}
-                                <img src="{{ trail.cover_image.url }}"
-                                     alt="{{ trail.name }}"
-                                     class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent"></div>
-                            {% else %}
-                                <div class="gradient-bg w-full h-full"></div>
-                            {% endif %}
-                            <div class="absolute inset-0 p-4 flex flex-col justify-end text-white">
-                                <div class="flex items-start justify-between">
-                                    <h3 class="text-lg font-bold leading-tight drop-shadow">{{ trail.name }}</h3>
-                                    {% if trail.required_points > 0 %}
-                                        <span class="text-xs bg-black/40 backdrop-blur-sm px-2 py-1 rounded-full whitespace-nowrap ml-2 flex-shrink-0">
-                                            <i class="fas fa-lock mr-1"></i>{{ trail.required_points }} pts
-                                        </span>
-                                    {% endif %}
-                                </div>
-                                <div class="flex items-center space-x-3 text-xs opacity-90 mt-1">
-                                    <span><i class="fas fa-map-marker-alt mr-1"></i>{{ trail.place_count }} places</span>
-                                    <span><i class="fas fa-user mr-1"></i>{{ trail.created_by.username }}</span>
-                                    {% if trail.distance %}<span><i class="fas fa-road mr-1"></i>{{ trail.distance|floatformat:0 }} km</span>{% endif %}
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Trail Content -->
-                        <div class="p-6">
-                            <p class="text-gray-600 mb-4 line-clamp-3">{{ trail.description }}</p>
-                            <!-- Trail Stats -->
-                            <div class="flex items-center justify-between mb-4">
-                                <div class="flex items-center space-x-4 text-sm text-gray-500">
-                                    <span class="flex items-center">
-                                        <i class="fas fa-clock mr-1 text-blue-500"></i>
-                                        {# FIX: use duration_display property instead of raw timedelta #}
-                                        {% if trail.duration_display %}
-                                            {{ trail.duration_display }}
-                                        {% else %}
-                                            Varies
-                                        {% endif %}
-                                    </span>
-                                    <span class="flex items-center">
-                                        <i class="fas fa-signal mr-1 {% if trail.difficulty == 'easy' %}text-green-500{% elif trail.difficulty == 'moderate' %}text-yellow-500{% else %}text-red-500{% endif %}"></i>
-                                        {{ trail.get_difficulty_display }}
-                                    </span>
-                                    {% if trail.checkin_count %}
-                                        <span class="flex items-center">
-                                            <i class="fas fa-shoe-prints mr-1 text-purple-500"></i>
-                                            {{ trail.checkin_count }}
-                                        </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <!-- Place Preview Chips -->
-                            <!-- FIX: use forloop.counter instead of |slice to respect prefetch cache -->
-                            <div class="mb-4">
-                                <h4 class="text-sm font-semibold text-gray-700 mb-2">Places:</h4>
-                                <div class="flex flex-wrap gap-2">
-                                    {% for place in trail.places.all %}
-                                        {% if forloop.counter <= 3 %}
-                                            <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">{{ place.name|truncatechars:20 }}</span>
-                                        {% endif %}
-                                    {% endfor %}
-                                    {% if trail.place_count > 3 %}
-                                        <span class="text-xs bg-gray-200 text-gray-600 px-2 py-1 rounded-full">+{{ trail.place_count|add:"-3" }} more</span>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            <!-- Progress bar (authenticated only, only if started) -->
-                            {% if user.is_authenticated and trail.user_progress and trail.user_progress.completed > 0 %}
-                                <div class="mb-4">
-                                    <div class="flex justify-between text-xs text-gray-500 mb-1">
-                                        <span>Your Progress</span>
-                                        <span>{{ trail.user_progress.completed }}/{{ trail.user_progress.total }}
-                                            {% if trail.user_progress.percent == 100 %}✅{% endif %}
-                                        </span>
-                                    </div>
-                                    <div class="w-full bg-gray-200 rounded-full h-2">
-                                        <div class="{% if trail.user_progress.percent == 100 %}bg-green-500{% else %}bg-blue-400{% endif %} h-2 rounded-full transition-all"
-                                             style="width: {{ trail.user_progress.percent }}%"></div>
-                                    </div>
-                                </div>
-                            {% endif %}
-                            <!-- Action Button -->
-                            <a href="{% url 'places:trail_detail' trail.pk %}"
-                               class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors duration-200 text-center block">
-                                <i class="fas fa-route mr-2"></i>
-                                {% if trail.user_progress and trail.user_progress.percent == 100 %}
-                                    View Trail
-                                {% elif trail.user_progress and trail.user_progress.completed > 0 %}
-                                    Continue Trail
-                                {% else %}
-                                    Explore Trail
-                                {% endif %}
-                            </a>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-            <!-- FIX: Pagination with URL-encoded query params -->
-            {% if is_paginated %}
-                <div class="mt-10 flex items-center justify-center gap-2">
-                    {% if trails.has_previous %}
-                        <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}&{% endif %}page={{ trails.previous_page_number }}"
-                           class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
-                            <i class="fas fa-chevron-left mr-1"></i> Previous
-                        </a>
-                    {% endif %}
-                    <span class="px-4 py-2 text-sm text-gray-600">Page {{ trails.number }} of {{ trails.paginator.num_pages }}</span>
-                    {% if trails.has_next %}
-                        <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}&{% endif %}page={{ trails.next_page_number }}"
-                           class="px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors">
-                            Next <i class="fas fa-chevron-right ml-1"></i>
-                        </a>
-                    {% endif %}
-                </div>
-            {% endif %}
-        {% else %}
-            <!-- Empty State -->
-            <div class="text-center py-16">
-                <div class="max-w-md mx-auto">
-                    <i class="fas fa-hiking text-8xl text-gray-300 mb-6"></i>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4">No Trails Found</h3>
-                    <p class="text-gray-600 mb-8">
-                        {% if search_query or selected_difficulty or selected_category %}
-                            No trails match your filters. Try adjusting your search.
-                        {% else %}
-                            Be the first to create a trail!
-                        {% endif %}
-                    </p>
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'places:create_trail' %}"
-                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
-                            <i class="fas fa-plus mr-2"></i> Create First Trail
-                        </a>
-                    {% else %}
-                        <a href="{% url 'login' %}"
-                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
-                            <i class="fas fa-sign-in-alt mr-2"></i> Login to Create Trails
-                        </a>
-                    {% endif %}
-                </div>
-            </div>
-        {% endif %}
-        <!-- Why Use Trails? -->
-        {% if trails %}
-            <div class="mt-16 bg-white rounded-lg shadow-lg p-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                    <i class="fas fa-star text-yellow-500 mr-2"></i>
-                    Why Use Trails?
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-route text-green-600 text-2xl"></i>
-                        </div>
-                        <h3 class="font-semibold text-lg mb-2">Planned Routes</h3>
-                        <p class="text-gray-600">Follow carefully planned trails that connect related places for a complete experience.</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-users text-blue-600 text-2xl"></i>
-                        </div>
-                        <h3 class="font-semibold text-lg mb-2">Community Curated</h3>
-                        <p class="text-gray-600">Discover trails created by local experts and fellow explorers.</p>
-                    </div>
-                    <div class="text-center">
-                        <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <i class="fas fa-clock text-purple-600 text-2xl"></i>
-                        </div>
-                        <h3 class="font-semibold text-lg mb-2">Time Efficient</h3>
-                        <p class="text-gray-600">Save time planning with pre-organised routes that optimise your exploration.</p>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+.trails-page{font-family:'DM Sans',sans-serif;}
+.display-font{font-family:'Playfair Display',serif;}
+
+/* Hero */
+.trails-hero{background:linear-gradient(135deg,#0a3d2e 0%,#1a5c42 40%,#0f4a35 100%);position:relative;overflow:hidden;padding:4rem 2rem 5.5rem;}
+.trails-hero::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle at 20% 50%,rgba(255,255,255,.04) 0%,transparent 60%),radial-gradient(circle at 80% 20%,rgba(134,239,172,.08) 0%,transparent 50%);}
+.trails-hero::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:70px;background:#f9fafb;clip-path:ellipse(55% 100% at 50% 100%);}
+.hero-dot{width:6px;height:6px;background:#86efac;border-radius:50%;display:inline-block;margin-right:8px;animation:pulse-dot 2s ease-in-out infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+/* Filter bar */
+.filter-bar{background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.07);padding:1.25rem 1.5rem;margin-bottom:2rem;}
+.filter-input{width:100%;padding:.6rem 1rem .6rem 2.5rem;border:1.5px solid #e5e7eb;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.85rem;outline:none;transition:border-color .2s;}
+.filter-input:focus{border-color:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.1);}
+.filter-select{padding:.5rem 1rem;border:1.5px solid #e5e7eb;border-radius:50px;font-family:'DM Sans',sans-serif;font-size:.8rem;color:#374151;outline:none;transition:border-color .2s;background:#fff;cursor:pointer;}
+.filter-select:focus{border-color:#16a34a;}
+.filter-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.1rem;border-radius:50px;border:none;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;}
+.filter-btn.primary{background:#16a34a;color:#fff;}
+.filter-btn.primary:hover{background:#15803d;transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.25);}
+.filter-btn.ghost{background:#f3f4f6;color:#6b7280;border:1.5px solid #e5e7eb;}
+.filter-btn.ghost:hover{background:#e5e7eb;color:#374151;}
+
+/* Trail cards */
+.trails-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:1.5rem;}
+.trail-card{background:#fff;border-radius:20px;overflow:hidden;border:1px solid rgba(0,0,0,.07);box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .25s,box-shadow .25s;}
+.trail-card:hover{transform:translateY(-5px);box-shadow:0 18px 45px rgba(0,0,0,.11);}
+.trail-card-cover{position:relative;height:175px;overflow:hidden;}
+.trail-card-cover img{width:100%;height:100%;object-fit:cover;transition:transform .45s;}
+.trail-card:hover .trail-card-cover img{transform:scale(1.06);}
+.trail-card-cover-fallback{width:100%;height:100%;background:linear-gradient(135deg,#0a3d2e 0%,#1a5c42 60%,#16a34a 100%);}
+.trail-card-cover-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.65) 0%,transparent 55%);}
+.trail-cover-meta{position:absolute;bottom:.8rem;left:.8rem;right:.8rem;}
+.trail-cover-title{font-family:'Playfair Display',serif;font-size:1.1rem;font-weight:700;color:#fff;line-height:1.25;margin-bottom:.35rem;drop-shadow:0 1px 3px rgba(0,0,0,.4);}
+.trail-cover-chips{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;}
+.trail-chip{display:inline-flex;align-items:center;gap:.25rem;font-size:.65rem;font-weight:600;padding:.18rem .55rem;border-radius:50px;backdrop-filter:blur(4px);}
+.trail-chip.white{background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.25);}
+.trail-chip.lock{background:rgba(0,0,0,.35);color:#fcd34d;border:1px solid rgba(252,211,77,.3);}
+.diff-badge{font-size:.6rem;font-weight:700;padding:.18rem .55rem;border-radius:50px;letter-spacing:.05em;text-transform:uppercase;}
+.diff-easy{background:#dcfce7;color:#15803d;}
+.diff-moderate{background:#fef9c3;color:#92400e;}
+.diff-challenging{background:#fee2e2;color:#991b1b;}
+
+.trail-card-body{padding:1.1rem 1.2rem 1.2rem;}
+.trail-card-desc{font-size:.82rem;line-height:1.65;color:#6b7280;margin-bottom:.9rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* Place chips */
+.place-chips{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.9rem;}
+.place-chip{font-size:.68rem;padding:.2rem .65rem;border-radius:50px;background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;font-weight:500;}
+.place-chip.more{background:#f3f4f6;color:#6b7280;border-color:#e5e7eb;}
+
+/* Progress bar */
+.progress-wrap{margin-bottom:.9rem;}
+.progress-label{display:flex;justify-content:space-between;font-size:.72rem;color:#9ca3af;margin-bottom:.3rem;}
+.progress-track{width:100%;background:#e5e7eb;border-radius:50px;height:6px;overflow:hidden;}
+.progress-fill{height:100%;border-radius:50px;background:linear-gradient(90deg,#16a34a,#4ade80);transition:width .6s ease;}
+.progress-fill.complete{background:linear-gradient(90deg,#15803d,#16a34a);}
+
+.trail-card-footer{display:flex;align-items:center;justify-content:space-between;gap:.5rem;}
+.trail-cta{flex:1;display:block;text-align:center;padding:.5rem 0;background:#15803d;color:#fff;border-radius:50px;text-decoration:none;font-size:.78rem;font-weight:600;letter-spacing:.02em;transition:background .15s,transform .15s,box-shadow .15s;}
+.trail-cta:hover{background:#166534;transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.25);}
+.trail-save-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;font-size:.82rem;color:#9ca3af;cursor:pointer;transition:all .2s;flex-shrink:0;}
+.trail-save-btn:hover{background:#f0fdf4;border-color:#16a34a;color:#16a34a;}
+
+/* Stats bar */
+.stats-bar{background:#fff;border-radius:20px;box-shadow:0 4px 20px rgba(0,0,0,.07);margin-bottom:2rem;}
+.stats-bar .stat-item+.stat-item{border-left:1px solid #e5e7eb;}
+
+/* Empty state */
+.empty-state{text-align:center;padding:5rem 2rem;background:#fff;border-radius:24px;border:1px dashed #d1fae5;}
+.empty-icon{font-size:5rem;margin-bottom:1.2rem;opacity:.2;}
+.empty-title{font-family:'Playfair Display',serif;font-size:2rem;color:#111827;margin-bottom:.6rem;}
+.empty-sub{font-size:.9rem;color:#6b7280;max-width:340px;margin:0 auto 1.8rem;line-height:1.7;}
+
+/* Why section */
+.why-card{background:#fff;border-radius:20px;padding:2rem;border:1px solid rgba(0,0,0,.07);box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .25s,box-shadow .25s;}
+.why-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.08);}
+.why-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:1rem;}
+
+/* Pagination */
+.page-btn{display:inline-flex;align-items:center;gap:.3rem;padding:.5rem 1.1rem;background:#fff;border:1.5px solid #e5e7eb;border-radius:50px;font-size:.8rem;font-weight:500;color:#374151;text-decoration:none;transition:all .2s;}
+.page-btn:hover{background:#f0fdf4;border-color:#16a34a;color:#15803d;}
+.page-info{font-size:.82rem;color:#6b7280;padding:.5rem 1rem;}
+
+/* Scroll animations */
+.fade-up{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.fade-up.visible{opacity:1;transform:translateY(0);}
+</style>
+
+<div class="trails-page">
+
+<!-- Hero -->
+<section class="trails-hero">
+  <div style="max-width:1200px;margin:0 auto;position:relative;z-index:1;text-align:center;">
+    <span style="display:inline-flex;align-items:center;padding:.35rem 1rem;border-radius:50px;background:rgba(255,255,255,.1);color:#86efac;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:1rem;">
+      <span class="hero-dot"></span> Community Curated Routes
+    </span>
+    <h1 class="display-font" style="font-size:clamp(2.2rem,5vw,3.2rem);color:#fff;font-weight:900;line-height:1.15;margin-bottom:.75rem;">
+      Explore Sri Lanka<br><em style="color:#86efac;font-style:normal;">Trail by Trail</em>
+    </h1>
+    <p style="color:rgba(255,255,255,.65);font-size:1rem;max-width:520px;margin:0 auto 1.8rem;line-height:1.7;">
+      Follow curated journeys across the island — from ancient temples to hidden waterfalls, crafted by local experts and fellow explorers.
+    </p>
+    <div style="display:flex;justify-content:center;align-items:center;gap:1.5rem;flex-wrap:wrap;font-size:.85rem;color:rgba(255,255,255,.6);">
+      <span><i class="fas fa-hiking" style="color:#86efac;margin-right:.4rem"></i> {{ trails.paginator.count }} Trail{{ trails.paginator.count|pluralize }}</span>
+      <span><i class="fas fa-map-marker-alt" style="color:#86efac;margin-right:.4rem"></i> All 9 Provinces</span>
+      <span><i class="fas fa-users" style="color:#86efac;margin-right:.4rem"></i> Community Built</span>
     </div>
+  </div>
+</section>
+
+<!-- Main content -->
+<div style="max-width:1200px;margin:0 auto;padding:2.5rem 1.5rem;">
+
+  <!-- Filter bar -->
+  <div class="filter-bar fade-up">
+    <form method="get">
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
+        <div style="position:relative;flex:1;min-width:200px;">
+          <input type="text" name="search" value="{{ search_query }}" placeholder="Search trails by name or description…" class="filter-input">
+          <i class="fas fa-search" style="position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:#9ca3af;font-size:.8rem;"></i>
+        </div>
+        <select name="difficulty" class="filter-select">
+          <option value="">All Difficulties</option>
+          <option value="easy" {% if selected_difficulty == 'easy' %}selected{% endif %}>🟢 Easy</option>
+          <option value="moderate" {% if selected_difficulty == 'moderate' %}selected{% endif %}>🟡 Moderate</option>
+          <option value="challenging" {% if selected_difficulty == 'challenging' %}selected{% endif %}>🔴 Challenging</option>
+        </select>
+        <select name="category" class="filter-select">
+          <option value="">All Categories</option>
+          {% for cat in category_choices %}<option value="{{ cat.slug }}" {% if selected_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}
+        </select>
+        <select name="sort" class="filter-select">
+          <option value="created_at" {% if selected_sort == 'created_at' %}selected{% endif %}>Newest First</option>
+          <option value="name" {% if selected_sort == 'name' %}selected{% endif %}>Name A–Z</option>
+          <option value="places" {% if selected_sort == 'places' %}selected{% endif %}>Most Places</option>
+          <option value="difficulty" {% if selected_sort == 'difficulty' %}selected{% endif %}>Difficulty</option>
+          <option value="popularity" {% if selected_sort == 'popularity' %}selected{% endif %}>Most Popular</option>
+        </select>
+        <button type="submit" class="filter-btn primary"><i class="fas fa-filter"></i> Filter</button>
+        {% if search_query or selected_difficulty or selected_category %}
+          <a href="{% url 'places:trails' %}" class="filter-btn ghost"><i class="fas fa-times"></i> Clear</a>
+        {% endif %}
+        {% if user.is_authenticated %}
+          <a href="{% url 'places:create_trail' %}" style="display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.1rem;border-radius:50px;background:linear-gradient(135deg,#0a3d2e,#16a34a);color:#fff;font-size:.8rem;font-weight:600;text-decoration:none;transition:all .2s;box-shadow:0 4px 12px rgba(22,163,74,.2);">
+            <i class="fas fa-plus"></i> New Trail
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+
+  {% if trails %}
+
+  <!-- Trails grid -->
+  <div class="trails-grid">
+    {% for trail in trails %}
+    <div class="trail-card fade-up" style="transition-delay:{{ forloop.counter0 }}0ms">
+      <div class="trail-card-cover">
+        {% if trail.cover_image %}
+          <img src="{{ trail.cover_image.url }}" alt="{{ trail.name }}">
+        {% else %}
+          <div class="trail-card-cover-fallback"></div>
+        {% endif %}
+        <div class="trail-card-cover-overlay"></div>
+        <div class="trail-cover-meta">
+          <div class="trail-cover-title">{{ trail.name }}</div>
+          <div class="trail-cover-chips">
+            <span class="trail-chip white"><i class="fas fa-map-marker-alt" style="font-size:.55rem"></i> {{ trail.place_count }} place{{ trail.place_count|pluralize }}</span>
+            <span class="trail-chip white"><i class="fas fa-user" style="font-size:.55rem"></i> {{ trail.created_by.username }}</span>
+            {% if trail.distance %}<span class="trail-chip white"><i class="fas fa-road" style="font-size:.55rem"></i> {{ trail.distance|floatformat:0 }} km</span>{% endif %}
+            {% if trail.required_points > 0 %}<span class="trail-chip lock"><i class="fas fa-lock" style="font-size:.55rem"></i> {{ trail.required_points }} pts</span>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="trail-card-body">
+        <!-- Difficulty + time row -->
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;">
+          <span class="diff-badge diff-{{ trail.difficulty }}">{{ trail.get_difficulty_display }}</span>
+          {% if trail.duration_display %}
+            <span style="font-size:.72rem;color:#9ca3af;display:flex;align-items:center;gap:.25rem;"><i class="fas fa-clock" style="font-size:.6rem;color:#93c5fd"></i> {{ trail.duration_display }}</span>
+          {% endif %}
+          {% if trail.checkin_count %}
+            <span style="font-size:.72rem;color:#9ca3af;display:flex;align-items:center;gap:.25rem;"><i class="fas fa-shoe-prints" style="font-size:.6rem;color:#a78bfa"></i> {{ trail.checkin_count }}</span>
+          {% endif %}
+          {% if trail.category.exists %}
+            {% for cat in trail.category.all|slice:":1" %}
+              <span style="font-size:.68rem;padding:.15rem .55rem;border-radius:50px;background:#ecfdf5;color:#15803d;font-weight:500;border:1px solid #a7f3d0;">{{ cat.name }}</span>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <p class="trail-card-desc">{{ trail.description }}</p>
+
+        <!-- Place chips -->
+        <div class="place-chips">
+          {% for place in trail.places.all %}
+            {% if forloop.counter <= 3 %}
+              <span class="place-chip">{{ place.name|truncatechars:22 }}</span>
+            {% endif %}
+          {% endfor %}
+          {% if trail.place_count > 3 %}
+            <span class="place-chip more">+{{ trail.place_count|add:"-3" }} more</span>
+          {% endif %}
+        </div>
+
+        <!-- Progress (authenticated + started) -->
+        {% if user.is_authenticated and trail.user_progress and trail.user_progress.completed > 0 %}
+        <div class="progress-wrap">
+          <div class="progress-label">
+            <span>Your Progress</span>
+            <span>{{ trail.user_progress.completed }}/{{ trail.user_progress.total }}{% if trail.user_progress.percent == 100 %} ✅{% endif %}</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill {% if trail.user_progress.percent == 100 %}complete{% endif %}" style="width:{{ trail.user_progress.percent }}%"></div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="trail-card-footer">
+          <a href="{% url 'places:trail_detail' trail.pk %}" class="trail-cta">
+            {% if trail.user_progress and trail.user_progress.percent == 100 %}
+              <i class="fas fa-check-circle" style="margin-right:.3rem"></i> Completed
+            {% elif trail.user_progress and trail.user_progress.completed > 0 %}
+              <i class="fas fa-play" style="margin-right:.3rem"></i> Continue
+            {% else %}
+              <i class="fas fa-route" style="margin-right:.3rem"></i> Explore Trail
+            {% endif %}
+          </a>
+          <button class="trail-save-btn" title="View details" onclick="window.location='{% url 'places:trail_detail' trail.pk %}'">
+            <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if is_paginated %}
+  <div style="margin-top:2.5rem;display:flex;align-items:center;justify-content:center;gap:.5rem;" class="fade-up">
+    {% if trails.has_previous %}
+      <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}&{% endif %}page={{ trails.previous_page_number }}" class="page-btn">
+        <i class="fas fa-chevron-left"></i> Previous
+      </a>
+    {% endif %}
+    <span class="page-info">Page {{ trails.number }} of {{ trails.paginator.num_pages }}</span>
+    {% if trails.has_next %}
+      <a href="?{% if search_query %}search={{ search_query|urlencode }}&{% endif %}{% if selected_difficulty %}difficulty={{ selected_difficulty }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_sort %}sort={{ selected_sort }}&{% endif %}page={{ trails.next_page_number }}" class="page-btn">
+        Next <i class="fas fa-chevron-right"></i>
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Why section -->
+  <section style="margin-top:4rem;">
+    <div style="text-align:center;margin-bottom:2rem;" class="fade-up">
+      <span style="color:#16a34a;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;">Why Trails?</span>
+      <h2 class="display-font" style="font-size:2rem;color:#111827;margin-top:.35rem;">A Better Way to Explore</h2>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.2rem;">
+      <div class="why-card fade-up">
+        <div class="why-icon" style="background:#f0fdf4;"><span>🗺️</span></div>
+        <h3 style="font-family:'Playfair Display',serif;font-weight:700;color:#111827;margin-bottom:.4rem;font-size:1rem;">Planned Routes</h3>
+        <p style="font-size:.82rem;color:#6b7280;line-height:1.65;">Follow carefully crafted paths that connect related places for a seamless, complete experience.</p>
+      </div>
+      <div class="why-card fade-up" style="transition-delay:.1s">
+        <div class="why-icon" style="background:#eff6ff;"><span>👥</span></div>
+        <h3 style="font-family:'Playfair Display',serif;font-weight:700;color:#111827;margin-bottom:.4rem;font-size:1rem;">Community Curated</h3>
+        <p style="font-size:.82rem;color:#6b7280;line-height:1.65;">Trails built by local experts who know every hidden gem, shortcut, and must-see spot.</p>
+      </div>
+      <div class="why-card fade-up" style="transition-delay:.2s">
+        <div class="why-icon" style="background:#fdf4ff;"><span>🏆</span></div>
+        <h3 style="font-family:'Playfair Display',serif;font-weight:700;color:#111827;margin-bottom:.4rem;font-size:1rem;">Earn Rewards</h3>
+        <p style="font-size:.82rem;color:#6b7280;line-height:1.65;">Complete a trail and unlock bonus points, badges, and bragging rights on the leaderboard.</p>
+      </div>
+    </div>
+  </section>
+
+  {% else %}
+  <div class="empty-state fade-up">
+    <div class="empty-icon">🥾</div>
+    <h3 class="empty-title">No Trails Found</h3>
+    <p class="empty-sub">
+      {% if search_query or selected_difficulty or selected_category %}
+        No trails match your filters. Try adjusting your search criteria.
+      {% else %}
+        Be the first explorer to create a trail for the community!
+      {% endif %}
+    </p>
+    {% if user.is_authenticated %}
+      <a href="{% url 'places:create_trail' %}" style="display:inline-flex;align-items:center;gap:.5rem;background:#15803d;color:#fff;padding:.7rem 1.8rem;border-radius:50px;text-decoration:none;font-size:.85rem;font-weight:600;box-shadow:0 4px 14px rgba(22,163,74,.3);">
+        <i class="fas fa-plus"></i> Create First Trail
+      </a>
+    {% else %}
+      <a href="{% url 'login' %}" style="display:inline-flex;align-items:center;gap:.5rem;background:#15803d;color:#fff;padding:.7rem 1.8rem;border-radius:50px;text-decoration:none;font-size:.85rem;font-weight:600;box-shadow:0 4px 14px rgba(22,163,74,.3);">
+        <i class="fas fa-sign-in-alt"></i> Login to Create Trails
+      </a>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+</div>
 {% endblock %}
+
 {% block extra_js %}
-    <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const cards = document.querySelectorAll('.card-hover');
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.style.opacity = '1';
-                    entry.target.style.transform = 'translateY(0)';
-                }
-            });
-        });
-        cards.forEach(card => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-            observer.observe(card);
-        });
-    });
-    </script>
+<script>
+document.addEventListener('DOMContentLoaded',function(){
+  const observer=new IntersectionObserver(entries=>{
+    entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target);}});
+  },{threshold:.08});
+  document.querySelectorAll('.fade-up').forEach(el=>observer.observe(el));
+});
+</script>
 {% endblock %}

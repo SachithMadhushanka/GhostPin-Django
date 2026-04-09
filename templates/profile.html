@@ -1,363 +1,563 @@
 {% extends 'base.html' %}
 {% block title %}{{ profile_user.username }}'s Profile - Expearls{% endblock %}
+{% block main_class %}p-0{% endblock %}
+
 {% block content %}
-    <div class="max-w-4xl mx-auto">
-        <!-- Profile Header -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div class="flex flex-col md:flex-row items-center md:items-start space-y-4 md:space-y-0 md:space-x-6">
-                <div class="flex-shrink-0">
-                    {% if profile.avatar %}
-                        <img src="{{ profile.avatar.url }}"
-                             alt="{{ profile_user.username }}"
-                             class="w-24 h-24 rounded-full object-cover border-4 border-green-500">
-                    {% else %}
-                        <div class="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center text-white text-3xl font-bold">
-                            {{ profile_user.username|first|upper }}
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="flex-1 text-center md:text-left">
-                    <h1 class="text-3xl font-bold text-gray-900">
-                        {% if profile_user.first_name or profile_user.last_name %}
-                            {{ profile_user.first_name }} {{ profile_user.last_name }}
-                        {% else %}
-                            {{ profile_user.username }}
-                        {% endif %}
-                    </h1>
-                    {% if profile.bio %}<p class="text-gray-600 mt-2">{{ profile.bio }}</p>{% endif %}
-                    <!-- Location, Website, Email -->
-                    <div class="mt-3 flex flex-col space-y-1 text-sm text-gray-700">
-                        {% if profile.show_location and profile.location %}
-                            <div>
-                                <i class="fas fa-map-marker-alt text-green-600 mr-1"></i>{{ profile.location }}
-                            </div>
-                        {% endif %}
-                        {% if profile.website %}
-                            <div>
-                                <i class="fas fa-link text-green-600 mr-1"></i>
-                                <a href="{{ profile.website }}"
-                                   class="text-green-700 hover:underline"
-                                   target="_blank"
-                                   rel="noopener">{{ profile.website }}</a>
-                            </div>
-                        {% endif %}
-                        {% if profile.show_email %}
-                            <div>
-                                <i class="fas fa-envelope text-green-600 mr-1"></i>
-                                <a href="mailto:{{ profile_user.email }}"
-                                   class="text-green-700 hover:underline">{{ profile_user.email }}</a>
-                            </div>
-                        {% endif %}
-                    </div>
-                    <!-- Expert Areas -->
-                    {% if profile.expert_areas.all %}
-                        <div class="mt-3">
-                            <h3 class="text-sm font-semibold text-gray-700">Areas of Expertise:</h3>
-                            <div class="flex flex-wrap gap-2 mt-1">
-                                {% for area in profile.expert_areas.all %}
-                                    <span class="bg-green-100 text-green-800 text-xs font-medium px-2.5 py-0.5 rounded-full">{{ area.name }}</span>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endif %}
-                    <!-- User Stats -->
-                    <div class="flex flex-wrap justify-center md:justify-start gap-6 mt-4">
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-green-600">{{ profile.points }}</div>
-                            <div class="text-sm text-gray-500">Points</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-blue-600">{{ profile.level }}</div>
-                            <div class="text-sm text-gray-500">Level</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-purple-600">{{ user_places.count }}</div>
-                            <div class="text-sm text-gray-500">Places Added</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-orange-600">{{ user_checkins.count }}</div>
-                            <div class="text-sm text-gray-500">Check-ins</div>
-                        </div>
-                    </div>
-                    <!-- User Badges -->
-                    {% if profile.is_trusted %}
-                        <div class="flex flex-wrap gap-2 mt-4">
-                            <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                                <i class="fas fa-shield-alt mr-1"></i> <span>Trusted User</span>
-                            </span>
-                            {% if profile.is_local_expert %}
-                                <span class="bg-purple-100 text-purple-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                                    <i class="fas fa-star mr-1"></i> <span>Local Expert</span>
-                                </span>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                </div>
-                {% if user == profile_user %}
-                    <div class="flex-shrink-0">
-                        <a href="{% url 'places:edit_profile' %}"
-                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            Edit Profile
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  .profile-page { font-family: 'DM Sans', sans-serif; background: #f9fafb; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* ── Header hero (same gradient as about.html) ── */
+  .prof-hero {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative; overflow: hidden;
+    padding: 3rem 2.5rem 5rem;
+  }
+  .prof-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .prof-hero::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 80px; background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .prof-hero-inner { position: relative; z-index: 10; max-width: 860px; margin: 0 auto; display: flex; gap: 2rem; align-items: center; flex-wrap: wrap; }
+
+  /* Avatar */
+  .prof-avatar-wrap { position: relative; flex-shrink: 0; }
+  .prof-avatar {
+    width: 96px; height: 96px; border-radius: 50%;
+    background: linear-gradient(135deg, #34d399, #059669);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem; font-weight: 700; color: #fff;
+    border: 3px solid rgba(255,255,255,0.25);
+    overflow: hidden;
+  }
+  .prof-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  /* Hero text */
+  .prof-hero-text { flex: 1; min-width: 0; }
+  .prof-name { font-size: 2.2rem; font-weight: 900; color: #fff; line-height: 1.1; text-shadow: 0 2px 20px rgba(0,0,0,0.2); margin-bottom: .4rem; }
+  .prof-bio  { font-size: .9rem; color: rgba(255,255,255,.72); line-height: 1.5; margin-bottom: .75rem; }
+  .prof-meta-row { display: flex; flex-wrap: wrap; gap: .75rem 1.2rem; }
+  .prof-meta-item { display: flex; align-items: center; gap: .4rem; font-size: .78rem; color: rgba(255,255,255,.65); }
+
+  /* Badges */
+  .prof-trust-badges { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+  .prof-trust-badge {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .3rem .85rem; border-radius: 100px; font-size: .68rem; font-weight: 500; letter-spacing: .06em;
+    background: rgba(52,211,153,.18); color: #6ee7b7; border: 1px solid rgba(52,211,153,.3);
+  }
+
+  /* Social links in hero */
+  .prof-social { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .85rem; }
+  .prof-social-link {
+    display: inline-flex; align-items: center; gap: .4rem;
+    padding: .35rem 1rem; border-radius: 100px; font-size: .7rem; font-weight: 500;
+    border: 1px solid; text-decoration: none; transition: all .2s;
+    backdrop-filter: blur(8px);
+  }
+  .prof-social-link.yt       { background: rgba(220,38,38,.15); border-color: rgba(220,38,38,.35); color: #fca5a5; }
+  .prof-social-link.fb       { background: rgba(37,99,235,.15); border-color: rgba(37,99,235,.35); color: #93c5fd; }
+  .prof-social-link.ig       { background: rgba(192,38,211,.15); border-color: rgba(192,38,211,.35); color: #e879f9; }
+  .prof-social-link.tt       { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); color: rgba(255,255,255,.85); }
+  .prof-social-link.ln       { background: rgba(37,99,235,.15); border-color: rgba(37,99,235,.35); color: #93c5fd; }
+  .prof-social-link.web      { background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); color: rgba(255,255,255,.8); }
+  .prof-social-link:hover    { background: rgba(255,255,255,.18); }
+
+  /* Edit btn */
+  .prof-edit-btn {
+    position: absolute; top: 1.5rem; right: 2rem; z-index: 20;
+    padding: .5rem 1.2rem;
+    background: rgba(255,255,255,.12); backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,.22); color: #fff;
+    border-radius: 100px; font-size: .78rem; font-weight: 500; text-decoration: none;
+    transition: background .2s;
+  }
+  .prof-edit-btn:hover { background: rgba(255,255,255,.24); color: #fff; }
+
+  /* ── Stats bar (matches about.html stats-bar exactly) ── */
+  .stats-bar {
+    max-width: 860px; margin: -2rem auto 2rem;
+    background: #fff; border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.10);
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    position: relative; z-index: 10;
+  }
+  .stat-item { text-align: center; padding: 1.5rem 1rem; }
+  .stat-item + .stat-item { border-left: 1px solid #e5e7eb; }
+  .stat-num   { font-size: 1.8rem; font-weight: 900; }
+  .stat-label { font-size: .78rem; color: #6b7280; margin-top: .2rem; }
+  .c-green  { color: #16a34a; }
+  .c-blue   { color: #2563eb; }
+  .c-purple { color: #7c3aed; }
+  .c-orange { color: #ea580c; }
+
+  /* ── Expert areas ── */
+  .expert-row { max-width: 860px; margin: 0 auto 1.5rem; padding: 0 1.5rem; }
+  .expert-label { font-size: .68rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #4a8a6a; margin-bottom: .5rem; }
+  .expert-tags { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .expert-tag  { background: #ecfdf5; color: #065f46; font-size: .72rem; font-weight: 500; padding: .3rem .85rem; border-radius: 100px; border: 1px solid rgba(6,95,70,.15); }
+
+  /* ── Tab panel ── */
+  .tab-panel-wrap { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+  .tab-nav {
+    background: #fff; border-radius: 20px 20px 0 0;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex; overflow-x: auto;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04);
+    padding: 0 1.5rem;
+  }
+  .tab-btn {
+    flex-shrink: 0;
+    padding: 1rem 1.2rem; border-bottom: 2px solid transparent;
+    font-size: .8rem; font-weight: 500; color: #6b7280; cursor: pointer;
+    transition: all .2s; white-space: nowrap; background: none; border-top: none; border-left: none; border-right: none;
+  }
+  .tab-btn.active { border-bottom-color: #16a34a; color: #16a34a; }
+  .tab-btn:hover:not(.active) { color: #374151; border-bottom-color: #d1d5db; }
+
+  .tab-body {
+    background: #fff; border-radius: 0 0 20px 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.05);
+    padding: 1.8rem;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── Place grid ── */
+  .place-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.2rem; }
+  .place-card {
+    border-radius: 16px; overflow: hidden;
+    border: 1px solid #f3f4f6; background: #f9fafb;
+    transition: transform .25s, box-shadow .25s;
+  }
+  .place-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.08); }
+  .place-card-img { width: 100%; height: 140px; object-fit: cover; display: block; }
+  .place-card-placeholder {
+    width: 100%; height: 140px;
+    background: linear-gradient(135deg, #0a3d2e, #4a8a6a);
+    display: flex; align-items: center; justify-content: center; font-size: 2.5rem;
+  }
+  .place-card-body { padding: 1rem; }
+  .place-card-cat  { font-size: .68rem; color: #4a8a6a; margin-bottom: .2rem; }
+  .place-card-name { font-weight: 600; font-size: .95rem; color: #0a3d2e; margin-bottom: .4rem; }
+  .place-card-desc { font-size: .8rem; color: #6b7280; margin-bottom: .75rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .place-card-link { font-size: .75rem; font-weight: 600; color: #16a34a; text-decoration: none; }
+  .place-card-link:hover { color: #0a3d2e; }
+
+  /* ── Check-ins list ── */
+  .checkin-list { display: flex; flex-direction: column; gap: .25rem; }
+  .checkin-item {
+    display: flex; align-items: center; gap: 1rem;
+    padding: .85rem 0; border-bottom: 1px solid #f9fafb;
+  }
+  .checkin-item:last-child { border-bottom: none; }
+  .checkin-icon {
+    width: 52px; height: 52px; background: #ecfdf5; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .checkin-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+  .checkin-name  { font-weight: 600; font-size: .9rem; color: #0a3d2e; }
+  .checkin-meta  { font-size: .75rem; color: #6b7280; margin-top: .1rem; }
+  .checkin-notes { font-size: .8rem; color: #374151; margin-top: .25rem; }
+  .checkin-pts   { margin-left: auto; flex-shrink: 0; }
+  .pts-badge     { font-weight: 700; font-size: .88rem; color: #16a34a; }
+  .verified-badge { font-size: .7rem; color: #16a34a; display: flex; align-items: center; gap: .3rem; margin-top: .2rem; }
+
+  /* ── Badges grid ── */
+  .badges-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: .85rem; }
+  .badge-cell {
+    background: #ecfdf5; border-radius: 14px; padding: 1.2rem .75rem;
+    text-align: center; border: 1px solid rgba(74,138,106,.15);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .badge-cell:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.07); }
+  .badge-cell img   { width: 3.5rem; height: 3.5rem; object-fit: contain; margin: 0 auto .6rem; display: block; }
+  .badge-icon       { font-size: 2.2rem; margin-bottom: .5rem; }
+  .badge-name       { font-size: .72rem; font-weight: 600; color: #0a3d2e; margin-bottom: .2rem; }
+  .badge-date       { font-size: .62rem; color: #6b7280; }
+
+  /* ── Trails grid ── */
+  .trails-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+  .trail-card {
+    background: #ecfdf5; border-radius: 14px; padding: 1.4rem;
+    border: 1px solid rgba(74,138,106,.15);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .trail-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,.07); }
+  .trail-name  { font-weight: 700; font-size: 1rem; color: #0a3d2e; margin-bottom: .4rem; }
+  .trail-desc  { font-size: .82rem; color: #6b7280; margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .trail-meta  { display: flex; align-items: center; gap: 1rem; font-size: .76rem; color: #4a8a6a; }
+  .trail-link  { margin-left: auto; font-size: .78rem; font-weight: 600; color: #16a34a; text-decoration: none; }
+
+  /* ── Media grid ── */
+  .media-section-label { font-size: .75rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #4a8a6a; margin: 1.5rem 0 .75rem; display: flex; align-items: center; gap: .5rem; }
+  .media-section-label:first-child { margin-top: 0; }
+  .photos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: .6rem; margin-bottom: 1.5rem; }
+  .media-photo {
+    position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 1; background: #ecfdf5;
+    transition: transform .2s;
+  }
+  .media-photo:hover { transform: scale(1.03); }
+  .media-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .media-photo-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,.55) 0%, transparent 60%);
+    opacity: 0; transition: opacity .2s;
+    display: flex; align-items: flex-end; padding: .5rem;
+    font-size: .65rem; color: rgba(255,255,255,.9);
+  }
+  .media-photo:hover .media-photo-overlay { opacity: 1; }
+  .videos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: .85rem; }
+  .video-card  { border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid #f3f4f6; }
+  .video-thumb-wrap { position: relative; aspect-ratio: 16/9; background: #111; }
+  .video-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; opacity: .82; display: block; }
+  .video-play  { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+  .video-play-btn { width: 40px; height: 40px; background: rgba(255,255,255,.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: .95rem; color: #111; box-shadow: 0 4px 16px rgba(0,0,0,.3); transition: transform .2s; }
+  .video-card:hover .video-play-btn { transform: scale(1.1); }
+  .video-info  { padding: .7rem .85rem; }
+  .video-place { font-weight: 600; font-size: .82rem; color: #0a3d2e; text-decoration: none; }
+  .video-place:hover { color: #16a34a; }
+  .video-meta  { display: flex; justify-content: space-between; font-size: .68rem; color: #6b7280; margin-top: .2rem; }
+
+  /* ── Empty state ── */
+  .empty-state { text-align: center; padding: 3rem 2rem; }
+  .empty-icon  { font-size: 4rem; opacity: .25; margin-bottom: .75rem; }
+  .empty-title { font-size: 1.2rem; font-weight: 700; color: #0a3d2e; margin-bottom: .3rem; }
+  .empty-sub   { font-size: .85rem; color: #6b7280; }
+
+  /* Fade-up animation (from about.html) */
+  .fade-up { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 640px) {
+    .prof-hero { padding: 2rem 1.2rem 4rem; }
+    .prof-edit-btn { top: 1rem; right: 1rem; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); margin: -1.5rem 1rem 1.5rem; border-radius: 16px; }
+    .stat-item:nth-child(3) { border-left: none; border-top: 1px solid #e5e7eb; }
+    .stat-item:nth-child(4) { border-top: 1px solid #e5e7eb; }
+    .tab-panel-wrap { padding: 0 .75rem 3rem; }
+    .place-grid { grid-template-columns: 1fr 1fr; }
+    .badges-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+</style>
+
+<div class="profile-page">
+
+  <!-- ── HERO ── -->
+  <div class="prof-hero">
+    {% if user == profile_user %}
+      <a href="{% url 'places:edit_profile' %}" class="prof-edit-btn"><i class="fas fa-edit" style="margin-right:.4rem"></i>Edit Profile</a>
+    {% endif %}
+
+    <div class="prof-hero-inner">
+      <div class="prof-avatar-wrap">
+        <div class="prof-avatar">
+          {% if profile.avatar %}
+            <img src="{{ profile.avatar.url }}" alt="{{ profile_user.username }}">
+          {% else %}
+            {{ profile_user.username|first|upper }}
+          {% endif %}
         </div>
-        <!-- Tabs -->
-        <div class="bg-white rounded-lg shadow-lg mb-8">
-            <div class="border-b border-gray-200">
-                <nav class="-mb-px flex space-x-8 px-6">
-                    <button class="tab-button active py-4 px-1 border-b-2 border-green-500 font-medium text-sm text-green-600"
-                            data-tab="places">
-                        <i class="fas fa-map-marker-alt mr-2"></i> Places ({{ user_places.count }})
-                    </button>
-                    <button class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                            data-tab="checkins">
-                        <i class="fas fa-map-pin mr-2"></i> Check-ins ({{ user_checkins.count }})
-                    </button>
-                    <button class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                            data-tab="badges">
-                        <i class="fas fa-trophy mr-2"></i> Badges ({{ user_badges.count }})
-                    </button>
-                    <button class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                            data-tab="trails">
-                        <i class="fas fa-hiking mr-2"></i> Trails ({{ user_trails.count }})
-                    </button>
-                    <button class="tab-button py-4 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                            data-tab="media">
-                        <i class="fas fa-photo-video mr-2"></i> Media ({{ user_images.count|add:user_videos.count }})
-                    </button>
-                </nav>
-            </div>
-            <!-- Tab Content -->
-            <div class="p-6">
-                <!-- Places Tab -->
-                <div id="places-tab" class="tab-content">
-                    {% if user_places %}
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {% for place in user_places %}
-                                <div class="bg-gray-50 rounded-lg overflow-hidden card-hover">
-                                    {% if place.image %}
-                                        <img src="{{ place.image.url }}"
-                                             alt="{{ place.name }}"
-                                             class="w-full h-48 object-cover">
-                                    {% else %}
-                                        <div class="w-full h-48 bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center">🏛️</div>
-                                    {% endif %}
-                                    <div class="p-4">
-                                        <h3 class="font-semibold text-lg mb-2">{{ place.name }}</h3>
-                                        <p class="text-gray-600 text-sm mb-3">{{ place.description|truncatewords:15 }}</p>
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-xs bg-gray-100 text-gray-800 px-2 py-1 rounded-full">
-                                                {% for cat in place.category.all %}
-                                                    {{ cat.name }}
-                                                    {% if not forloop.last %},{% endif %}
-                                                {% endfor %}
-                                            </span>
-                                            <a href="{% url 'places:place_detail' place.slug %}"
-                                               class="text-green-600 hover:text-green-800 text-sm font-medium">
-                                                View Details →
-                                            </a>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-12">
-                            <i class="fas fa-map-marker-alt text-6xl text-gray-300 mb-4"></i>
-                            <h3 class="text-xl font-medium text-gray-900 mb-2">No places yet</h3>
-                            <p class="text-gray-500">{{ profile_user.username }} hasn't added any places yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
-                <!-- Check-ins Tab -->
-                <div id="checkins-tab" class="tab-content hidden">
-                    {% if user_checkins %}
-                        <div class="space-y-4">
-                            {% for checkin in user_checkins %}
-                                <div class="bg-gray-50 rounded-lg p-4 flex items-center space-x-4">
-                                    {% if checkin.photo_proof %}
-                                        <img src="{{ checkin.photo_proof.url }}"
-                                             alt="Check-in photo"
-                                             class="w-16 h-16 rounded-lg object-cover">
-                                    {% else %}
-                                        <div class="w-16 h-16 bg-green-100 rounded-lg flex items-center justify-center">
-                                            <i class="fas fa-map-pin text-green-600 text-xl"></i>
-                                        </div>
-                                    {% endif %}
-                                    <div class="flex-1">
-                                        <h4 class="font-semibold">{{ checkin.place.name }}</h4>
-                                        <p class="text-gray-600 text-sm">{{ checkin.created_at|date:"M d, Y" }}</p>
-                                        {% if checkin.notes %}<p class="text-gray-700 text-sm mt-1">{{ checkin.notes }}</p>{% endif %}
-                                    </div>
-                                    <div class="text-right">
-                                        <div class="text-green-600 font-semibold">+{{ checkin.points_awarded }} pts</div>
-                                        {% if checkin.location_verified %}
-                                            <div class="text-xs text-green-500">
-                                                <i class="fas fa-check-circle mr-1"></i> Verified
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-12">
-                            <i class="fas fa-map-pin text-6xl text-gray-300 mb-4"></i>
-                            <h3 class="text-xl font-medium text-gray-900 mb-2">No check-ins yet</h3>
-                            <p class="text-gray-500">{{ profile_user.username }} hasn't checked in anywhere yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
-                <!-- Badges Tab -->
-                <div id="badges-tab" class="tab-content hidden">
-                    {% if user_badges %}
-                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                            {% for user_badge in user_badges %}
-                                <div class="bg-gray-50 rounded-lg p-4 text-center">
-                                    {% if user_badge.badge.image %}
-                                        <img src="{{ user_badge.badge.image.url }}"
-                                             class="w-14 h-14 mx-auto mb-3 object-contain">
-                                    {% elif user_badge.badge.icon %}
-                                        <div class="text-4xl mb-3">{{ user_badge.badge.icon|safe }}</div>
-                                    {% endif %}
-                                    <h4 class="font-semibold text-sm">{{ user_badge.badge.name }}</h4>
-                                    <p class="text-xs text-gray-500 mt-1">{{ user_badge.earned_at|date:"M d, Y" }}</p>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-12">
-                            <i class="fas fa-trophy text-6xl text-gray-300 mb-4"></i>
-                            <h3 class="text-xl font-medium text-gray-900 mb-2">No badges yet</h3>
-                            <p class="text-gray-500">{{ profile_user.username }} hasn't earned any badges yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
-                <!-- Trails Tab -->
-                <div id="trails-tab" class="tab-content hidden">
-                    {% if user_trails %}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {% for trail in user_trails %}
-                                <div class="bg-gray-50 rounded-lg p-6 card-hover">
-                                    <h3 class="font-semibold text-lg mb-2">{{ trail.name }}</h3>
-                                    <p class="text-gray-600 text-sm mb-4">{{ trail.description|truncatewords:20 }}</p>
-                                    <div class="flex items-center justify-between">
-                                        <div class="flex items-center space-x-4 text-sm text-gray-500">
-                                            <span><i class="fas fa-map-marker-alt mr-1"></i> {{ trail.places.count }} places</span>
-                                            <span><i class="fas fa-clock mr-1"></i> {{ trail.difficulty|title }}</span>
-                                        </div>
-                                        <a href="{% url 'places:trail_detail' trail.pk %}"
-                                           class="text-green-600 hover:text-green-800 font-medium">View →</a>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        <div class="text-center py-12">
-                            <i class="fas fa-hiking text-6xl text-gray-300 mb-4"></i>
-                            <h3 class="text-xl font-medium text-gray-900 mb-2">No trails yet</h3>
-                            <p class="text-gray-500">{{ profile_user.username }} hasn't created any trails yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
-                <!-- Media Tab -->
-                <div id="media-tab" class="tab-content hidden">
-                    {% if user_images or user_videos %}
-                        {% if user_images %}
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                                <i class="fas fa-images text-green-600 mr-2"></i> Photos
-                            </h3>
-                            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-8">
-                                {% for img in user_images %}
-                                    <div class="relative group rounded-lg overflow-hidden bg-gray-100">
-                                        <img src="{{ img.image.url }}"
-                                             alt="Photo at {{ img.place.name }}"
-                                             class="w-full h-40 object-cover group-hover:opacity-80 transition-opacity">
-                                        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 translate-y-full group-hover:translate-y-0 transition-transform">
-                                            <a href="{% url 'places:place_detail' img.place.slug %}"
-                                               class="hover:underline">{{ img.place.name }}</a>
-                                            <span class="block text-gray-300">{{ img.created_at|date:"M d, Y" }}</span>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                        {% if user_videos %}
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">
-                                <i class="fas fa-video text-green-600 mr-2"></i> Videos
-                            </h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {% for video in user_videos %}
-                                    <div class="bg-gray-50 rounded-lg overflow-hidden">
-                                        {% if video.thumbnail_url %}
-                                            <a href="{{ video.url }}"
-                                               target="_blank"
-                                               rel="noopener"
-                                               class="relative block">
-                                                <img src="{{ video.thumbnail_url }}"
-                                                     alt="Video thumbnail"
-                                                     class="w-full h-48 object-cover">
-                                                <div class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30">
-                                                    <i class="fas fa-play-circle text-white text-5xl"></i>
-                                                </div>
-                                            </a>
-                                        {% else %}
-                                            <a href="{{ video.url }}"
-                                               target="_blank"
-                                               rel="noopener"
-                                               class="flex items-center justify-center h-48 bg-gray-200 hover:bg-gray-300 transition-colors">
-                                                <i class="fas fa-play-circle text-gray-500 text-5xl"></i>
-                                            </a>
-                                        {% endif %}
-                                        <div class="p-3">
-                                            <a href="{% url 'places:place_detail' video.place.slug %}"
-                                               class="font-medium text-gray-800 hover:text-green-600 text-sm">
-                                                {{ video.place.name }}
-                                            </a>
-                                            <div class="flex items-center justify-between mt-1">
-                                                <span class="text-xs text-gray-500 capitalize">{{ video.platform }}</span>
-                                                <span class="text-xs text-gray-400">{{ video.created_at|date:"M d, Y" }}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="text-center py-12">
-                            <i class="fas fa-photo-video text-6xl text-gray-300 mb-4"></i>
-                            <h3 class="text-xl font-medium text-gray-900 mb-2">No media yet</h3>
-                            <p class="text-gray-500">{{ profile_user.username }} hasn't uploaded any photos or videos yet.</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+      </div>
+
+      <div class="prof-hero-text">
+        <h1 class="prof-name display-font">
+          {% if profile_user.first_name or profile_user.last_name %}
+            {{ profile_user.first_name }} {{ profile_user.last_name }}
+          {% else %}
+            {{ profile_user.username }}
+          {% endif %}
+        </h1>
+        {% if profile.bio %}<p class="prof-bio">{{ profile.bio }}</p>{% endif %}
+
+        <div class="prof-meta-row">
+          {% if profile.show_location and profile.location %}
+            <span class="prof-meta-item"><i class="fas fa-map-marker-alt"></i> {{ profile.location }}</span>
+          {% endif %}
+          {% if profile.show_email %}
+            <span class="prof-meta-item"><i class="fas fa-envelope"></i> {{ profile_user.email }}</span>
+          {% endif %}
+          {% if profile.show_phone and profile.phone_number %}
+            <span class="prof-meta-item"><i class="fas fa-phone"></i> {{ profile.phone_number }}</span>
+          {% endif %}
         </div>
+
+        {% if profile.is_trusted %}
+        <div class="prof-trust-badges">
+          <span class="prof-trust-badge"><i class="fas fa-shield-alt"></i> Trusted User</span>
+          {% if profile.is_local_expert %}
+            <span class="prof-trust-badge"><i class="fas fa-star"></i> Local Expert</span>
+          {% endif %}
+        </div>
+        {% endif %}
+
+        {% with links=profile.social_links %}
+        {% if links %}
+        <div class="prof-social">
+          {% for slug, url, icon, label in links %}
+          <a href="{{ url }}" target="_blank" rel="noopener" class="prof-social-link {{ slug }}">
+            <i class="{{ icon }}"></i> {{ label }}
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
     </div>
+  </div>
+
+  <!-- ── STATS BAR ── -->
+  <div class="stats-bar fade-up">
+    <div class="stat-item">
+      <div class="stat-num display-font c-green">{{ profile.points }}</div>
+      <div class="stat-label">Points</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num display-font c-blue">{{ profile.level }}</div>
+      <div class="stat-label">Level</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num display-font c-purple">{{ user_places.count }}</div>
+      <div class="stat-label">Places Added</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num display-font c-orange">{{ user_checkins.count }}</div>
+      <div class="stat-label">Check-ins</div>
+    </div>
+  </div>
+
+  <!-- ── EXPERT AREAS ── -->
+  {% if profile.expert_areas.all %}
+  <div class="expert-row fade-up">
+    <p class="expert-label">Areas of Expertise</p>
+    <div class="expert-tags">
+      {% for area in profile.expert_areas.all %}
+        <span class="expert-tag">{{ area.name }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── TABS ── -->
+  <div class="tab-panel-wrap">
+    <nav class="tab-nav fade-up">
+      <button class="tab-btn active" onclick="switchTab(this,'places-tab')">
+        <i class="fas fa-map-marker-alt" style="margin-right:.4rem"></i>Places ({{ user_places.count }})
+      </button>
+      <button class="tab-btn" onclick="switchTab(this,'checkins-tab')">
+        <i class="fas fa-map-pin" style="margin-right:.4rem"></i>Check-ins ({{ user_checkins.count }})
+      </button>
+      <button class="tab-btn" onclick="switchTab(this,'badges-tab')">
+        <i class="fas fa-trophy" style="margin-right:.4rem"></i>Badges ({{ user_badges.count }})
+      </button>
+      <button class="tab-btn" onclick="switchTab(this,'trails-tab')">
+        <i class="fas fa-hiking" style="margin-right:.4rem"></i>Trails ({{ user_trails.count }})
+      </button>
+      <button class="tab-btn" onclick="switchTab(this,'media-tab')">
+        <i class="fas fa-photo-video" style="margin-right:.4rem"></i>Media ({{ user_images.count|add:user_videos.count }})
+      </button>
+    </nav>
+
+    <div class="tab-body fade-up">
+
+      <!-- Places -->
+      <div id="places-tab" class="tab-content active">
+        {% if user_places %}
+        <div class="place-grid">
+          {% for place in user_places %}
+          <div class="place-card">
+            {% if place.image %}
+              <img class="place-card-img" src="{{ place.image.url }}" alt="{{ place.name }}">
+            {% else %}
+              <div class="place-card-placeholder">🏛️</div>
+            {% endif %}
+            <div class="place-card-body">
+              <p class="place-card-cat">{% for cat in place.category.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+              <p class="place-card-name">{{ place.name }}</p>
+              <p class="place-card-desc">{{ place.description|truncatewords:15 }}</p>
+              <a href="{% url 'places:place_detail' place.slug %}" class="place-card-link">View Details →</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📍</div>
+          <p class="empty-title display-font">No places yet</p>
+          <p class="empty-sub">{{ profile_user.username }} hasn't added any places yet.</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Check-ins -->
+      <div id="checkins-tab" class="tab-content">
+        {% if user_checkins %}
+        <div class="checkin-list">
+          {% for checkin in user_checkins %}
+          <div class="checkin-item">
+            <div class="checkin-icon">
+              {% if checkin.photo_proof %}
+                <img src="{{ checkin.photo_proof.url }}" alt="">
+              {% else %}
+                <i class="fas fa-map-pin" style="font-size:1.3rem;color:#4a8a6a"></i>
+              {% endif %}
+            </div>
+            <div style="flex:1;min-width:0">
+              <p class="checkin-name">{{ checkin.place.name }}</p>
+              <p class="checkin-meta">{{ checkin.created_at|date:"M d, Y" }}</p>
+              {% if checkin.notes %}<p class="checkin-notes">{{ checkin.notes }}</p>{% endif %}
+            </div>
+            <div class="checkin-pts">
+              <div class="pts-badge">+{{ checkin.points_awarded }} pts</div>
+              {% if checkin.location_verified %}
+                <div class="verified-badge"><i class="fas fa-check-circle"></i> Verified</div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🗺</div>
+          <p class="empty-title display-font">No check-ins yet</p>
+          <p class="empty-sub">{{ profile_user.username }} hasn't checked in anywhere yet.</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Badges -->
+      <div id="badges-tab" class="tab-content">
+        {% if user_badges %}
+        <div class="badges-grid">
+          {% for user_badge in user_badges %}
+          <div class="badge-cell">
+            {% if user_badge.badge.image %}
+              <img src="{{ user_badge.badge.image.url }}" alt="{{ user_badge.badge.name }}">
+            {% elif user_badge.badge.icon %}
+              <div class="badge-icon">{{ user_badge.badge.icon|safe }}</div>
+            {% endif %}
+            <p class="badge-name">{{ user_badge.badge.name }}</p>
+            <p class="badge-date">{{ user_badge.earned_at|date:"M d, Y" }}</p>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🏆</div>
+          <p class="empty-title display-font">No badges yet</p>
+          <p class="empty-sub">{{ profile_user.username }} hasn't earned any badges yet.</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Trails -->
+      <div id="trails-tab" class="tab-content">
+        {% if user_trails %}
+        <div class="trails-grid">
+          {% for trail in user_trails %}
+          <div class="trail-card">
+            <p class="trail-name">{{ trail.name }}</p>
+            <p class="trail-desc">{{ trail.description|truncatewords:20 }}</p>
+            <div class="trail-meta">
+              <span><i class="fas fa-map-marker-alt"></i> {{ trail.places.count }} places</span>
+              <span><i class="fas fa-signal"></i> {{ trail.difficulty|title }}</span>
+              <a href="{% url 'places:trail_detail' trail.pk %}" class="trail-link">View →</a>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">🥾</div>
+          <p class="empty-title display-font">No trails yet</p>
+          <p class="empty-sub">{{ profile_user.username }} hasn't created any trails yet.</p>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Media -->
+      <div id="media-tab" class="tab-content">
+        {% if user_images or user_videos %}
+          {% if user_images %}
+          <p class="media-section-label"><i class="fas fa-images" style="color:#4a8a6a"></i> Photos ({{ user_images.count }})</p>
+          <div class="photos-grid">
+            {% for img in user_images %}
+            <div class="media-photo">
+              <img src="{{ img.image.url }}" alt="Photo at {{ img.place.name }}" loading="lazy">
+              <div class="media-photo-overlay">
+                <a href="{% url 'places:place_detail' img.place.slug %}" style="color:inherit;text-decoration:none">{{ img.place.name }}</a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% if user_videos %}
+          <p class="media-section-label"><i class="fas fa-video" style="color:#4a8a6a"></i> Videos ({{ user_videos.count }})</p>
+          <div class="videos-grid">
+            {% for video in user_videos %}
+            <div class="video-card">
+              <a href="{{ video.url }}" target="_blank" rel="noopener" class="video-thumb-wrap" style="display:block">
+                {% if video.thumbnail_url %}
+                  <img src="{{ video.thumbnail_url }}" alt="">
+                {% else %}
+                  <div style="width:100%;height:100%;background:#ecfdf5;display:flex;align-items:center;justify-content:center"><i class="fas fa-play" style="font-size:2rem;color:#4a8a6a;opacity:.5"></i></div>
+                {% endif %}
+                <div class="video-play"><div class="video-play-btn"><i class="fas fa-play" style="margin-left:2px"></i></div></div>
+              </a>
+              <div class="video-info">
+                <a href="{% url 'places:place_detail' video.place.slug %}" class="video-place">{{ video.place.name }}</a>
+                <div class="video-meta">
+                  <span style="text-transform:capitalize">{{ video.platform }}</span>
+                  <span>{{ video.created_at|date:"M d, Y" }}</span>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon">📸</div>
+          <p class="empty-title display-font">No media yet</p>
+          <p class="empty-sub">{{ profile_user.username }} hasn't uploaded any photos or videos yet.</p>
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div><!-- /tab-panel-wrap -->
+
+</div><!-- /profile-page -->
 {% endblock %}
+
 {% block extra_js %}
-    <script>
-    // Tab functionality
-    document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', () => {
-            const tabName = button.getAttribute('data-tab');
-            
-            // Remove active class from all buttons and contents
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active', 'border-green-500', 'text-green-600');
-                btn.classList.add('border-transparent', 'text-gray-500');
-            });
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            
-            // Add active class to clicked button and show content
-            button.classList.add('active', 'border-green-500', 'text-green-600');
-            button.classList.remove('border-transparent', 'text-gray-500');
-            document.getElementById(tabName + '-tab').classList.remove('hidden');
-        });
-    });
-    </script>
+<script>
+function switchTab(btn, tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
+
+// Fade-up observer (from about.html)
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
 {% endblock %}

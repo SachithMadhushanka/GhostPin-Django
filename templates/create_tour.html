@@ -2,189 +2,453 @@
 {% block title %}{{ action }} Tour Package — Expearls{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 py-8">
 
-  <!-- Header -->
-  <div class="mb-8 flex items-center justify-between flex-wrap gap-4">
-    <div>
-      <h1 class="text-3xl font-bold text-gray-900">{{ action }} Tour Package</h1>
-      <p class="text-gray-500 mt-1 text-sm">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .tour-page    { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* ── Hero ─────────────────────────────────────────────── */
+  .hero-tour {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-tour::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-tour::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 80px;
+    background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px;
+    background: #86efac;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(1.4); }
+  }
+
+  /* ── Card ─────────────────────────────────────────────── */
+  .form-card {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    border: 1px solid #f3f4f6;
+  }
+
+  /* ── Section headings ─────────────────────────────────── */
+  .form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid #f0fdf4;
+    margin-bottom: 20px;
+  }
+  .form-section-icon {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* ── Field helpers ────────────────────────────────────── */
+  .field-label { display: block; font-size: .8125rem; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  .field-label .req { color: #16a34a; margin-left: 2px; }
+  .field-hint  { font-size: .75rem; color: #9ca3af; margin-top: 5px; line-height: 1.4; }
+  .field-error { font-size: .75rem; color: #dc2626; margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+  /* ── Inputs ───────────────────────────────────────────── */
+  .tour-page input[type="text"],
+  .tour-page input[type="number"],
+  .tour-page input[type="date"],
+  .tour-page input[type="time"],
+  .tour-page select,
+  .tour-page textarea {
+    width: 100%;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .875rem;
+    color: #111827;
+    background: #fafafa;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+    outline: none;
+  }
+  .tour-page input:focus,
+  .tour-page select:focus,
+  .tour-page textarea:focus {
+    border-color: #34d399;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(52,211,153,.12);
+  }
+  .tour-page input.is-error,
+  .tour-page textarea.is-error { border-color: #fca5a5; background: #fff5f5; }
+  .tour-page textarea { resize: vertical; min-height: 100px; }
+
+  /* input with icon prefix */
+  .input-icon-wrap { position: relative; }
+  .input-icon-wrap .icon {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: #9ca3af; font-size: .875rem; pointer-events: none;
+  }
+  .input-icon-wrap .prefix-text {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: #6b7280; font-size: .75rem; font-weight: 700; pointer-events: none;
+  }
+  .input-icon-wrap input { padding-left: 38px; }
+  .input-icon-wrap.has-prefix input { padding-left: 48px; }
+
+  /* ── Image upload zone ────────────────────────────────── */
+  .upload-zone {
+    width: 100%;
+    padding: 20px;
+    border-radius: 14px;
+    border: 2px dashed #d1fae5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-size: .875rem;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all .2s;
+    background: #fafafa;
+  }
+  .upload-zone:hover { border-color: #34d399; background: #f0fdf4; color: #16a34a; }
+
+  /* ── Trail list ───────────────────────────────────────── */
+  .trail-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1.5px solid #f3f4f6;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .trail-item:hover { border-color: #34d399; background: #f0fdf4; }
+  .trail-item.checked { border-color: #34d399; background: #f0fdf4; }
+  .trail-item input[type="checkbox"] { display: none; }
+  .trail-check {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    border: 1.5px solid #d1d5db;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: all .2s;
+  }
+  .trail-item.checked .trail-check { background: #16a34a; border-color: #16a34a; }
+  .trail-item.checked .trail-check i { display: block !important; }
+
+  /* ── Offering grid ────────────────────────────────────── */
+  .offering-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1.5px solid #f3f4f6;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .offering-item:hover { border-color: #34d399; background: #f0fdf4; }
+  .offering-item.checked { border-color: #34d399; background: #f0fdf4; }
+  .offering-item input[type="checkbox"] { display: none; }
+
+  /* ── Bring preview ────────────────────────────────────── */
+  .bring-preview-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #fffbeb;
+    border: 1px solid #fef3c7;
+    font-size: .875rem;
+    color: #374151;
+    font-weight: 500;
+  }
+
+  /* ── Toggle switch ────────────────────────────────────── */
+  .toggle-wrap { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+  .toggle-track {
+    width: 44px; height: 24px; border-radius: 50px;
+    background: #e5e7eb; position: relative; transition: background .2s; flex-shrink: 0;
+  }
+  .toggle-thumb {
+    width: 18px; height: 18px; border-radius: 50%; background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.15);
+    position: absolute; top: 3px; left: 3px; transition: transform .2s;
+  }
+  .toggle-wrap.on .toggle-track { background: #16a34a; }
+  .toggle-wrap.on .toggle-thumb { transform: translateX(20px); }
+  .toggle-wrap input[type="checkbox"] { display: none; }
+
+  /* ── Alerts ───────────────────────────────────────────── */
+  .msg-success { background:#f0fdf4; border:1px solid #bbf7d0; border-radius:14px; padding:12px 16px; }
+  .msg-error   { background:#fef2f2; border:1px solid #fecaca; border-radius:14px; padding:12px 16px; }
+
+  /* ── Buttons ──────────────────────────────────────────── */
+  .btn-submit {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff; border: none; border-radius: 50px; padding: 13px 32px;
+    font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 600;
+    cursor: pointer; transition: all .25s;
+    box-shadow: 0 4px 16px rgba(22,163,74,.3);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(22,163,74,.35); }
+  .btn-danger {
+    background: #fff; color: #dc2626; border: 1.5px solid #fecaca;
+    border-radius: 50px; padding: 12px 24px;
+    font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 600;
+    cursor: pointer; transition: all .2s;
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn-danger:hover { background: #fef2f2; border-color: #dc2626; }
+  .btn-cancel {
+    color: #6b7280; font-size: .875rem; font-weight: 500;
+    text-decoration: none; display: inline-flex; align-items: center; gap: 6px;
+    transition: color .2s;
+  }
+  .btn-cancel:hover { color: #111827; }
+
+  /* ── Entrance animation ───────────────────────────────── */
+  .fade-up { opacity:0; transform:translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .fade-up.visible { opacity:1; transform:translateY(0); }
+</style>
+
+<div class="tour-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-tour pt-20 pb-32 px-4 text-center">
+    <div class="max-w-2xl mx-auto relative z-10">
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-6 tracking-wide uppercase">
+        <span class="hero-dot"></span> Tour Packages
+      </span>
+      <h1 class="display-font text-5xl md:text-6xl font-black text-white leading-tight mb-4">
+        {{ action }} a<br>
+        <em class="text-green-300 not-italic">Tour Package</em>
+      </h1>
+      <p class="text-green-100 text-lg font-light max-w-lg mx-auto leading-relaxed">
         {% if action == 'Edit' %}Update the details for "{{ tour.name }}".
-        {% else %}Create a new curated tour from existing trails.{% endif %}
+        {% else %}Create a curated tour from existing trails and share it with the world.{% endif %}
       </p>
     </div>
-    <a href="{% url 'places:tour_list' %}"
-       class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1.5 transition-colors">
-      <i class="fas fa-arrow-left text-xs"></i> Back to Tours
-    </a>
-  </div>
+  </section>
 
-  <!-- Flash messages -->
-  {% if messages %}
-    {% for message in messages %}
-    <div class="mb-5 px-4 py-3 rounded-xl text-sm font-medium flex items-center gap-2
-                {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200
-                {% else %}bg-green-50 text-green-700 border border-green-200{% endif %}">
-      <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %}"></i>
-      {{ message }}
-    </div>
-    {% endfor %}
-  {% endif %}
+  <!-- ══ CONTENT ══ -->
+  <section class="max-w-3xl mx-auto px-4 -mt-10 pb-20 relative z-10">
 
-  <form method="post" enctype="multipart/form-data" id="tour-form" novalidate>
-    {% csrf_token %}
+    <!-- Flash messages -->
+    {% if messages %}
+      {% for message in messages %}
+      <div class="mb-5 {% if message.tags == 'error' %}msg-error{% else %}msg-success{% endif %} fade-up flex items-center gap-2 text-sm font-medium">
+        <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle text-red-500{% else %}fa-check-circle text-green-600{% endif %}"></i>
+        {{ message }}
+      </div>
+      {% endfor %}
+    {% endif %}
 
-    <div class="space-y-7">
+    <form method="post" enctype="multipart/form-data" id="tour-form" novalidate>
+      {% csrf_token %}
 
-      <!-- ── Basic Info ─────────────────────────────── -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
-        <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-6 flex items-center gap-2">
-          <i class="fas fa-info-circle text-green-500 text-xs"></i> Basic Information
-        </h2>
+      <!-- ── Section 1: Basic Info ── -->
+      <div class="form-card p-8 mb-6 fade-up">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-info text-green-600"></i></div>
+          Basic Information
+        </div>
 
-        <!-- Tour name -->
+        <!-- Tour Name -->
         <div class="mb-5">
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-            Tour Name <span class="text-red-400">*</span>
-          </label>
+          <label class="field-label">Tour Name <span class="req">*</span></label>
           <input type="text" name="name"
                  value="{{ form.name.value|default:'' }}"
                  placeholder="e.g. Horton Plains Adventure Tour"
-                 class="w-full px-4 py-2.5 rounded-xl border text-sm transition-all placeholder-gray-300
-                        focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400
-                        {% if form.name.errors %}border-red-300 bg-red-50{% else %}border-gray-200{% endif %}">
-          {% if form.name.errors %}
-          <p class="mt-1 text-xs text-red-600 flex items-center gap-1">
-            <i class="fas fa-exclamation-circle"></i> {{ form.name.errors.0 }}
-          </p>
-          {% endif %}
+                 class="{% if form.name.errors %}is-error{% endif %}">
+          {% if form.name.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.name.errors.0 }}</p>{% endif %}
         </div>
 
         <!-- Description -->
         <div class="mb-5">
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-            Description <span class="text-red-400">*</span>
-          </label>
-          <textarea name="description" rows="4" id="desc-field"
-                    placeholder="Describe the tour experience, highlights, and what to expect…"
-                    class="w-full px-4 py-2.5 rounded-xl border text-sm resize-none transition-all placeholder-gray-300
-                           focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400
-                           {% if form.description.errors %}border-red-300 bg-red-50{% else %}border-gray-200{% endif %}">{{ form.description.value|default:'' }}</textarea>
-          {% if form.description.errors %}
-          <p class="mt-1 text-xs text-red-600 flex items-center gap-1">
-            <i class="fas fa-exclamation-circle"></i> {{ form.description.errors.0 }}
-          </p>
-          {% endif %}
+          <label class="field-label">Description <span class="req">*</span></label>
+          <textarea name="description" rows="4"
+                    placeholder="Describe the experience, highlights, and what to expect…"
+                    class="{% if form.description.errors %}is-error{% endif %}">{{ form.description.value|default:'' }}</textarea>
+          {% if form.description.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.description.errors.0 }}</p>{% endif %}
         </div>
 
         <!-- Duration + Price -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-              Duration (hours) <span class="text-red-400">*</span>
-            </label>
-            <div class="relative">
-              <i class="fas fa-clock absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
+            <label class="field-label">Duration (hours) <span class="req">*</span></label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-clock icon"></i>
               <input type="number" name="duration_hours" step="0.5" min="0.5"
                      value="{{ form.duration_hours.value|default:'' }}"
                      placeholder="9"
-                     class="w-full pl-9 pr-4 py-2.5 rounded-xl border text-sm transition-all placeholder-gray-300
-                            focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400
-                            {% if form.duration_hours.errors %}border-red-300 bg-red-50{% else %}border-gray-200{% endif %}">
+                     class="{% if form.duration_hours.errors %}is-error{% endif %}">
             </div>
-            {% if form.duration_hours.errors %}
-            <p class="mt-1 text-xs text-red-600 flex items-center gap-1">
-              <i class="fas fa-exclamation-circle"></i> {{ form.duration_hours.errors.0 }}
-            </p>
-            {% endif %}
-            <p class="text-xs text-gray-400 mt-1">e.g. 9 or 9.5 for 9h 30m</p>
+            <p class="field-hint">e.g. 9 or 9.5 for 9h 30m</p>
+            {% if form.duration_hours.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.duration_hours.errors.0 }}</p>{% endif %}
           </div>
-
           <div>
-            <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-              Price per Person (LKR) <span class="text-red-400">*</span>
-            </label>
-            <div class="relative">
-              <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs font-bold">LKR</span>
+            <label class="field-label">Price per Person (LKR) <span class="req">*</span></label>
+            <div class="input-icon-wrap has-prefix">
+              <span class="prefix-text">LKR</span>
               <input type="number" name="price_lkr" step="100" min="0"
                      value="{{ form.price_lkr.value|default:'' }}"
                      placeholder="5900"
-                     class="w-full pl-12 pr-4 py-2.5 rounded-xl border text-sm transition-all placeholder-gray-300
-                            focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400
-                            {% if form.price_lkr.errors %}border-red-300 bg-red-50{% else %}border-gray-200{% endif %}">
+                     class="{% if form.price_lkr.errors %}is-error{% endif %}">
             </div>
-            {% if form.price_lkr.errors %}
-            <p class="mt-1 text-xs text-red-600 flex items-center gap-1">
-              <i class="fas fa-exclamation-circle"></i> {{ form.price_lkr.errors.0 }}
-            </p>
-            {% endif %}
+            {% if form.price_lkr.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.price_lkr.errors.0 }}</p>{% endif %}
           </div>
         </div>
 
-        <!-- Tour image -->
+        <!-- Tour Image -->
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">
-            Tour Image / Poster
-          </label>
+          <label class="field-label">Tour Image / Poster</label>
           {% if tour.image %}
-          <div class="mb-3 flex items-center gap-3 p-3 bg-gray-50 rounded-xl border border-gray-200">
-            <img src="{{ tour.image.url }}" class="w-16 h-16 rounded-lg object-cover border border-gray-200">
+          <div class="flex items-center gap-3 p-3 bg-gray-50 rounded-14px border border-gray-200 mb-3" style="border-radius:12px">
+            <img src="{{ tour.image.url }}" class="w-16 h-16 rounded-xl object-cover border border-gray-200">
             <div>
               <p class="text-xs font-semibold text-gray-700">Current image</p>
               <p class="text-xs text-gray-400 mt-0.5">Upload a new file to replace it.</p>
             </div>
           </div>
           {% endif %}
-          <label for="{{ form.image.id_for_label }}"
-                 class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl
-                        border-2 border-dashed border-gray-200 hover:border-green-300 hover:bg-green-50
-                        cursor-pointer text-sm text-gray-500 hover:text-green-600 transition-all">
-            <i class="fas fa-image"></i>
-            <span id="image-label">
-              {% if tour.image %}Replace image{% else %}Choose image (JPEG, PNG, WebP){% endif %}
-            </span>
+          <label for="{{ form.image.id_for_label }}" class="upload-zone">
+            <i class="fas fa-image text-green-500"></i>
+            <span id="image-label">{% if tour.image %}Replace image{% else %}Choose image (JPEG, PNG, WebP){% endif %}</span>
           </label>
           <div class="hidden">{{ form.image }}</div>
-          <p class="text-xs text-gray-400 mt-1.5">Recommended: 1200 × 600px or wider · max 10 MB</p>
-          {% if form.image.errors %}
-          <p class="mt-1 text-xs text-red-600 flex items-center gap-1">
-            <i class="fas fa-exclamation-circle"></i> {{ form.image.errors.0 }}
-          </p>
-          {% endif %}
+          <p class="field-hint">Recommended: 1200 × 600px or wider · max 10 MB</p>
+          {% if form.image.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.image.errors.0 }}</p>{% endif %}
         </div>
-
       </div>
 
-      <!-- ── Trail Selector ─────────────────────────── -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
-        <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-2">
-          <i class="fas fa-route text-green-500 text-xs"></i> Included Trails
-        </h2>
-        <p class="text-xs text-gray-400 mb-5">
-          Select all trails that are part of this tour. Only public trails are shown.
-        </p>
+      <!-- ── Section 2: Event Date & Time ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.08s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-calendar-alt text-green-600"></i></div>
+          Event Date & Time
+        </div>
+        <p class="text-sm text-gray-500 mb-5 -mt-2">Leave blank if this tour runs on demand with no fixed date.</p>
 
-        <!-- Search filter -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="field-label">Event Date</label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-calendar icon"></i>
+              <input type="date" name="event_date"
+                     value="{{ form.event_date.value|default:'' }}"
+                     class="{% if form.event_date.errors %}is-error{% endif %}">
+            </div>
+            {% if form.event_date.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.event_date.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="field-label">Start Time <span class="text-gray-400 font-normal">(optional)</span></label>
+            <div class="input-icon-wrap">
+              <i class="fas fa-clock icon"></i>
+              <input type="time" name="event_time"
+                     value="{{ form.event_time.value|default:'' }}"
+                     class="{% if form.event_time.errors %}is-error{% endif %}">
+            </div>
+            <p class="field-hint">When participants should arrive or depart.</p>
+            {% if form.event_time.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.event_time.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Section 3: Start & End Location ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.16s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-map-signs text-green-600"></i></div>
+          Starting & Ending Location
+        </div>
+        <p class="text-sm text-gray-500 mb-5 -mt-2">Where does the tour begin and end?</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="field-label">
+              <span class="inline-flex w-4 h-4 bg-green-600 rounded-full items-center justify-center mr-1" style="vertical-align:middle">
+                <i class="fas fa-map-marker-alt text-white" style="font-size:.45rem"></i>
+              </span>
+              Starting Location
+            </label>
+            <input type="text" name="starting_location"
+                   value="{{ form.starting_location.value|default:'' }}"
+                   placeholder="e.g. Colombo Fort Railway Station"
+                   class="{% if form.starting_location.errors %}is-error{% endif %}">
+            {% if form.starting_location.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.starting_location.errors.0 }}</p>{% endif %}
+          </div>
+          <div>
+            <label class="field-label">
+              <span class="inline-flex w-4 h-4 bg-teal-600 rounded-full items-center justify-center mr-1" style="vertical-align:middle">
+                <i class="fas fa-flag-checkered text-white" style="font-size:.4rem"></i>
+              </span>
+              Ending Location <span class="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <input type="text" name="ending_location"
+                   value="{{ form.ending_location.value|default:'' }}"
+                   placeholder="Leave blank if same as start"
+                   class="{% if form.ending_location.errors %}is-error{% endif %}">
+            <p class="field-hint">Leave blank if the tour loops back to the start.</p>
+            {% if form.ending_location.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.ending_location.errors.0 }}</p>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Section 4: Trails ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.24s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-route text-green-600"></i></div>
+          Included Trails
+        </div>
+        <p class="text-sm text-gray-500 mb-5 -mt-2">Select all trails that are part of this tour. Only public trails are shown.</p>
+
         <div class="relative mb-4">
-          <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 text-sm"></i>
+          <i class="fas fa-search absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300 text-sm pointer-events-none"></i>
           <input type="text" id="trail-search" placeholder="Search trails…"
-                 class="w-full pl-9 pr-4 py-2.5 rounded-xl border border-gray-200 text-sm
-                        focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400
-                        placeholder-gray-300">
+                 style="padding-left:38px; border-radius:12px; border:1.5px solid #e5e7eb; width:100%; padding-top:10px; padding-bottom:10px; font-size:.875rem; background:#fafafa; outline:none;">
         </div>
 
         <div id="trail-list" class="space-y-2 max-h-72 overflow-y-auto pr-1">
           {% for trail in all_trails %}
-          <label class="trail-item flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer
-                        transition-all hover:border-green-200 hover:bg-green-50
-                        has-[:checked]:border-green-400 has-[:checked]:bg-green-50
-                        {% if trail.pk in selected_trail_ids %}border-green-400 bg-green-50{% else %}border-gray-100{% endif %}">
+          <label class="trail-item {% if trail.pk in selected_trail_ids %}checked{% endif %}"
+                 onclick="toggleTrail(this)">
             <input type="checkbox" name="trails" value="{{ trail.pk }}"
-                   {% if trail.pk in selected_trail_ids %}checked{% endif %}
-                   class="sr-only">
-            <div class="w-5 h-5 rounded-md border-2 flex items-center justify-center flex-shrink-0 transition-all
-                        border-gray-300 bg-white check-indicator">
-              <i class="fas fa-check text-white text-xs hidden check-icon"></i>
+                   {% if trail.pk in selected_trail_ids %}checked{% endif %}>
+            <div class="trail-check">
+              <i class="fas fa-check text-white text-xs" style="{% if trail.pk not in selected_trail_ids %}display:none{% endif %}"></i>
             </div>
             <div class="flex-1 min-w-0">
               <div class="font-semibold text-gray-800 text-sm truncate trail-name">{{ trail.name }}</div>
@@ -193,7 +457,7 @@
               {% endif %}
             </div>
             {% if trail.difficulty %}
-            <span class="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0
+            <span class="text-xs px-2 py-0.5 rounded-full font-semibold flex-shrink-0
               {% if trail.difficulty == 'easy' %}bg-green-100 text-green-700
               {% elif trail.difficulty == 'moderate' %}bg-yellow-100 text-yellow-700
               {% else %}bg-red-100 text-red-700{% endif %}">
@@ -205,32 +469,24 @@
           <p class="text-sm text-gray-400 text-center py-6">No public trails found.</p>
           {% endfor %}
         </div>
-
-        <div class="mt-3 text-xs text-gray-400">
-          <span id="trail-selected-count">{{ selected_trail_ids|length }}</span> trail{% if selected_trail_ids|length != 1 %}s{% endif %} selected
-        </div>
+        <p class="field-hint mt-3"><span id="trail-count">{{ selected_trail_ids|length }}</span> trail{% if selected_trail_ids|length != 1 %}s{% endif %} selected</p>
       </div>
 
-      <!-- ── Offerings ───────────────────────────────── -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
-        <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-2">
-          <i class="fas fa-check-circle text-green-500 text-xs"></i> What's Included
-        </h2>
-        <p class="text-xs text-gray-400 mb-5">
-          Select all facilities and services provided in this tour.
-          Add more options in Django admin → Tour Offerings.
-        </p>
+      <!-- ── Section 5: What's Included ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.32s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-check-circle text-green-600"></i></div>
+          What's Included
+        </div>
+        <p class="text-sm text-gray-500 mb-5 -mt-2">Select all facilities and services provided in this tour.</p>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
           {% for offering in all_offerings %}
-          <label class="flex items-center gap-2.5 p-3 rounded-xl border-2 cursor-pointer
-                        transition-all hover:border-green-200
-                        has-[:checked]:border-green-400 has-[:checked]:bg-green-50
-                        {% if offering.pk in selected_offering_ids %}border-green-400 bg-green-50{% else %}border-gray-100{% endif %}">
+          <label class="offering-item {% if offering.pk in selected_offering_ids %}checked{% endif %}"
+                 onclick="toggleOffering(this)">
             <input type="checkbox" name="offerings" value="{{ offering.pk }}"
-                   {% if offering.pk in selected_offering_ids %}checked{% endif %}
-                   class="sr-only">
-            <div class="w-8 h-8 bg-white rounded-lg shadow-sm flex items-center justify-center flex-shrink-0 border border-gray-100">
+                   {% if offering.pk in selected_offering_ids %}checked{% endif %}>
+            <div class="w-8 h-8 bg-white rounded-lg shadow-sm border border-gray-100 flex items-center justify-center flex-shrink-0">
               {% if offering.icon %}
               <i class="{{ offering.icon }} text-green-600 text-sm"></i>
               {% else %}
@@ -249,117 +505,123 @@
         </div>
       </div>
 
-      <!-- ── Contact & Booking ──────────────────────── -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-7">
-        <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-1 flex items-center gap-2">
-          <i class="fas fa-phone-alt text-green-500 text-xs"></i> Contact & Booking
-        </h2>
-        <p class="text-xs text-gray-400 mb-5">Enter one phone number per line. Visitors will see these to book.</p>
+      <!-- ── Section 6: What to Bring ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.4s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-backpack text-green-600"></i></div>
+          What to Bring
+        </div>
+        <p class="text-sm text-gray-500 mb-5 -mt-2">Enter one item per line. Shown as a checklist on the public page.</p>
+
+        <textarea name="what_to_bring" id="what-to-bring" rows="6"
+                  placeholder="Sunscreen&#10;Water bottle (1.5L+)&#10;Comfortable walking shoes&#10;Light rain jacket&#10;Camera"
+                  class="{% if form.what_to_bring.errors %}is-error{% endif %}">{{ form.what_to_bring.value|default:'' }}</textarea>
+        {% if form.what_to_bring.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.what_to_bring.errors.0 }}</p>{% endif %}
+
+        <div id="bring-preview" class="mt-4 hidden">
+          <p class="field-label mb-2">Preview</p>
+          <div id="bring-items" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+        </div>
+      </div>
+
+      <!-- ── Section 7: Contact & Booking ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.48s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-phone-alt text-green-600"></i></div>
+          Contact & Booking
+        </div>
+        <p class="text-sm text-gray-500 mb-5 -mt-2">Enter one phone number per line. Visitors will see these to book.</p>
 
         <textarea name="contact_numbers" rows="3"
                   placeholder="+94 77 123 4567&#10;+94 71 987 6543"
-                  class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-mono transition-all
-                         placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-green-300 focus:border-green-400
-                         resize-none {% if form.contact_numbers.errors %}border-red-300 bg-red-50{% endif %}">{{ form.contact_numbers.value|default:'' }}</textarea>
-        {% if form.contact_numbers.errors %}
-        <p class="mt-1 text-xs text-red-600 flex items-center gap-1">
-          <i class="fas fa-exclamation-circle"></i> {{ form.contact_numbers.errors.0 }}
-        </p>
-        {% endif %}
+                  style="font-family:monospace"
+                  class="{% if form.contact_numbers.errors %}is-error{% endif %}">{{ form.contact_numbers.value|default:'' }}</textarea>
+        {% if form.contact_numbers.errors %}<p class="field-error"><i class="fas fa-exclamation-circle"></i>{{ form.contact_numbers.errors.0 }}</p>{% endif %}
       </div>
 
-      <!-- ── Visibility ─────────────────────────────── -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-        <label class="flex items-center justify-between cursor-pointer">
+      <!-- ── Section 8: Visibility ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.56s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-eye text-green-600"></i></div>
+          Visibility
+        </div>
+
+        <label class="toggle-wrap {% if form.is_active.value or action == 'Create' %}on{% endif %}"
+               onclick="toggleSwitch(this)">
+          <input type="checkbox" name="is_active" id="is_active"
+                 {% if form.is_active.value or action == 'Create' %}checked{% endif %}>
+          <div class="toggle-track"><div class="toggle-thumb"></div></div>
           <div>
-            <p class="text-sm font-semibold text-gray-700">Publish Tour</p>
-            <p class="text-xs text-gray-400 mt-0.5">When active, this tour is visible to all visitors.</p>
-          </div>
-          <div class="relative flex-shrink-0">
-            <input type="checkbox" name="is_active" id="is_active"
-                   {% if form.is_active.value %}checked{% elif action == 'Create' %}checked{% endif %}
-                   class="sr-only peer">
-            <div class="w-11 h-6 bg-gray-200 rounded-full peer-checked:bg-green-500 transition-colors"></div>
-            <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transition-transform"></div>
+            <p class="text-sm font-semibold text-gray-800">Publish tour</p>
+            <p class="text-xs text-gray-500 mt-0.5">When active, this tour is visible to all visitors. Turn off to save as a draft.</p>
           </div>
         </label>
       </div>
 
-      <!-- ── Actions ────────────────────────────────── -->
-      <div class="flex items-center justify-between gap-4 pb-4">
-        {% if action == 'Edit' %}
-        <form method="post" action="{% url 'places:delete_tour' slug=tour.slug %}"
-              onsubmit="return confirm('Delete \'{{ tour.name }}\'? This cannot be undone.')">
-          {% csrf_token %}
-          <button type="submit"
-                  class="px-5 py-3 rounded-xl border-2 border-red-200 text-red-500 hover:bg-red-50
-                         text-sm font-semibold transition-colors flex items-center gap-2">
-            <i class="fas fa-trash-alt"></i> Delete Tour
-          </button>
-        </form>
-        {% else %}
-        <a href="{% url 'places:tour_list' %}"
-           class="px-6 py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-600
-                  hover:bg-gray-50 transition-colors">
-          Cancel
-        </a>
-        {% endif %}
+      <!-- ── Actions ── -->
+      <div class="flex items-center justify-between gap-4 fade-up" style="transition-delay:.64s">
+        <div class="flex items-center gap-3">
+          <a href="{% url 'places:tour_list' %}" class="btn-cancel">
+            <i class="fas fa-arrow-left text-xs"></i> Cancel
+          </a>
+          {% if action == 'Edit' %}
+          <form method="post" action="{% url 'places:delete_tour' slug=tour.slug %}"
+                onsubmit="return confirm('Delete \'{{ tour.name }}\'? This cannot be undone.')">
+            {% csrf_token %}
+            <button type="submit" class="btn-danger">
+              <i class="fas fa-trash-alt text-sm"></i> Delete Tour
+            </button>
+          </form>
+          {% endif %}
+        </div>
 
-        <button type="submit"
-                class="flex-1 sm:flex-none px-10 py-3 rounded-xl bg-green-600 hover:bg-green-700 active:scale-95
-                       text-white text-sm font-bold shadow-md shadow-green-200 transition-all
-                       flex items-center justify-center gap-2">
-          <i class="fas fa-save"></i>
+        <button type="submit" class="btn-submit">
+          <i class="fas fa-save text-sm"></i>
           {% if action == 'Edit' %}Save Changes{% else %}Create Tour{% endif %}
         </button>
       </div>
 
-    </div><!-- /space-y-7 -->
-  </form>
+    </form>
+  </section>
+
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-// ── Image file label update ────────────────────────────────
+// ── Image label update ──────────────────────────────────
 const imageInput = document.querySelector('input[name="image"]');
 const imageLabel = document.getElementById('image-label');
 if (imageInput) {
-  imageInput.addEventListener('change', (e) => {
+  imageInput.addEventListener('change', e => {
     const f = e.target.files[0];
     if (f) imageLabel.textContent = f.name.length > 30 ? f.name.slice(0,27)+'…' : f.name;
   });
 }
 
-// ── Trail checkbox visual state ─────────────────────────────
-function updateCheckboxVisuals() {
-  document.querySelectorAll('#trail-list label').forEach(label => {
-    const cb    = label.querySelector('input[type="checkbox"]');
-    const ind   = label.querySelector('.check-indicator');
-    const icon  = label.querySelector('.check-icon');
-    if (!cb || !ind || !icon) return;
-    if (cb.checked) {
-      ind.classList.replace('border-gray-300', 'border-green-500');
-      ind.classList.add('bg-green-500');
-      icon.classList.remove('hidden');
-    } else {
-      ind.classList.replace('border-green-500', 'border-gray-300');
-      ind.classList.remove('bg-green-500');
-      icon.classList.add('hidden');
-    }
-  });
-  // Update count
-  const count = document.querySelectorAll('#trail-list input[type="checkbox"]:checked').length;
-  const countEl = document.getElementById('trail-selected-count');
-  if (countEl) countEl.textContent = count;
+// ── Trail checkbox toggle ───────────────────────────────
+function toggleTrail(label) {
+  const cb   = label.querySelector('input[type="checkbox"]');
+  const icon = label.querySelector('.trail-check i');
+  cb.checked = !cb.checked;
+  label.classList.toggle('checked', cb.checked);
+  icon.style.display = cb.checked ? 'block' : 'none';
+  updateTrailCount();
+}
+function updateTrailCount() {
+  const n = document.querySelectorAll('#trail-list input[type="checkbox"]:checked').length;
+  const el = document.getElementById('trail-count');
+  if (el) el.textContent = n;
 }
 
-document.querySelectorAll('#trail-list input[type="checkbox"]').forEach(cb => {
-  cb.addEventListener('change', updateCheckboxVisuals);
-});
-updateCheckboxVisuals();
+// ── Offering toggle ─────────────────────────────────────
+function toggleOffering(label) {
+  const cb = label.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  label.classList.toggle('checked', cb.checked);
+}
 
-// ── Trail search filter ────────────────────────────────────
+// ── Trail search ────────────────────────────────────────
 document.getElementById('trail-search')?.addEventListener('input', function () {
   const q = this.value.toLowerCase();
   document.querySelectorAll('.trail-item').forEach(item => {
@@ -368,23 +630,50 @@ document.getElementById('trail-search')?.addEventListener('input', function () {
   });
 });
 
-// ── Staggered card entrance ────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.bg-white.rounded-2xl').forEach((el, i) => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(14px)';
-    el.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-    setTimeout(() => { el.style.opacity='1'; el.style.transform='translateY(0)'; }, 50 + i * 70);
+// ── What to Bring live preview ──────────────────────────
+const bringTA      = document.getElementById('what-to-bring');
+const bringPreview = document.getElementById('bring-preview');
+const bringItems   = document.getElementById('bring-items');
+
+function renderBringPreview() {
+  if (!bringTA) return;
+  const lines = bringTA.value.split('\n').map(l => l.trim()).filter(Boolean);
+  if (!lines.length) { bringPreview.classList.add('hidden'); return; }
+  bringPreview.classList.remove('hidden');
+  bringItems.innerHTML = lines.map(line => `
+    <div class="bring-preview-item">
+      <div class="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
+        <i class="fas fa-check text-amber-600" style="font-size:.5rem"></i>
+      </div>
+      <span>${line}</span>
+    </div>`).join('');
+}
+bringTA?.addEventListener('input', renderBringPreview);
+renderBringPreview();
+
+// ── Toggle switch ───────────────────────────────────────
+function toggleSwitch(label) {
+  const cb = label.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  label.classList.toggle('on', cb.checked);
+}
+
+// ── Scroll entrance animations ──────────────────────────
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }
   });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 
-  const firstError = document.querySelector('.border-red-300');
-  if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
-});
+// ── Scroll to first error ───────────────────────────────
+const firstError = document.querySelector('.is-error');
+if (firstError) firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-// ── Unsaved changes guard ──────────────────────────────────
+// ── Unsaved changes guard ───────────────────────────────
 let dirty = false;
 document.getElementById('tour-form')?.addEventListener('input', () => { dirty = true; });
-window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue=''; } });
+window.addEventListener('beforeunload', e => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 document.getElementById('tour-form')?.addEventListener('submit', () => { dirty = false; });
 </script>
 {% endblock %}

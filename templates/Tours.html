@@ -2,170 +2,415 @@
 {% block title %}Tour Packages — Expearls{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 py-10">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 
-  <!-- Hero header -->
-  <div class="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-800 via-green-700 to-teal-800
-              mb-12 px-8 py-14 text-white shadow-2xl">
-    <!-- Background texture -->
-    <div class="absolute inset-0 opacity-10"
-         style="background-image: url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")"></div>
-    <div class="relative z-10 max-w-2xl">
-      <div class="inline-flex items-center gap-2 bg-white bg-opacity-20 rounded-full px-4 py-1.5 text-sm font-semibold mb-4 backdrop-blur-sm">
-        <i class="fas fa-map-marked-alt"></i> Curated Sri Lanka Experiences
-      </div>
-      <h1 class="text-4xl md:text-5xl font-black leading-tight mb-4">
-        Tour Packages
+<style>
+  /* ══ Design tokens (mirrors about.html) ══ */
+  .tours-page { font-family: 'DM Sans', sans-serif; background: #f9fafb; color: #111827; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* ── Hero (same as about.html hero) ── */
+  .tours-hero {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative; overflow: hidden;
+    padding: 5rem 2rem 7rem; text-align: center;
+  }
+  .tours-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  /* Same wave bottom as about.html */
+  .tours-hero::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 80px; background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .tours-hero-inner { position: relative; z-index: 10; max-width: 700px; margin: 0 auto; }
+
+  .hero-tag {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .4rem 1.1rem; border-radius: 100px;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+    color: rgba(255,255,255,.8); font-size: .75rem; font-weight: 500;
+    letter-spacing: .08em; text-transform: uppercase;
+    margin-bottom: 1.5rem; backdrop-filter: blur(8px);
+  }
+  .hero-dot {
+    width: 6px; height: 6px; background: #86efac; border-radius: 50%;
+    animation: pulseDot 2s ease-in-out infinite;
+  }
+  @keyframes pulseDot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+
+  .tours-hero h1 {
+    font-size: clamp(2.4rem, 6vw, 4.5rem); font-weight: 900; color: #fff;
+    line-height: 1.08; text-shadow: 0 2px 24px rgba(0,0,0,.2); margin-bottom: 1.2rem;
+  }
+  .tours-hero p {
+    font-size: 1.05rem; color: rgba(255,255,255,.7); line-height: 1.7; margin-bottom: 2rem;
+    font-weight: 300;
+  }
+  .hero-cta-row { display: flex; flex-wrap: wrap; justify-content: center; gap: .75rem; }
+  .hero-cta-primary {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .75rem 1.8rem; border-radius: 100px;
+    background: #4ade80; color: #052e16; font-weight: 700; font-size: .88rem;
+    text-decoration: none; transition: background .2s;
+    box-shadow: 0 4px 16px rgba(74,222,128,.3);
+  }
+  .hero-cta-primary:hover { background: #86efac; }
+  .hero-cta-staff {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .75rem 1.8rem; border-radius: 100px;
+    background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.2);
+    color: rgba(255,255,255,.9); font-weight: 500; font-size: .88rem;
+    text-decoration: none; backdrop-filter: blur(8px); transition: background .2s;
+  }
+  .hero-cta-staff:hover { background: rgba(255,255,255,.2); }
+
+  /* ── Stats bar (matches about.html stats-bar) ── */
+  .stats-bar {
+    max-width: 700px; margin: -2.5rem auto 3rem;
+    background: #fff; border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.10);
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    position: relative; z-index: 10;
+  }
+  .stat-item { text-align: center; padding: 1.5rem 1rem; }
+  .stat-item + .stat-item { border-left: 1px solid #e5e7eb; }
+  .stat-num   { font-size: 2rem; font-weight: 900; color: #0a3d2e; }
+  .stat-label { font-size: .75rem; color: #6b7280; margin-top: .2rem; }
+
+  /* ── Page wrap ── */
+  .page-wrap { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+  /* ── Section header ── */
+  .section-label {
+    font-size: .68rem; font-weight: 500; letter-spacing: .14em;
+    text-transform: uppercase; color: #4a8a6a; margin-bottom: .4rem; display: block;
+  }
+
+  /* ── Tour cards grid ── */
+  .tours-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
+
+  .tour-card {
+    background: #fff; border-radius: 20px; overflow: hidden;
+    border: 1px solid rgba(0,0,0,.07);
+    box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+    transition: transform .3s, box-shadow .3s;
+    display: flex; flex-direction: column;
+    opacity: 0; transform: translateY(20px);
+  }
+  .tour-card.visible { opacity: 1; transform: translateY(0); }
+  .tour-card:hover { transform: translateY(-5px); box-shadow: 0 16px 48px rgba(0,0,0,.12); }
+
+  /* Card image */
+  .tour-card-img-wrap {
+    position: relative; height: 210px; overflow: hidden;
+    background: linear-gradient(135deg, #0a3d2e, #1a5c42);
+  }
+  .tour-card-img {
+    width: 100%; height: 100%; object-fit: cover;
+    transition: transform .5s;
+  }
+  .tour-card:hover .tour-card-img { transform: scale(1.05); }
+  .tour-card-placeholder {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem; opacity: .4;
+  }
+
+  /* Price badge */
+  .price-badge {
+    position: absolute; top: 1rem; right: 1rem;
+    background: rgba(255,255,255,.95); backdrop-filter: blur(8px);
+    border-radius: 12px; padding: .4rem .85rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,.12);
+    text-align: center;
+  }
+  .price-badge-label { font-size: .6rem; color: #6b7280; line-height: 1; }
+  .price-badge-num   { font-size: .92rem; font-weight: 900; color: #0a3d2e; }
+
+  /* Duration badge */
+  .dur-badge {
+    position: absolute; bottom: 1rem; left: 1rem;
+    display: flex; align-items: center; gap: .4rem;
+    background: rgba(0,0,0,.5); backdrop-filter: blur(6px);
+    color: #fff; font-size: .72rem; font-weight: 600;
+    padding: .35rem .8rem; border-radius: 100px;
+  }
+
+  /* Date badge */
+  .date-badge {
+    position: absolute; bottom: 1rem; right: 1rem;
+    display: flex; align-items: center; gap: .4rem;
+    background: rgba(0,0,0,.5); backdrop-filter: blur(6px);
+    color: #fff; font-size: .72rem; font-weight: 600;
+    padding: .35rem .8rem; border-radius: 100px;
+  }
+
+  /* Card body */
+  .tour-card-body { padding: 1.4rem 1.5rem; flex: 1; display: flex; flex-direction: column; }
+  .tour-card-name {
+    font-size: 1.12rem; font-weight: 700; color: #0a3d2e; margin-bottom: .35rem;
+    line-height: 1.3; transition: color .2s;
+  }
+  .tour-card:hover .tour-card-name { color: #16a34a; }
+  .tour-card-event {
+    display: flex; align-items: center; gap: .4rem;
+    font-size: .74rem; font-weight: 600; color: #16a34a; margin-bottom: .6rem;
+  }
+  .tour-card-desc {
+    font-size: .84rem; color: #6b7280; line-height: 1.65;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    margin-bottom: 1rem; flex: 1;
+  }
+  .tour-card-location {
+    display: flex; align-items: center; gap: .4rem;
+    font-size: .74rem; color: #6b7280; margin-bottom: .85rem;
+  }
+
+  /* Chips row */
+  .chips-row { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: 1.2rem; }
+  .chip {
+    display: inline-flex; align-items: center; gap: .35rem;
+    font-size: .68rem; font-weight: 500; padding: .3rem .75rem; border-radius: 100px;
+  }
+  .chip-green { background: #ecfdf5; color: #16a34a; border: 1px solid rgba(22,163,74,.15); }
+  .chip-gray  { background: #f3f4f6; color: #4b5563; border: 1px solid rgba(0,0,0,.06); }
+  .chip-more  { font-size: .68rem; color: #9ca3af; padding: .3rem 0; }
+
+  /* CTA button */
+  .tour-cta {
+    display: flex; align-items: center; justify-content: center; gap: .5rem;
+    padding: .8rem; border-radius: 12px;
+    background: #0a3d2e; color: #fff; font-weight: 600; font-size: .88rem;
+    text-decoration: none; transition: background .2s;
+  }
+  .tour-cta:hover { background: #1a5c42; color: #fff; }
+
+  /* Admin row */
+  .admin-row { display: flex; gap: .5rem; margin-top: .5rem; }
+  .admin-btn-sm {
+    flex: 1; text-align: center; font-size: .72rem; font-weight: 500;
+    padding: .45rem; border-radius: 8px; text-decoration: none;
+    color: #6b7280; background: transparent; border: none; cursor: pointer;
+    transition: background .15s, color .15s;
+  }
+  .admin-btn-sm:hover { background: #f3f4f6; color: #374151; }
+  .admin-btn-sm.deactivate { color: #d97706; }
+  .admin-btn-sm.deactivate:hover { color: #92400e; }
+  .admin-btn-sm.activate { color: #16a34a; }
+  .admin-btn-sm.activate:hover { color: #065f46; }
+
+  /* ── Empty state ── */
+  .empty-state { text-align: center; padding: 5rem 2rem; }
+  .empty-icon  {
+    width: 90px; height: 90px; background: #ecfdf5; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1.5rem; font-size: 2.2rem; color: #bbf7d0;
+  }
+  .empty-title { font-size: 1.6rem; font-weight: 900; color: #0a3d2e; margin-bottom: .6rem; }
+  .empty-sub   { font-size: .95rem; color: #6b7280; max-width: 400px; margin: 0 auto 2rem; line-height: 1.6; }
+  .empty-cta {
+    display: inline-flex; align-items: center; gap: .5rem;
+    padding: .75rem 1.8rem; border-radius: 100px;
+    background: #0a3d2e; color: #fff; font-weight: 600; font-size: .9rem;
+    text-decoration: none; transition: background .2s;
+  }
+  .empty-cta:hover { background: #1a5c42; }
+
+  /* Fade-up — from about.html */
+  .fade-up { opacity: 0; transform: translateY(24px); transition: opacity .6s ease, transform .6s ease; }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 640px) {
+    .tours-hero { padding: 3.5rem 1.2rem 6rem; }
+    .stats-bar { grid-template-columns: repeat(3, 1fr); margin: -2rem 1rem 2rem; }
+    .tours-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="tours-page">
+
+  <!-- ── HERO ── -->
+  <section class="tours-hero">
+    <div class="tours-hero-inner">
+      <div class="hero-tag"><span class="hero-dot"></span> Curated Sri Lanka Experiences</div>
+      <h1 class="display-font">
+        Explore Sri Lanka<br>
+        <em style="color:#86efac;font-style:normal">Your Way</em>
       </h1>
-      <p class="text-emerald-100 text-lg leading-relaxed">
-        Handcrafted adventures led by local experts. Every tour combines the finest trails into an unforgettable journey.
-      </p>
+      <p>Handcrafted adventures led by local experts. Every tour weaves the finest trails into an unforgettable island journey.</p>
+      <div class="hero-cta-row">
+        <a href="#tours-grid" class="hero-cta-primary"><i class="fas fa-map-marked-alt"></i> Browse Tours</a>
+        {% if user.is_staff %}
+        <a href="{% url 'places:create_tour' %}" class="hero-cta-staff"><i class="fas fa-plus"></i> Create Tour Package</a>
+        {% endif %}
+      </div>
     </div>
-    <!-- Decorative circles -->
-    <div class="absolute -right-16 -top-16 w-64 h-64 bg-white opacity-5 rounded-full"></div>
-    <div class="absolute right-16 -bottom-24 w-96 h-96 bg-teal-400 opacity-10 rounded-full"></div>
-  </div>
+  </section>
 
-  {% if user.is_staff %}
-  <div class="flex justify-end mb-6">
-    <a href="{% url 'places:create_tour' %}"
-       class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white
-              px-5 py-2.5 rounded-xl font-semibold text-sm shadow-md transition-all active:scale-95">
-      <i class="fas fa-plus"></i> Create Tour Package
-    </a>
+  <!-- ── STATS BAR ── -->
+  {% if tours %}
+  <div class="stats-bar fade-up">
+    <div class="stat-item">
+      <div class="stat-num display-font">{{ tours|length }}</div>
+      <div class="stat-label">Tour Packages</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num display-font">9</div>
+      <div class="stat-label">Provinces</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num display-font">100%</div>
+      <div class="stat-label">Local Guides</div>
+    </div>
   </div>
   {% endif %}
 
-  {% if tours %}
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-7">
-    {% for tour in tours %}
-    <article class="tour-card group bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100
-                    hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+  <!-- ── TOURS GRID ── -->
+  <div class="page-wrap" id="tours-grid">
 
-      <!-- Image / poster -->
-      <div class="relative h-52 overflow-hidden bg-gradient-to-br from-green-600 to-teal-700">
-        {% if tour.image %}
-          <img src="{{ tour.image.url }}" alt="{{ tour.name }}"
-               class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-        {% else %}
-          <div class="w-full h-full flex items-center justify-center">
-            <i class="fas fa-mountain text-white text-5xl opacity-40"></i>
+    {% if tours %}
+    <div style="margin-bottom:2rem" class="fade-up">
+      <span class="section-label">All Packages</span>
+      <h2 class="display-font" style="font-size:2rem;font-weight:900;color:#0a3d2e;margin-top:.2rem">Available Tours</h2>
+    </div>
+
+    <div class="tours-grid">
+      {% for tour in tours %}
+      <article class="tour-card">
+
+        <div class="tour-card-img-wrap">
+          {% if tour.image %}
+            <img class="tour-card-img" src="{{ tour.image.url }}" alt="{{ tour.name }}">
+          {% else %}
+            <div class="tour-card-placeholder"><i class="fas fa-mountain"></i></div>
+          {% endif %}
+
+          <!-- Price badge -->
+          <div class="price-badge">
+            <div class="price-badge-label">per person</div>
+            <div class="price-badge-num">LKR {{ tour.price_lkr|floatformat:0 }}</div>
           </div>
-        {% endif %}
 
-        <!-- Price badge -->
-        <div class="absolute top-4 right-4 bg-white bg-opacity-95 backdrop-blur-sm
-                    rounded-xl px-3 py-1.5 shadow-md">
-          <div class="text-xs text-gray-400 leading-none">per person</div>
-          <div class="text-sm font-black text-green-700">LKR {{ tour.price_lkr|floatformat:0 }}</div>
-        </div>
+          <!-- Duration -->
+          <div class="dur-badge"><i class="fas fa-clock" style="color:#86efac;font-size:.65rem"></i> {{ tour.duration_display }}</div>
 
-        <!-- Duration badge -->
-        <div class="absolute bottom-4 left-4 flex items-center gap-1.5 bg-black bg-opacity-50
-                    backdrop-blur-sm rounded-full px-3 py-1.5 text-white text-xs font-semibold">
-          <i class="fas fa-clock text-emerald-300"></i>
-          {{ tour.duration_display }}
-        </div>
-      </div>
-
-      <div class="p-5">
-        <h2 class="text-lg font-bold text-gray-900 mb-2 leading-snug group-hover:text-green-700 transition-colors">
-          {{ tour.name }}
-        </h2>
-        <p class="text-gray-500 text-sm leading-relaxed mb-4 line-clamp-2">
-          {{ tour.description }}
-        </p>
-
-        <!-- Trail count + offering chips -->
-        <div class="flex flex-wrap items-center gap-2 mb-5">
-          <span class="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-xs font-semibold
-                       rounded-full px-3 py-1">
-            <i class="fas fa-route text-green-500"></i>
-            {{ tour.trails.count }} trail{% if tour.trails.count != 1 %}s{% endif %}
-          </span>
-          {% for offering in tour.offerings.all|slice:":3" %}
-          <span class="inline-flex items-center gap-1 bg-gray-50 text-gray-600 text-xs rounded-full px-2.5 py-1 border border-gray-200">
-            {% if offering.icon %}<i class="{{ offering.icon }} text-gray-400"></i>{% endif %}
-            {{ offering.name }}
-          </span>
-          {% endfor %}
-          {% if tour.offerings.count > 3 %}
-          <span class="text-xs text-gray-400">+{{ tour.offerings.count|add:"-3" }} more</span>
+          <!-- Event date (if set) -->
+          {% if tour.event_date %}
+          <div class="date-badge"><i class="fas fa-calendar-alt" style="color:#86efac;font-size:.65rem"></i> {{ tour.event_date|date:"M j" }}</div>
           {% endif %}
         </div>
 
-        <a href="{% url 'places:tour_detail' slug=tour.slug %}"
-           class="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700
-                  text-white font-semibold text-sm py-2.5 rounded-xl transition-colors active:scale-95">
-          View Details <i class="fas fa-arrow-right text-xs"></i>
-        </a>
+        <div class="tour-card-body">
+          <h2 class="tour-card-name display-font">{{ tour.name }}</h2>
 
-        {% if user.is_staff %}
-        <div class="flex gap-2 mt-2">
-          <a href="{% url 'places:edit_tour' slug=tour.slug %}"
-             class="flex-1 text-center text-xs text-gray-500 hover:text-green-600 py-1.5 rounded-lg
-                    hover:bg-gray-50 transition-colors">
-            <i class="fas fa-edit mr-1"></i> Edit
+          {% if tour.event_date %}
+          <div class="tour-card-event">
+            <i class="fas fa-calendar-alt" style="color:#4a8a6a;font-size:.7rem"></i>
+            {{ tour.event_date|date:"l, F j, Y" }}
+            {% if tour.event_time %}
+            <span style="color:#9ca3af">·</span>
+            <i class="fas fa-clock" style="color:#4a8a6a;font-size:.7rem"></i>
+            {{ tour.event_time|time:"g:i A" }}
+            {% endif %}
+          </div>
+          {% endif %}
+
+          <p class="tour-card-desc">{{ tour.description }}</p>
+
+          {% if tour.starting_location %}
+          <div class="tour-card-location">
+            <i class="fas fa-map-marker-alt" style="color:#4a8a6a;font-size:.7rem"></i>
+            Starts at <strong style="color:#374151;margin-left:.2rem">{{ tour.starting_location }}</strong>
+          </div>
+          {% endif %}
+
+          <div class="chips-row">
+            <span class="chip chip-green"><i class="fas fa-route" style="font-size:.6rem"></i>{{ tour.trails.count }} trail{% if tour.trails.count != 1 %}s{% endif %}</span>
+            {% for offering in tour.offerings.all|slice:":3" %}
+            <span class="chip chip-gray">{% if offering.icon %}<i class="{{ offering.icon }}" style="font-size:.6rem"></i>{% endif %}{{ offering.name }}</span>
+            {% endfor %}
+            {% if tour.offerings.count > 3 %}<span class="chip-more">+{{ tour.offerings.count|add:"-3" }} more</span>{% endif %}
+          </div>
+
+          <a href="{% url 'places:tour_detail' slug=tour.slug %}" class="tour-cta">
+            View Details <i class="fas fa-arrow-right" style="font-size:.72rem"></i>
           </a>
-          <button onclick="toggleTour('{{ tour.slug }}', this)"
-                  class="flex-1 text-xs py-1.5 rounded-lg hover:bg-gray-50 transition-colors
-                         {% if tour.is_active %}text-yellow-600 hover:text-yellow-700{% else %}text-green-600 hover:text-green-700{% endif %}">
-            <i class="fas {% if tour.is_active %}fa-eye-slash{% else %}fa-eye{% endif %} mr-1"></i>
-            {% if tour.is_active %}Deactivate{% else %}Activate{% endif %}
-          </button>
+
+          {% if user.is_staff %}
+          <div class="admin-row">
+            <a href="{% url 'places:edit_tour' slug=tour.slug %}" class="admin-btn-sm"><i class="fas fa-edit" style="margin-right:.3rem"></i>Edit</a>
+            <button onclick="toggleTour('{{ tour.slug }}', this)"
+                    class="admin-btn-sm {% if tour.is_active %}deactivate{% else %}activate{% endif %}">
+              <i class="fas {% if tour.is_active %}fa-eye-slash{% else %}fa-eye{% endif %}" style="margin-right:.3rem"></i>
+              {% if tour.is_active %}Deactivate{% else %}Activate{% endif %}
+            </button>
+          </div>
+          {% endif %}
         </div>
-        {% endif %}
-      </div>
-    </article>
-    {% endfor %}
-  </div>
-
-  {% else %}
-  <div class="text-center py-24">
-    <div class="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mx-auto mb-6">
-      <i class="fas fa-map-marked-alt text-4xl text-green-300"></i>
+      </article>
+      {% endfor %}
     </div>
-    <h3 class="text-2xl font-bold text-gray-800 mb-3">No Tours Available Yet</h3>
-    <p class="text-gray-500 mb-8 max-w-md mx-auto">
-      Our team is crafting amazing tour experiences. Check back soon!
-    </p>
-    {% if user.is_staff %}
-    <a href="{% url 'places:create_tour' %}"
-       class="inline-flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white
-              px-6 py-3 rounded-xl font-semibold transition-colors">
-      <i class="fas fa-plus"></i> Create First Tour
-    </a>
-    {% endif %}
-  </div>
-  {% endif %}
 
-</div>
+    {% else %}
+
+    <!-- Empty state -->
+    <div class="empty-state fade-up">
+      <div class="empty-icon"><i class="fas fa-map-marked-alt"></i></div>
+      <h3 class="empty-title display-font">No Tours Yet</h3>
+      <p class="empty-sub">Our team is crafting extraordinary tour experiences across Sri Lanka. Check back soon!</p>
+      {% if user.is_staff %}
+      <a href="{% url 'places:create_tour' %}" class="empty-cta"><i class="fas fa-plus"></i> Create First Tour</a>
+      {% endif %}
+    </div>
+
+    {% endif %}
+
+  </div><!-- /page-wrap -->
+
+</div><!-- /tours-page -->
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
 // Staggered card entrance
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.tour-card').forEach((card, i) => {
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(20px)';
-    card.style.transition = 'opacity 0.45s ease, transform 0.45s ease';
-    setTimeout(() => {
-      card.style.opacity = '1';
-      card.style.transform = 'translateY(0)';
-    }, 60 + i * 80);
-  });
+  const cards = document.querySelectorAll('.tour-card');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const card = entry.target;
+        const i = [...cards].indexOf(card);
+        setTimeout(() => {
+          card.style.transition = 'opacity .5s ease, transform .5s ease';
+          card.classList.add('visible');
+        }, i * 75);
+        io.unobserve(card);
+      }
+    });
+  }, { threshold: 0.07 });
+  cards.forEach(c => io.observe(c));
 });
 
+// Fade-up for non-card elements
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// Toggle tour active state
 function toggleTour(slug, btn) {
   fetch(`/tours/${slug}/toggle/`, {
     method: 'POST',
     headers: { 'X-CSRFToken': document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '' }
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.success) location.reload();
-  });
+  }).then(r => r.json()).then(data => { if (data.success) location.reload(); });
 }
 </script>
 {% endblock %}

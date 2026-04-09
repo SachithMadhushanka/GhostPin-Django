@@ -18,6 +18,7 @@ from .models import (
     PlaceVideo,
     TourPackage,
     TourOffering,
+    TourItineraryDay,
 )
 
 @admin.register(UserProfile)
@@ -38,19 +39,16 @@ class UserProfileAdmin(admin.ModelAdmin):
     def make_trusted(self, request, queryset):
         queryset.update(is_trusted=True)
         self.message_user(request, f"{queryset.count()} users marked as trusted.")
-
     make_trusted.short_description = "Mark selected users as trusted"
 
     def remove_trusted(self, request, queryset):
         queryset.update(is_trusted=False)
         self.message_user(request, f"{queryset.count()} users removed from trusted.")
-
     remove_trusted.short_description = "Remove trusted status from selected users"
 
     def make_local_expert(self, request, queryset):
         queryset.update(is_local_expert=True)
         self.message_user(request, f"{queryset.count()} users marked as local experts.")
-
     make_local_expert.short_description = "Mark selected users as local experts"
 
 
@@ -76,7 +74,7 @@ class CategoryAdmin(admin.ModelAdmin):
 class PlaceAdmin(admin.ModelAdmin):
     list_display = [
         "name",
-        "get_categories",  # ✅ custom method instead of 'category'
+        "get_categories",
         "difficulty",
         "created_by",
         "status",
@@ -85,71 +83,39 @@ class PlaceAdmin(admin.ModelAdmin):
         "visit_count",
         "created_at",
     ]
-
-    list_filter = [
-        "status",
-        "difficulty",
-        "created_at",
-        "category",  # ✅ This is OK in filters
-    ]
-
+    list_filter = ["status", "difficulty", "created_at", "category"]
     search_fields = ["name", "description", "legends_stories"]
     actions = ["approve_places", "reject_places"]
     inlines = [PlaceImageInline]
-
     readonly_fields = [
-        "approval_votes",
-        "rejection_votes",
-        "visit_count",
-        "created_at",
-        "updated_at",
+        "approval_votes", "rejection_votes", "visit_count", "created_at", "updated_at",
     ]
-
-    filter_horizontal = ("category",)  # ✅ Better UI for ManyToMany in admin
-
+    filter_horizontal = ("category",)
     fieldsets = (
-        (
-            "Basic Information",
-            {"fields": ("name", "description", "legends_stories", "image")},
-        ),
+        ("Basic Information", {"fields": ("name", "description", "legends_stories", "image")}),
         ("Location", {"fields": ("latitude", "longitude")}),
         ("Categorization", {"fields": ("category", "difficulty")}),
-        (
-            "Additional Info",
-            {"fields": ("accessibility_info", "best_time_to_visit", "safety_rating")},
-        ),
-        (
-            "Status & Metadata",
-            {
-                "fields": (
-                    "created_by",
-                    "status",
-                    "approval_votes",
-                    "rejection_votes",
-                    "visit_count",
-                    "created_at",
-                    "updated_at",
-                )
-            },
-        ),
+        ("Additional Info", {"fields": ("accessibility_info", "best_time_to_visit", "safety_rating")}),
+        ("Status & Metadata", {
+            "fields": (
+                "created_by", "status", "approval_votes", "rejection_votes",
+                "visit_count", "created_at", "updated_at",
+            )
+        }),
     )
 
-    # ✅ Custom method to show categories in list_display
     def get_categories(self, obj):
         return ", ".join([cat.name for cat in obj.category.all()])
-
     get_categories.short_description = "Categories"
 
     def approve_places(self, request, queryset):
         queryset.update(status="approved")
         self.message_user(request, f"{queryset.count()} places approved.")
-
     approve_places.short_description = "Approve selected places"
 
     def reject_places(self, request, queryset):
         queryset.update(status="rejected")
         self.message_user(request, f"{queryset.count()} places rejected.")
-
     reject_places.short_description = "Reject selected places"
 
 
@@ -162,13 +128,7 @@ class PlaceImageAdmin(admin.ModelAdmin):
 
 @admin.register(CheckIn)
 class CheckInAdmin(admin.ModelAdmin):
-    list_display = [
-        "user",
-        "place",
-        "location_verified",
-        "points_awarded",
-        "created_at",
-    ]
+    list_display = ["user", "place", "location_verified", "points_awarded", "created_at"]
     list_filter = ["location_verified", "created_at"]
     search_fields = ["user__username", "place__name"]
     readonly_fields = ["created_at"]
@@ -212,27 +172,18 @@ class FavoriteAdmin(admin.ModelAdmin):
 
 @admin.register(Badge)
 class BadgeAdmin(admin.ModelAdmin):
-    list_display = [
-        "name",
-        "badge_preview",
-        "category",
-        "points_required",
-        "is_active",
-        "created_at",
-    ]
+    list_display = ["name", "badge_preview", "category", "points_required", "is_active", "created_at"]
     list_filter = ["is_active", "category", "created_at"]
     search_fields = ["name", "description"]
 
     def badge_preview(self, obj):
         if obj.image:
             from django.utils.html import format_html
-
             return format_html(
                 '<img src="{}" width="40" height="40" style="border-radius:50%;object-fit:cover;">',
                 obj.image.url,
             )
-        return obj.icon  # fallback to emoji
-
+        return obj.icon
     badge_preview.short_description = "Icon/Image"
 
 
@@ -245,14 +196,7 @@ class UserBadgeAdmin(admin.ModelAdmin):
 
 @admin.register(Challenge)
 class ChallengeAdmin(admin.ModelAdmin):
-    list_display = [
-        "title",
-        "challenge_type",
-        "reward_points",
-        "start_date",
-        "end_date",
-        "is_active",
-    ]
+    list_display = ["title", "challenge_type", "reward_points", "start_date", "end_date", "is_active"]
     list_filter = ["challenge_type", "is_active", "start_date", "end_date"]
     search_fields = ["title", "description"]
 
@@ -267,15 +211,11 @@ class NotificationAdmin(admin.ModelAdmin):
     def mark_as_read(self, request, queryset):
         queryset.update(is_read=True)
         self.message_user(request, f"{queryset.count()} notifications marked as read.")
-
     mark_as_read.short_description = "Mark selected notifications as read"
 
     def mark_as_unread(self, request, queryset):
         queryset.update(is_read=False)
-        self.message_user(
-            request, f"{queryset.count()} notifications marked as unread."
-        )
-
+        self.message_user(request, f"{queryset.count()} notifications marked as unread.")
     mark_as_unread.short_description = "Mark selected notifications as unread"
 
 
@@ -291,13 +231,62 @@ class TourOfferingAdmin(admin.ModelAdmin):
     list_display = ['name', 'icon']
     search_fields = ['name']
 
+
+# ── TourItineraryDay inline for TourPackage ───────────────
+class TourItineraryDayInline(admin.StackedInline):
+    model = TourItineraryDay
+    extra = 1
+    fields = ['day_number', 'title', 'description', 'distance_km', 'highlights']
+    ordering = ['day_number']
+
+
 @admin.register(TourPackage)
 class TourPackageAdmin(admin.ModelAdmin):
-    list_display  = ['name', 'price_lkr', 'duration_hours', 'is_active', 'created_by', 'created_at']
-    list_filter   = ['is_active']
-    search_fields = ['name', 'description']
+    list_display  = [
+        'name', 'price_lkr', 'duration_hours',
+        'event_date', 'event_time',
+        'starting_location', 'is_active', 'created_by', 'created_at',
+    ]
+    list_filter   = ['is_active', 'event_date']
+    search_fields = ['name', 'description', 'starting_location', 'ending_location']
     prepopulated_fields = {'slug': ('name',)}
     filter_horizontal = ['trails', 'offerings']
+    inlines = [TourItineraryDayInline]
+
+    fieldsets = (
+        ('Core Info', {
+            'fields': ('name', 'slug', 'description', 'image', 'is_active', 'created_by'),
+        }),
+        ('Logistics', {
+            'fields': ('duration_hours', 'price_lkr'),
+        }),
+        ('Event Date & Time', {
+            'fields': ('event_date', 'event_time'),
+            'description': 'Leave blank if this is not a fixed-date event.',
+        }),
+        ('Route', {
+            'fields': ('starting_location', 'ending_location'),
+        }),
+        ('What to Bring', {
+            'fields': ('what_to_bring',),
+            'description': 'Enter one item per line.',
+        }),
+        ('Trails & Offerings', {
+            'fields': ('trails', 'offerings'),
+        }),
+        ('Booking', {
+            'fields': ('contact_numbers',),
+            'description': 'Enter one phone number per line.',
+        }),
+    )
+
+
+@admin.register(TourItineraryDay)
+class TourItineraryDayAdmin(admin.ModelAdmin):
+    list_display  = ['tour', 'day_number', 'title', 'distance_km']
+    list_filter   = ['tour']
+    search_fields = ['tour__name', 'title', 'description']
+    ordering      = ['tour', 'day_number']
 
 
 # ─────────────────────────────────────────────────────────
@@ -321,39 +310,3 @@ class TourPackageAdmin(admin.ModelAdmin):
 # for name, icon in defaults:
 #     TourOffering.objects.get_or_create(name=name, defaults={'icon': icon})
 # print("Done!")
-
-
-# @admin.register(AudioGuide)
-# class AudioGuideAdmin(admin.ModelAdmin):
-#     list_display = ['title', 'place', 'created_by', 'is_approved', 'duration', 'created_at']
-#     list_filter = ['is_approved', 'created_at']
-#     search_fields = ['title', 'place__name', 'created_by__username']
-#     actions = ['approve_guides', 'reject_guides']
-
-#     def approve_guides(self, request, queryset):
-#         queryset.update(is_approved=True)
-#         self.message_user(request, f'{queryset.count()} audio guides approved.')
-#     approve_guides.short_description = 'Approve selected audio guides'
-
-#     def reject_guides(self, request, queryset):
-#         queryset.update(is_approved=False)
-#         self.message_user(request, f'{queryset.count()} audio guides rejected.')
-#     reject_guides.short_description = 'Reject selected audio guides'
-
-
-# @admin.register(Report)
-# class ReportAdmin(admin.ModelAdmin):
-#     list_display = ['reported_by', 'place', 'comment', 'reason', 'status', 'created_at']
-#     list_filter = ['status', 'reason', 'created_at']
-#     search_fields = ['reported_by__username', 'reason', 'description']
-#     actions = ['mark_resolved', 'mark_pending']
-
-#     def mark_resolved(self, request, queryset):
-#         queryset.update(status='resolved')
-#         self.message_user(request, f'{queryset.count()} reports marked as resolved.')
-#     mark_resolved.short_description = 'Mark selected reports as resolved'
-
-#     def mark_pending(self, request, queryset):
-#         queryset.update(status='pending')
-#         self.message_user(request, f'{queryset.count()} reports marked as pending.')
-#     mark_pending.short_description = 'Mark selected reports as pending'

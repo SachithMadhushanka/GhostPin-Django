@@ -1,276 +1,452 @@
 {% extends 'base.html' %}
-{% block title %}Badges - Expearls{% endblock %}
+{% block title %}Badges — Expearls{% endblock %}
+
 {% block content %}
-  <div class="max-w-6xl mx-auto">
-    <!-- Header -->
-    <div class="text-center mb-10">
-      <h1 class="text-4xl font-bold text-gray-900 mb-3">
-        <i class="fas fa-trophy text-yellow-500 mr-3"></i>Achievement Badges
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .badges-page { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* Hero — identical pattern to about.html */
+  .hero-badges {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-badges::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-badges::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 80px;
+    background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px;
+    background: #86efac;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:.5; transform:scale(1.4); }
+  }
+
+  /* Progress banner */
+  .progress-banner {
+    background: linear-gradient(135deg, #7c3aed 0%, #4338ca 100%);
+    border-radius: 20px;
+    box-shadow: 0 8px 32px rgba(124,58,237,.2);
+  }
+  .progress-track {
+    background: rgba(255,255,255,.2);
+    border-radius: 50px;
+    height: 8px;
+  }
+  .progress-fill {
+    background: #fff;
+    height: 8px;
+    border-radius: 50px;
+    transition: width .8s ease;
+  }
+
+  /* Sidebar */
+  .filter-sidebar {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.06);
+  }
+  .filter-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 9px 12px;
+    border-radius: 10px;
+    font-size: .8125rem;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    color: #6b7280;
+    background: transparent;
+    transition: all .15s;
+  }
+  .filter-btn.active {
+    background: #ecfdf5;
+    color: #15803d;
+  }
+  .filter-btn:hover:not(.active) { background: #f9fafb; }
+
+  /* Badge cards */
+  .badge-card {
+    background: #fff;
+    border-radius: 16px;
+    border: 1px solid #f3f4f6;
+    padding: 22px 18px;
+    text-align: center;
+    transition: transform .3s, box-shadow .3s, border-color .3s;
+  }
+  .badge-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 40px rgba(0,0,0,.08);
+  }
+  .badge-card.earned { border-color: #fde68a; box-shadow: 0 2px 12px rgba(253,230,138,.25); }
+  .badge-card.earned:hover { border-color: #fbbf24; }
+
+  .badge-icon-ring {
+    position: relative;
+    display: inline-flex;
+    margin-bottom: 14px;
+  }
+  .badge-icon {
+    width: 68px; height: 68px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 28px;
+  }
+  .badge-icon.earned-icon {
+    background: linear-gradient(135deg, #fbbf24, #f97316);
+    box-shadow: 0 6px 16px rgba(251,191,36,.35);
+  }
+  .badge-icon.locked-icon {
+    background: #f3f4f6;
+    filter: grayscale(1);
+    opacity: .5;
+  }
+  .status-badge {
+    position: absolute;
+    top: -2px; right: -2px;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px;
+    color: #fff;
+    font-weight: 700;
+    border: 2px solid #fff;
+  }
+  .status-badge.earned-badge { background: #22c55e; }
+  .status-badge.locked-badge { background: #d1d5db; }
+
+  .badge-category {
+    font-size: .6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 3px;
+  }
+  .badge-category.explorer  { color: #16a34a; }
+  .badge-category.contributor { color: #2563eb; }
+  .badge-category.social    { color: #7c3aed; }
+  .badge-category.special   { color: #ea580c; }
+
+  .badge-name { font-size: .875rem; font-weight: 600; color: #111; margin-bottom: 4px; }
+  .badge-desc { font-size: .6875rem; color: #9ca3af; line-height: 1.5; margin-bottom: 12px; }
+
+  .earned-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #f0fdf4;
+    color: #15803d;
+    font-size: .6875rem;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 50px;
+  }
+
+  .mini-progress-label {
+    display: flex; justify-content: space-between;
+    font-size: .6875rem; color: #9ca3af;
+    margin-bottom: 4px;
+  }
+  .mini-track { background: #f3f4f6; border-radius: 50px; height: 5px; }
+  .mini-fill  { height: 5px; border-radius: 50px; transition: width .7s ease; }
+  .mini-fill.pct-high   { background: #22c55e; }
+  .mini-fill.pct-mid    { background: #3b82f6; }
+  .mini-fill.pct-low    { background: #d1d5db; }
+
+  .action-hint {
+    background: #fafafa;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: .6875rem;
+    color: #9ca3af;
+    text-align: left;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  /* How-to grid — same value-card pattern as about.html */
+  .how-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px 20px;
+    border: 1px solid #f3f4f6;
+    transition: transform .3s, box-shadow .3s;
+  }
+  .how-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,.08); }
+  .how-icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    margin-bottom: 14px;
+  }
+
+  /* Fade-up animation — same as about.html */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+
+<div class="badges-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-badges pt-20 pb-32 px-4 text-center">
+    <div class="max-w-3xl mx-auto relative z-10">
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-6 tracking-wide uppercase">
+        <span class="hero-dot"></span> Achievement System
+      </span>
+      <h1 class="display-font text-5xl md:text-6xl font-black text-white leading-tight mb-6">
+        Earn Your<br>
+        <em class="text-green-300 not-italic">Explorer Badges</em>
       </h1>
-      <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-        Earn badges by exploring places, contributing to the community, and building streaks.
-        Every badge has a concrete goal — no mystery requirements.
+      <p class="text-green-100 text-lg font-light max-w-xl mx-auto leading-relaxed mb-10">
+        Every milestone unlocks a badge. Check in, contribute, and build streaks to collect them all — no mystery requirements.
       </p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <a href="{% url 'places:home' %}" class="px-7 py-3 bg-green-400 hover:bg-green-300 text-green-950 font-semibold rounded-full text-sm transition-all shadow-lg shadow-green-900/30">
+          Start Exploring
+        </a>
+        <a href="#how-to-earn" class="px-7 py-3 bg-white bg-opacity-10 hover:bg-opacity-20 text-white font-medium rounded-full text-sm transition-all border border-white border-opacity-20">
+          How to Earn
+        </a>
+      </div>
     </div>
-    <!-- User progress banner -->
+  </section>
+
+  <!-- ══ CONTENT ══ -->
+  <div class="max-w-5xl mx-auto px-4 pb-24">
+
+    <!-- Progress banner (authenticated only) -->
     {% if user.is_authenticated %}
-      <div class="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl p-6 text-white mb-10 shadow-lg">
-        <div class="flex items-center justify-between flex-wrap gap-4">
-          <div class="flex-1">
-            <h2 class="text-lg font-bold mb-1">Your Collection</h2>
-            <p class="text-purple-200 text-sm mb-3">{{ earned_count }} of {{ total_count }} badges earned</p>
-            <div class="w-full bg-white bg-opacity-20 rounded-full h-2.5 max-w-sm">
-              <div class="bg-white h-2.5 rounded-full transition-all duration-700"
-                   style="width: {% widthratio earned_count total_count 100 %}%"></div>
-            </div>
-          </div>
-          <div class="text-right">
-            <div class="text-5xl font-black">{% widthratio earned_count total_count 100 %}%</div>
-            <div class="text-purple-200 text-sm">complete</div>
+    <div class="progress-banner p-6 md:p-8 mb-10 fade-up">
+      <div class="flex flex-wrap items-center justify-between gap-6">
+        <div class="flex-1">
+          <h2 class="text-white font-bold text-lg mb-1">Your Collection</h2>
+          <p class="text-purple-200 text-sm mb-4">{{ earned_count }} of {{ total_count }} badges earned</p>
+          <div class="progress-track max-w-xs">
+            <div class="progress-fill" style="width: {% widthratio earned_count total_count 100 %}%"></div>
           </div>
         </div>
+        <div class="text-right">
+          <div class="display-font text-5xl font-black text-white">{% widthratio earned_count total_count 100 %}%</div>
+          <div class="text-purple-200 text-sm">complete</div>
+        </div>
       </div>
+    </div>
     {% endif %}
+
     <!-- Layout: sidebar + grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-      <!-- Sidebar filters -->
-      <div class="lg:col-span-1">
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 sticky top-24">
-          <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Filter by Category</h3>
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+
+      <!-- Sidebar -->
+      <div class="lg:col-span-1 fade-up">
+        <div class="filter-sidebar p-5 sticky top-24">
+          <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">Filter by Category</p>
           <nav class="space-y-1">
             {% for value, label, icon in badge_category_tabs %}
-              <button class="category-filter w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium transition-colors {% if forloop.first %}bg-indigo-50 text-indigo-700{% else %}text-gray-600 hover:bg-gray-50{% endif %}"
-                      data-category="{{ value }}">
+              <button class="filter-btn {% if forloop.first %}active{% endif %}" data-category="{{ value }}" onclick="filterBadges(this)">
                 <i class="{{ icon }} mr-2 w-4 text-center"></i>{{ label }}
               </button>
             {% empty %}
-              <!-- Static fallback if view doesn't pass tabs -->
-              <button class="category-filter w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium bg-indigo-50 text-indigo-700"
-                      data-category="all">
-                <i class="fas fa-th mr-2 w-4 text-center"></i>All Badges
-              </button>
-              <button class="category-filter w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50"
-                      data-category="explorer">
-                <i class="fas fa-map-marked-alt mr-2 w-4 text-center"></i>Explorer
-              </button>
-              <button class="category-filter w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50"
-                      data-category="contributor">
-                <i class="fas fa-hands-helping mr-2 w-4 text-center"></i>Contributor
-              </button>
-              <button class="category-filter w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50"
-                      data-category="social">
-                <i class="fas fa-users mr-2 w-4 text-center"></i>Social
-              </button>
-              <button class="category-filter w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50"
-                      data-category="special">
-                <i class="fas fa-star mr-2 w-4 text-center"></i>Special
-              </button>
+              <button class="filter-btn active" data-category="all" onclick="filterBadges(this)"><i class="fas fa-th mr-2 w-4 text-center"></i>All Badges</button>
+              <button class="filter-btn" data-category="explorer" onclick="filterBadges(this)"><i class="fas fa-map-marked-alt mr-2 w-4 text-center"></i>Explorer</button>
+              <button class="filter-btn" data-category="contributor" onclick="filterBadges(this)"><i class="fas fa-hands-helping mr-2 w-4 text-center"></i>Contributor</button>
+              <button class="filter-btn" data-category="social" onclick="filterBadges(this)"><i class="fas fa-users mr-2 w-4 text-center"></i>Social</button>
+              <button class="filter-btn" data-category="special" onclick="filterBadges(this)"><i class="fas fa-star mr-2 w-4 text-center"></i>Special</button>
             {% endfor %}
           </nav>
+
           {% if user.is_authenticated %}
-            <div class="mt-6 pt-5 border-t border-gray-100">
-              <h3 class="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Quick Stats</h3>
-              <div class="space-y-2 text-sm text-gray-600">
-                <div class="flex justify-between">
-                  <span>Earned</span>
-                  <span class="font-semibold text-green-600">{{ earned_count }}</span>
-                </div>
-                <div class="flex justify-between">
-                  <span>Remaining</span>
-                  <span class="font-semibold text-gray-800">{{ total_count|add:"-"|add:earned_count }}</span>
-                </div>
+          <div class="mt-6 pt-5 border-t border-gray-100">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Quick Stats</p>
+            <div class="space-y-2 text-sm text-gray-600">
+              <div class="flex justify-between">
+                <span>Earned</span>
+                <span class="font-semibold text-green-600">{{ earned_count }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Remaining</span>
+                <span class="font-semibold text-gray-800">{{ remaining_count }}</span>
               </div>
             </div>
+          </div>
           {% endif %}
         </div>
       </div>
+
       <!-- Badge grid -->
       <div class="lg:col-span-3">
         {% if all_badges %}
-          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
-               id="badges-grid">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="badges-grid">
             {% for badge in all_badges %}
-              <div class="badge-card group bg-white rounded-xl shadow-sm border transition-all duration-300 {% if badge.is_earned %}border-yellow-300 shadow-yellow-100{% else %}border-gray-100 hover:border-indigo-200 hover:shadow-md{% endif %}"
-                   data-category="{{ badge.category }}">
-                <div class="p-5">
-                  <!-- Badge icon -->
-                  <div class="relative mb-4 flex justify-center">
-                    <div class="w-20 h-20 rounded-full flex items-center justify-center text-3xl {% if badge.is_earned %} bg-gradient-to-br from-yellow-400 to-orange-500 shadow-lg shadow-orange-200 {% else %} bg-gray-100 grayscale {% endif %}">
-                      {% if badge.image %}
-                        <img src="{{ badge.image.url }}"
-                             alt="{{ badge.name }}"
-                             class="w-full h-full rounded-full object-cover {% if not badge.is_earned %}opacity-40{% endif %}">
-                      {% elif badge.icon %}
-                        <span class="{% if not badge.is_earned %}opacity-40{% endif %}">{{ badge.icon }}</span>
-                      {% else %}
-                        <span class="{% if not badge.is_earned %}opacity-40{% endif %}">🏅</span>
-                      {% endif %}
-                    </div>
-                    <!-- Status dot -->
-                    {% if badge.is_earned %}
-                      <div class="absolute -top-1 -right-1 w-7 h-7 bg-green-500 rounded-full flex items-center justify-center shadow">
-                        <i class="fas fa-check text-white text-xs"></i>
-                      </div>
-                    {% else %}
-                      <div class="absolute -top-1 -right-1 w-7 h-7 bg-gray-300 rounded-full flex items-center justify-center">
-                        <i class="fas fa-lock text-white text-xs"></i>
-                      </div>
-                    {% endif %}
-                  </div>
-                  <!-- Name + category -->
-                  <div class="text-center mb-3">
-                    <span class="text-xs font-semibold uppercase tracking-wider {% if badge.category == 'explorer' %}text-green-600 {% elif badge.category == 'contributor' %}text-blue-600 {% elif badge.category == 'social' %}text-purple-600 {% else %}text-orange-600{% endif %}">
-                      {{ badge.get_category_display }}
-                    </span>
-                    <h3 class="text-base font-bold text-gray-900 mt-0.5">{{ badge.name }}</h3>
-                    <p class="text-gray-500 text-xs mt-1 leading-relaxed">{{ badge.description }}</p>
-                  </div>
-                  <!-- Real progress (authenticated) -->
-                  {% if user.is_authenticated and badge.progress %}
-                    {% if badge.is_earned %}
-                      <!-- Earned state -->
-                      <div class="bg-green-50 rounded-lg px-3 py-2 text-center">
-                        <div class="text-green-700 font-semibold text-xs flex items-center justify-center gap-1">
-                          <i class="fas fa-calendar-check"></i>
-                          Earned
-                          {% if badge.earned_at %}{{ badge.earned_at|date:"M d, Y" }}{% endif %}
-                        </div>
-                      </div>
-                    {% else %}
-                      <!-- In-progress state -->
-                      <div class="mb-3">
-                        <div class="flex justify-between text-xs text-gray-500 mb-1">
-                          <span>{{ badge.progress.label }}</span>
-                          <span class="font-semibold">{{ badge.progress.percent }}%</span>
-                        </div>
-                        <div class="w-full bg-gray-100 rounded-full h-2">
-                          <div class="h-2 rounded-full transition-all duration-700 {% if badge.progress.percent >= 75 %}bg-green-500 {% elif badge.progress.percent >= 40 %}bg-blue-500 {% else %}bg-gray-400{% endif %}"
-                               style="width: {{ badge.progress.percent }}%"></div>
-                        </div>
-                      </div>
-                      <!-- Action hint -->
-                      <div class="bg-gray-50 rounded-lg px-3 py-2">
-                        <p class="text-xs text-gray-500 leading-relaxed">
-                          <i class="fas fa-lightbulb text-yellow-500 mr-1"></i>
-                          {{ badge.progress.action_hint }}
-                        </p>
-                      </div>
-                    {% endif %}
-                  {% elif not user.is_authenticated %}
-                    <!-- Logged out — show requirement only -->
-                    <div class="bg-gray-50 rounded-lg px-3 py-2 text-center">
-                      <p class="text-xs text-gray-400">
-                        <a href="{% url 'login' %}"
-                           class="text-indigo-500 hover:underline font-medium">Log in</a>
-                        to track your progress
-                      </p>
-                    </div>
+            <div class="badge-card fade-up {% if badge.is_earned %}earned{% endif %}" data-category="{{ badge.category }}" style="transition-delay: {{ forloop.counter0 }}0ms">
+              <div class="badge-icon-ring">
+                <div class="badge-icon {% if badge.is_earned %}earned-icon{% else %}locked-icon{% endif %}">
+                  {% if badge.image %}
+                    <img src="{{ badge.image.url }}" alt="{{ badge.name }}" class="w-full h-full rounded-full object-cover {% if not badge.is_earned %}opacity-40{% endif %}">
+                  {% elif badge.icon %}
+                    <span {% if not badge.is_earned %}style="opacity:.4"{% endif %}>{{ badge.icon }}</span>
+                  {% else %}
+                    <span {% if not badge.is_earned %}style="opacity:.4"{% endif %}>🏅</span>
                   {% endif %}
                 </div>
+                <div class="status-badge {% if badge.is_earned %}earned-badge{% else %}locked-badge{% endif %}">
+                  {% if badge.is_earned %}<i class="fas fa-check" style="font-size:8px"></i>{% else %}<i class="fas fa-lock" style="font-size:8px"></i>{% endif %}
+                </div>
               </div>
+
+              <div class="badge-category {{ badge.category }}">{{ badge.get_category_display }}</div>
+              <h3 class="badge-name">{{ badge.name }}</h3>
+              <p class="badge-desc">{{ badge.description }}</p>
+
+              {% if user.is_authenticated and badge.progress %}
+                {% if badge.is_earned %}
+                  <div class="earned-pill">
+                    <i class="fas fa-calendar-check" style="font-size:9px"></i>
+                    Earned{% if badge.earned_at %} {{ badge.earned_at|date:"M d, Y" }}{% endif %}
+                  </div>
+                {% else %}
+                  <div>
+                    <div class="mini-progress-label">
+                      <span>{{ badge.progress.label }}</span>
+                      <span class="font-semibold">{{ badge.progress.percent }}%</span>
+                    </div>
+                    <div class="mini-track">
+                      <div class="mini-fill {% if badge.progress.percent >= 75 %}pct-high{% elif badge.progress.percent >= 40 %}pct-mid{% else %}pct-low{% endif %}"
+                           style="width: {{ badge.progress.percent }}%"></div>
+                    </div>
+                    <div class="action-hint">
+                      <i class="fas fa-lightbulb text-yellow-500 mr-1" style="font-size:10px"></i>{{ badge.progress.action_hint }}
+                    </div>
+                  </div>
+                {% endif %}
+              {% elif not user.is_authenticated %}
+                <div class="action-hint text-center">
+                  <a href="{% url 'login' %}" class="text-green-600 font-semibold hover:underline">Log in</a> to track your progress
+                </div>
+              {% endif %}
+            </div>
             {% endfor %}
           </div>
         {% else %}
-          <div class="text-center py-20">
-            <i class="fas fa-trophy text-8xl text-gray-200 mb-6"></i>
-            <h3 class="text-2xl font-bold text-gray-800 mb-3">No Badges Yet</h3>
+          <div class="text-center py-20 fade-up">
+            <div class="text-7xl mb-6">🏆</div>
+            <h3 class="display-font text-2xl font-bold text-gray-800 mb-3">No Badges Yet</h3>
             <p class="text-gray-500 mb-8">Badges are being set up. Check back soon!</p>
-            <a href="{% url 'places:home' %}"
-               class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+            <a href="{% url 'places:home' %}" class="px-7 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full text-sm transition-all">
               <i class="fas fa-map-marker-alt mr-2"></i>Start Exploring
             </a>
           </div>
         {% endif %}
       </div>
     </div>
-    <!-- How to earn section -->
-    <div class="mt-12 bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-      <h2 class="text-xl font-bold text-gray-900 mb-6">
-        <i class="fas fa-question-circle text-indigo-500 mr-2"></i>How to Earn Badges
-      </h2>
+
+    <!-- ══ HOW TO EARN ══ -->
+    <section id="how-to-earn" class="mt-16">
+      <div class="text-center mb-10 fade-up">
+        <span class="text-green-600 text-xs font-semibold uppercase tracking-widest">Get Started</span>
+        <h2 class="display-font text-4xl font-bold text-gray-900 mt-2">How to Earn Badges</h2>
+      </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div class="flex items-start gap-3">
-          <div class="w-9 h-9 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-map-marker-alt text-green-600 text-sm"></i>
-          </div>
-          <div>
-            <p class="font-semibold text-gray-800 text-sm">Check In</p>
-            <p class="text-gray-500 text-xs mt-0.5">Visit places and check in — especially with photo proof.</p>
-          </div>
+        <div class="how-card fade-up">
+          <div class="how-icon bg-green-50"><span>📍</span></div>
+          <h3 class="font-semibold text-gray-900 mb-2">Check In</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Visit places and check in — especially with photo proof for bonus points.</p>
         </div>
-        <div class="flex items-start gap-3">
-          <div class="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-plus-circle text-blue-600 text-sm"></i>
-          </div>
-          <div>
-            <p class="font-semibold text-gray-800 text-sm">Add Places</p>
-            <p class="text-gray-500 text-xs mt-0.5">Submit new places and get them approved by the team.</p>
-          </div>
+        <div class="how-card fade-up" style="transition-delay:.1s">
+          <div class="how-icon bg-blue-50"><span>➕</span></div>
+          <h3 class="font-semibold text-gray-900 mb-2">Add Places</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Submit new places and get them approved by the moderation team.</p>
         </div>
-        <div class="flex items-start gap-3">
-          <div class="w-9 h-9 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-star text-yellow-600 text-sm"></i>
-          </div>
-          <div>
-            <p class="font-semibold text-gray-800 text-sm">Write Reviews</p>
-            <p class="text-gray-500 text-xs mt-0.5">Leave star ratings and reviews when visiting places.</p>
-          </div>
+        <div class="how-card fade-up" style="transition-delay:.2s">
+          <div class="how-icon bg-yellow-50"><span>⭐</span></div>
+          <h3 class="font-semibold text-gray-900 mb-2">Write Reviews</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Leave star ratings and honest reviews when you visit places.</p>
         </div>
-        <div class="flex items-start gap-3">
-          <div class="w-9 h-9 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-            <i class="fas fa-fire text-purple-600 text-sm"></i>
-          </div>
-          <div>
-            <p class="font-semibold text-gray-800 text-sm">Build Streaks</p>
-            <p class="text-gray-500 text-xs mt-0.5">Check in on consecutive days to build your daily streak.</p>
-          </div>
+        <div class="how-card fade-up" style="transition-delay:.3s">
+          <div class="how-icon bg-purple-50"><span>🔥</span></div>
+          <h3 class="font-semibold text-gray-900 mb-2">Build Streaks</h3>
+          <p class="text-sm text-gray-500 leading-relaxed">Check in on consecutive days to grow your daily streak count.</p>
         </div>
       </div>
-    </div>
+    </section>
   </div>
+
+  <!-- ══ CTA ══ -->
+  <section class="bg-gradient-to-br from-green-700 to-emerald-900 py-20 px-4 text-center">
+    <div class="max-w-2xl mx-auto fade-up">
+      <h2 class="display-font text-4xl font-bold text-white mb-4">Ready to Collect?</h2>
+      <p class="text-green-200 mb-8 text-lg">Every adventure earns a badge. Start exploring Sri Lanka today.</p>
+      <div class="flex flex-wrap justify-center gap-4">
+        <a href="{% url 'register' %}" class="px-8 py-3.5 bg-white text-green-800 font-semibold rounded-full text-sm hover:bg-green-50 transition-all shadow-lg">
+          Create Free Account
+        </a>
+        <a href="{% url 'places:home' %}" class="px-8 py-3.5 border border-green-400 text-green-100 font-medium rounded-full text-sm hover:bg-green-800 transition-all">
+          Browse Places
+        </a>
+      </div>
+    </div>
+  </section>
+
+</div>
+
 {% endblock %}
+
 {% block extra_js %}
-  <script>
-// Category filter
-const filterBtns = document.querySelectorAll('.category-filter');
-filterBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    const cat = btn.dataset.category;
+<script>
+function filterBadges(btn) {
+  const cat = btn.dataset.category;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
 
-    filterBtns.forEach(b => {
-      b.classList.remove('bg-indigo-50', 'text-indigo-700');
-      b.classList.add('text-gray-600');
-    });
-    btn.classList.add('bg-indigo-50', 'text-indigo-700');
-    btn.classList.remove('text-gray-600');
-
-    document.querySelectorAll('.badge-card').forEach(card => {
-      const match = cat === 'all' || card.dataset.category === cat;
-      card.style.transition = 'opacity 0.2s, transform 0.2s';
-      if (match) {
-        card.style.opacity = '1';
-        card.style.transform = 'scale(1)';
-        card.style.display = '';
-      } else {
-        card.style.opacity = '0';
-        card.style.transform = 'scale(0.95)';
-        setTimeout(() => { if (card.style.opacity === '0') card.style.display = 'none'; }, 200);
-      }
-    });
-  });
-});
-
-// Staggered load animation
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.badge-card').forEach((card, i) => {
-    card.style.opacity = '0';
-    card.style.transform = 'translateY(16px)';
-    card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-    setTimeout(() => {
+  document.querySelectorAll('.badge-card').forEach(card => {
+    const match = cat === 'all' || card.dataset.category === cat;
+    card.style.transition = 'opacity .2s, transform .2s';
+    if (match) {
       card.style.opacity = '1';
-      card.style.transform = 'translateY(0)';
-    }, 40 + i * 60);
+      card.style.transform = '';
+      card.style.display = '';
+    } else {
+      card.style.opacity = '0';
+      card.style.transform = 'scale(.95)';
+      setTimeout(() => { if (card.style.opacity === '0') card.style.display = 'none'; }, 200);
+    }
   });
-});
-  </script>
+}
+
+// Scroll entrance animations — same as about.html
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
 {% endblock %}

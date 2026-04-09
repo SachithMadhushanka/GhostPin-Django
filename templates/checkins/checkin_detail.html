@@ -1,488 +1,676 @@
 {% extends 'base.html' %}
-{% block title %}
-    Check-In Details - {{ place.name }} - Expearls
-{% endblock %}
+{% block title %}Check-In at {{ place.name }} — Expearls{% endblock %}
+
 {% block content %}
-    {% csrf_token %}
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                        <i class="fas fa-map-pin text-green-600 mr-2"></i>
-                        Check-In at {{ place.name }}
-                    </h1>
-                    <p class="text-gray-600">Details and verification for this check-in</p>
-                </div>
-                <div class="flex space-x-3">
-                    <a href="{% url 'places:place_detail' place.slug %}"
-                       class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
-                        <i class="fas fa-eye mr-2"></i> View Place
-                    </a>
-                    <a href="{% url 'places:check_ins' %}"
-                       class="inline-flex items-center text-green-600 hover:text-green-700 font-medium">
-                        <i class="fas fa-arrow-left mr-2"></i> All Check-ins
-                    </a>
-                </div>
-            </div>
-        </div>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
-        <!-- Place Card -->
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8 card-hover">
-            <div class="flex flex-col md:flex-row">
-                <div class="md:w-1/3 h-64 md:h-auto">
-                    {% if checkin.place.image %}
-                        <img src="{{ checkin.place.image.url }}"
-                             alt="{{ checkin.place.name }}"
-                             class="w-full h-full object-cover" />
-                    {% else %}
-                        <div class="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-white text-4xl">
-                            🏛️
-                        </div>
-                    {% endif %}
-                </div>
-                <div class="md:w-2/3 p-6">
-                    <h2 class="text-2xl font-bold text-gray-900 mb-3">{{ place.name }}</h2>
-                    <p class="text-gray-600 mb-4">{{ place.description|truncatewords:20 }}</p>
-                    <div class="flex flex-wrap gap-2 mb-4">
-                        <span class="bg-blue-100 text-blue-800 text-sm px-3 py-1 rounded-full">
-                            <i class="fas fa-tag mr-1"></i>
-                            {% for cat in place.category.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                        </span>
-                        <span class="bg-orange-100 text-orange-800 text-sm px-3 py-1 rounded-full">
-                            <i class="fas fa-signal mr-1"></i>
-                            {{ place.get_difficulty_display }}
-                        </span>
-                        {% if place.average_rating %}
-                            <span class="bg-yellow-100 text-yellow-800 text-sm px-3 py-1 rounded-full">
-                                <i class="fas fa-star mr-1"></i>
-                                {{ place.average_rating|floatformat:1 }} ⭐
-                            </span>
-                        {% endif %}
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 text-sm text-gray-600">
-                        <div class="flex items-center">
-                            <i class="fas fa-map-marker-alt text-red-500 mr-2"></i>
-                            {{ place.latitude|floatformat:4 }}, {{ place.longitude|floatformat:4 }}
-                        </div>
-                        <div class="flex items-center">
-                            <i class="fas fa-users text-blue-500 mr-2"></i>
-                            {{ place.checkin_set.count }} check-ins
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+  .ci-detail-page { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
 
-        <!-- Check-In Summary Card -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h3 class="text-xl font-semibold text-gray-900 mb-6">
-                <i class="fas fa-clipboard-check text-green-600 mr-2"></i>
-                Check-In Summary
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                        <span class="text-gray-600 font-medium">Checked in by</span>
-                        <div class="flex items-center space-x-2">
-                            <a href="{% url 'places:profile' checkin.user.username %}"
-                               class="w-8 h-8 bg-gradient-to-br from-blue-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                                {{ checkin.user.username|first|upper }}
-                            </a>
-                            <span class="font-semibold text-gray-900">{{ checkin.user.username }}</span>
-                        </div>
-                    </div>
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                        <span class="text-gray-600 font-medium">Date</span>
-                        <span class="font-semibold text-gray-900">
-                            <i class="fas fa-calendar text-blue-500 mr-1"></i>
-                            {{ checkin.created_at|date:"F j, Y, g:i a" }}
-                        </span>
-                    </div>
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                        <span class="text-gray-600 font-medium">Points Earned</span>
-                        <span class="font-bold text-green-600 text-lg">
-                            <i class="fas fa-coins mr-1"></i>
-                            +{{ checkin.points_awarded }}
-                        </span>
-                    </div>
-                </div>
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                        <span class="text-gray-600 font-medium">Location Verified</span>
-                        {% if checkin.location_verified %}
-                            <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                <i class="fas fa-check-circle mr-1"></i>Yes
-                            </span>
-                        {% else %}
-                            <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                <i class="fas fa-times-circle mr-1"></i>No
-                            </span>
-                        {% endif %}
-                    </div>
-                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
-                        <span class="text-gray-600 font-medium">Photo Proof</span>
-                        {% if checkin.photo_proof %}
-                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                <i class="fas fa-camera mr-1"></i>Provided
-                            </span>
-                        {% else %}
-                            <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-full text-sm">
-                                <i class="fas fa-camera-slash mr-1"></i>No photo
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% if checkin.notes %}
-                <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                    <h4 class="font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-sticky-note text-yellow-600 mr-2"></i>Notes
-                    </h4>
-                    <p class="text-gray-700 italic">"{{ checkin.notes }}"</p>
-                </div>
-            {% endif %}
-        </div>
+  /* ── Hero ── */
+  .hero-cid {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative; overflow: hidden;
+  }
+  .hero-cid::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-cid::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 64px; background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px; background: #86efac; border-radius: 50%;
+    display: inline-block; margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(1.4); }
+  }
+  .hero-breadcrumb {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 50px;
+    background: rgba(255,255,255,0.10); color: #bbf7d0;
+    font-size: .73rem; font-weight: 500; letter-spacing: .05em; text-transform: uppercase;
+    text-decoration: none; transition: background .2s;
+  }
+  .hero-breadcrumb:hover { background: rgba(255,255,255,.18); }
 
-        <!-- Photo Preview -->
-        {% if checkin.photo_proof %}
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-image text-purple-600 mr-2"></i>Photo Proof
-                </h3>
-                <div class="relative">
-                    <img src="{{ checkin.photo_proof.url }}"
-                         alt="Photo proof at {{ place.name }}"
-                         class="w-full max-w-2xl mx-auto rounded-lg shadow-lg cursor-pointer"
-                         onclick="openPhotoModal(this.src)" />
-                    <div class="absolute bottom-4 left-4 bg-black bg-opacity-75 text-white px-3 py-2 rounded-lg text-sm">
-                        <i class="fas fa-info-circle mr-1"></i>Click to view full size
-                    </div>
-                </div>
-            </div>
-        {% endif %}
+  /* ── Section label ── */
+  .section-label {
+    font-size: .68rem; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; color: #16a34a;
+  }
 
-        <!-- Comments Section -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8" id="comments">
-            <h3 class="text-xl font-semibold text-gray-900 mb-6">
-                <i class="fas fa-comments text-blue-600 mr-2"></i>
-                Visitor Comments
-                <span class="text-sm font-normal text-gray-500 ml-2">({{ comments.count|default:0 }})</span>
-            </h3>
-            {% if comments %}
-                <div class="space-y-6" id="comments-list">
-                    {% for comment in comments %}
-                        <div class="comment-item border-b border-gray-100 pb-6 last:border-b-0"
-                             data-comment-id="{{ comment.id }}">
-                            <div class="flex items-start space-x-4">
-                                <a href="{% url 'places:profile' comment.user.username %}"
-                                   class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 hover:opacity-90 transition">
-                                    {{ comment.user.username|first|upper }}
-                                </a>
-                                <div class="flex-1">
-                                    <div class="flex items-center space-x-2 mb-2">
-                                        <span class="font-semibold text-gray-900">{{ comment.user.username }}</span>
-                                        <span class="text-gray-500 text-sm">{{ comment.created_at|timesince }} ago</span>
-                                        {% if comment.rating %}
-                                            <div class="flex items-center space-x-1">
-                                                {% for i in "12345" %}
-                                                    {% if forloop.counter <= comment.rating %}
-                                                        <i class="fas fa-star text-yellow-400 text-xs"></i>
-                                                    {% else %}
-                                                        <i class="far fa-star text-gray-300 text-xs"></i>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <p class="text-gray-700 mb-3">{{ comment.text }}</p>
-                                    {% if comment.youtube_id %}
-                                        <div class="mb-3">
-                                            <a href="https://www.youtube.com/watch?v={{ comment.youtube_id }}"
-                                               target="_blank" rel="noopener">
-                                                <img src="https://img.youtube.com/vi/{{ comment.youtube_id }}/0.jpg"
-                                                     alt="YouTube thumbnail"
-                                                     class="rounded-lg shadow-md hover:opacity-80 transition w-full max-w-xs" />
-                                            </a>
-                                        </div>
-                                    {% endif %}
-                                    <!-- Voting -->
-                                    <div class="flex items-center space-x-4">
-                                        <div class="flex items-center space-x-2">
-                                            <button class="vote-btn hover:text-green-700 transition-colors"
-                                                    data-comment-id="{{ comment.id }}"
-                                                    data-vote-type="up"
-                                                    onclick="voteComment('{{ comment.id }}', 'up')">
-                                                <i class="fas fa-thumbs-up text-green-600"></i>
-                                            </button>
-                                            <span class="text-sm text-gray-600 vote-count-up">{{ comment.votes }}</span>
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            <button class="vote-btn hover:text-red-700 transition-colors"
-                                                    data-comment-id="{{ comment.id }}"
-                                                    data-vote-type="down"
-                                                    onclick="voteComment('{{ comment.id }}', 'down')">
-                                                <i class="fas fa-thumbs-down text-red-600"></i>
-                                            </button>
-                                            <span class="text-sm text-gray-600 vote-count-down">{{ comment.votes }}</span>
-                                        </div>
-                                        <button class="text-sm text-blue-600 hover:text-blue-700"
-                                                onclick="toggleReplyForm('{{ comment.id }}')">
-                                            <i class="fas fa-reply mr-1"></i>Reply
-                                        </button>
-                                    </div>
-                                    <!-- Reply Form -->
-                                    <div id="reply-form-{{ comment.id }}" class="hidden mt-4 ml-4 p-4 bg-gray-50 rounded-lg">
-                                        <textarea id="reply-text-{{ comment.id }}"
-                                                  rows="2"
-                                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                                                  placeholder="Write your reply..."></textarea>
-                                        <div class="flex justify-end space-x-2 mt-2">
-                                            <button type="button"
-                                                    onclick="toggleReplyForm('{{ comment.id }}')"
-                                                    class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800">Cancel</button>
-                                            <button type="button"
-                                                    onclick="submitReply('{{ comment.id }}')"
-                                                    class="px-4 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">Reply</button>
-                                        </div>
-                                    </div>
-                                    <!-- Replies -->
-                                    {% if comment.replies.all %}
-                                        <div class="mt-4 ml-4 space-y-4">
-                                            {% for reply in comment.replies.all %}
-                                                <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                                                    <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                                                        {{ reply.user.username|first|upper }}
-                                                    </div>
-                                                    <div class="flex-1">
-                                                        <div class="flex items-center space-x-2 mb-1">
-                                                            <span class="font-medium text-gray-900 text-sm">{{ reply.user.username }}</span>
-                                                            <span class="text-gray-500 text-xs">{{ reply.created_at|timesince }} ago</span>
-                                                        </div>
-                                                        <p class="text-gray-700 text-sm">{{ reply.text }}</p>
-                                                    </div>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="text-center py-12">
-                    <i class="fas fa-comments text-6xl text-gray-300 mb-4"></i>
-                    <h4 class="text-xl font-semibold text-gray-900 mb-2">No comments yet</h4>
-                    <p class="text-gray-600 mb-6">Be the first to share your thoughts about this check-in!</p>
-                </div>
-            {% endif %}
-        </div>
+  /* ── Cards ── */
+  .detail-card {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    overflow: hidden;
+  }
+  .card-pad { padding: 26px 28px; }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem; font-weight: 700; color: #111827; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .card-title-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+  }
 
-        <!-- Comment Form -->
-        {% if user.is_authenticated %}
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="text-xl font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-pen text-green-600 mr-2"></i>Leave a Comment
-                </h3>
-                <form method="post" id="comment-form" class="space-y-4">
-                    {% csrf_token %}
-                    <input type="hidden" name="checkin_id" value="{{ checkin.id }}" />
-                    <div>
-                        <label for="comment-text" class="block text-sm font-medium text-gray-700 mb-2">Your Comment</label>
-                        <textarea name="text"
-                                  id="comment-text"
-                                  rows="4"
-                                  required
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                                  placeholder="Write something about this check-in..."></textarea>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Rating (Optional)</label>
-                        <div class="flex items-center space-x-1" id="rating-stars">
-                            {% for i in "12345" %}
-                                <i class="far fa-star text-gray-300 text-xl cursor-pointer hover:text-yellow-400 transition-colors"
-                                   data-rating="{{ forloop.counter }}"
-                                   onclick="setRating('{{ forloop.counter }}')"></i>
-                            {% endfor %}
-                        </div>
-                        <input type="hidden" name="rating" id="rating-input" value="" />
-                    </div>
-                    <div class="flex justify-end">
-                        <button type="submit"
-                                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-                            <i class="fas fa-paper-plane mr-2"></i>Post Comment
-                        </button>
-                    </div>
-                </form>
-            </div>
+  /* Place card horizontal */
+  .place-thumb { width: 260px; flex-shrink: 0; }
+  @media (max-width: 768px) { .place-thumb { width: 100%; height: 200px; } }
+  .place-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .place-thumb-placeholder {
+    width: 100%; height: 100%; min-height: 200px;
+    background: linear-gradient(135deg,#0a3d2e,#34d399);
+    display: flex; align-items: center; justify-content: center; font-size: 3rem;
+  }
+  .tag-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 50px; font-size: .73rem; font-weight: 500;
+  }
+  .tag-cat      { background: #d1fae5; color: #065f46; }
+  .tag-diff     { background: #fef3c7; color: #92400e; }
+  .tag-rating   { background: #fef9c3; color: #92400e; }
+
+  /* Detail rows */
+  .detail-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid #f9fafb; font-size: .86rem;
+  }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-row .lbl { color: #6b7280; }
+
+  .badge-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 12px; border-radius: 50px; font-size: .72rem; font-weight: 600;
+  }
+  .badge-yes    { background: #dcfce7; color: #15803d; }
+  .badge-no     { background: #fee2e2; color: #991b1b; }
+  .badge-photo  { background: #dbeafe; color: #1d4ed8; }
+  .badge-none   { background: #f3f4f6; color: #6b7280; }
+
+  .points-big {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem; font-weight: 700; color: #16a34a;
+    display: flex; align-items: baseline; gap: 4px;
+  }
+  .points-big span { font-size: .85rem; font-weight: 400; color: #9ca3af; font-family: 'DM Sans', sans-serif; }
+
+  /* User row */
+  .user-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .user-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: linear-gradient(135deg,#059669,#10b981);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: .85rem;
+    text-decoration: none; flex-shrink: 0;
+    border: 2px solid #a7f3d0;
+  }
+  .user-name-link {
+    font-weight: 600; color: #111827; text-decoration: none; transition: color .15s;
+  }
+  .user-name-link:hover { color: #16a34a; }
+
+  /* Photo section */
+  .photo-wrapper {
+    position: relative; border-radius: 16px; overflow: hidden;
+    max-width: 600px; margin: 0 auto; cursor: pointer;
+  }
+  .photo-wrapper img {
+    width: 100%; display: block;
+    transition: transform .3s;
+  }
+  .photo-wrapper:hover img { transform: scale(1.02); }
+  .photo-overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0);
+    display: flex; align-items: center; justify-content: center;
+    transition: background .25s;
+  }
+  .photo-wrapper:hover .photo-overlay { background: rgba(0,0,0,.2); }
+  .photo-overlay i { color: #fff; font-size: 1.5rem; opacity: 0; transition: opacity .25s; }
+  .photo-wrapper:hover .photo-overlay i { opacity: 1; }
+
+  /* Notes box */
+  .notes-box {
+    background: #f9fafb; border-left: 3px solid #d1fae5;
+    border-radius: 0 14px 14px 0; padding: 16px 18px;
+  }
+  .notes-box p { font-size: .88rem; color: #374151; font-style: italic; line-height: 1.65; }
+
+  /* ── Comments ── */
+  .comment-item {
+    padding: 18px 0; border-bottom: 1px solid #f9fafb;
+  }
+  .comment-item:last-child { border-bottom: none; }
+  .comment-avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: linear-gradient(135deg,#059669,#10b981);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: .85rem;
+    text-decoration: none; flex-shrink: 0; border: 2px solid #a7f3d0;
+  }
+  .comment-avatar-purple {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg,#7c3aed,#a78bfa);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-weight: 700; font-size: .75rem; flex-shrink: 0;
+  }
+  .star-row { display: flex; gap: 2px; }
+  .star-row i { font-size: .7rem; }
+
+  /* Vote buttons */
+  .vote-btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 12px; border-radius: 50px; border: 1.5px solid #e5e7eb;
+    background: #f9fafb; cursor: pointer; font-size: .75rem;
+    font-family: 'DM Sans', sans-serif; font-weight: 500; color: #6b7280;
+    transition: all .15s;
+  }
+  .vote-btn:hover { border-color: #34d399; color: #16a34a; background: #f0fdf4; }
+  .vote-btn.down:hover { border-color: #fca5a5; color: #dc2626; background: #fff1f2; }
+
+  .reply-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: .75rem; color: #9ca3af; cursor: pointer; padding: 5px 0;
+    background: none; border: none; font-family: 'DM Sans', sans-serif;
+    transition: color .15s;
+  }
+  .reply-link:hover { color: #3b82f6; }
+
+  /* Reply form */
+  .reply-form-wrap {
+    margin-top: 12px; margin-left: 16px;
+    background: #f9fafb; border-radius: 14px; padding: 14px;
+    border: 1px solid #f3f4f6;
+  }
+  .exp-textarea {
+    width: 100%;
+    border: 1.5px solid #e5e7eb; border-radius: 10px;
+    padding: 10px 14px; font-family: 'DM Sans', sans-serif;
+    font-size: .85rem; color: #111827; resize: none;
+    transition: border-color .2s;
+  }
+  .exp-textarea:focus { outline: none; border-color: #34d399; }
+  .reply-submit-btn {
+    padding: 7px 18px; border-radius: 50px;
+    background: #3b82f6; color: #fff; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: .78rem; font-weight: 600;
+    cursor: pointer; transition: background .15s;
+  }
+  .reply-submit-btn:hover { background: #2563eb; }
+  .reply-cancel-btn {
+    padding: 7px 14px; border-radius: 50px;
+    background: transparent; color: #6b7280; border: none;
+    font-family: 'DM Sans', sans-serif; font-size: .78rem; cursor: pointer;
+    transition: color .15s;
+  }
+  .reply-cancel-btn:hover { color: #374151; }
+
+  /* Replies */
+  .reply-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 14px; background: #f9fafb; border-radius: 12px;
+    margin-top: 10px;
+  }
+
+  /* Comment form */
+  .comment-form-card { background: #fff; border-radius: 20px; border: 1px solid #f3f4f6; box-shadow: 0 2px 12px rgba(0,0,0,.05); }
+  .rating-stars i {
+    font-size: 1.2rem; cursor: pointer; color: #d1d5db;
+    transition: color .15s;
+  }
+  .rating-stars i.active { color: #f59e0b; }
+  .submit-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 11px 24px; border-radius: 50px;
+    background: linear-gradient(135deg,#16a34a,#059669);
+    color: #fff; border: none; font-family: 'DM Sans', sans-serif;
+    font-size: .88rem; font-weight: 600; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(22,163,74,.3);
+    transition: all .2s;
+  }
+  .submit-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(22,163,74,.4); }
+
+  /* Login prompt */
+  .login-prompt {
+    background: #f0fdf4; border-radius: 18px; border: 1px solid #d1fae5;
+    padding: 28px; text-align: center;
+  }
+
+  /* ── Empty comments ── */
+  .empty-comments {
+    text-align: center; padding: 40px 20px;
+  }
+  .empty-comments-icon {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: #f0fdf4; border: 2px solid #d1fae5;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px; font-size: 28px;
+  }
+
+  /* Photo modal */
+  .photo-modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,.88);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; padding: 20px;
+  }
+  .photo-modal-bg img { max-width: 100%; max-height: 90vh; border-radius: 14px; }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: rgba(255,255,255,.15); border: none; color: #fff;
+    cursor: pointer; font-size: 15px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s;
+  }
+  .modal-close:hover { background: rgba(255,255,255,.3); }
+
+  /* Fade */
+  .fade-up {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+
+{% csrf_token %}
+
+<div class="ci-detail-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-cid pt-12 pb-24 px-4">
+    <div class="max-w-4xl mx-auto relative z-10">
+      <div class="flex flex-wrap gap-3 mb-6">
+        <a href="{% url 'places:place_detail' place.slug %}" class="hero-breadcrumb">
+          <i class="fas fa-eye text-xs"></i> {{ place.name|truncatechars:24 }}
+        </a>
+        <a href="{% url 'places:check_ins' %}" class="hero-breadcrumb">
+          <i class="fas fa-arrow-left text-xs"></i> All Check-ins
+        </a>
+      </div>
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-5 tracking-wide uppercase">
+        <span class="hero-dot"></span> Check-in Detail
+      </span>
+      <h1 class="display-font text-4xl md:text-5xl font-black text-white leading-tight mb-3">
+        Check-In at<br><em class="text-green-300 not-italic">{{ place.name }}</em>
+      </h1>
+      <p class="text-green-100 font-light">Verification details and visitor experience for this check-in.</p>
+    </div>
+  </section>
+
+  <div class="max-w-4xl mx-auto px-4 -mt-8 pb-20 relative z-10 space-y-6">
+
+    <!-- ══ PLACE CARD ══ -->
+    <div class="detail-card flex flex-col md:flex-row fade-up">
+      <div class="place-thumb">
+        {% if checkin.place.image %}
+          <img src="{{ checkin.place.image.url }}" alt="{{ place.name }}">
         {% else %}
-            <div class="bg-gray-50 rounded-lg p-6 text-center">
-                <i class="fas fa-sign-in-alt text-4xl text-gray-400 mb-4"></i>
-                <h3 class="text-lg font-semibold text-gray-900 mb-2">Want to leave a comment?</h3>
-                <p class="text-gray-600 mb-4">Log in to share your thoughts about this check-in.</p>
-                <a href="{% url 'login' %}?next={{ request.path }}" class="btn-primary">
-                    <i class="fas fa-sign-in-alt mr-2"></i>Log In
-                </a>
-            </div>
+          <div class="place-thumb-placeholder">🏛️</div>
         {% endif %}
+      </div>
+      <div class="card-pad flex-1">
+        <p class="section-label mb-2">Location</p>
+        <h2 class="display-font text-2xl font-bold text-gray-900 mb-3">{{ place.name }}</h2>
+        <p class="text-gray-500 text-sm leading-relaxed mb-4">{{ place.description|truncatewords:20 }}</p>
+        <div class="flex flex-wrap gap-2 mb-4">
+          <span class="tag-pill tag-cat"><i class="fas fa-tag" style="font-size:.6rem"></i>{% for cat in place.category.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
+          <span class="tag-pill tag-diff"><i class="fas fa-signal" style="font-size:.6rem"></i>{{ place.get_difficulty_display }}</span>
+          {% if place.average_rating %}<span class="tag-pill tag-rating"><i class="fas fa-star" style="font-size:.6rem"></i>{{ place.average_rating|floatformat:1 }}</span>{% endif %}
+        </div>
+        <div class="flex flex-wrap gap-4 text-sm text-gray-400">
+          <span><i class="fas fa-map-marker-alt mr-1 text-red-400"></i>{{ place.latitude|floatformat:4 }}, {{ place.longitude|floatformat:4 }}</span>
+          <span><i class="fas fa-users mr-1 text-blue-400"></i>{{ place.checkin_set.count }} check-ins</span>
+        </div>
+      </div>
     </div>
 
-    <!-- Photo Modal -->
-    <div id="photo-modal"
-         class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
-        <div class="max-w-4xl max-h-full p-4 relative">
-            <img id="modal-photo" src="" alt="Full size photo" class="max-w-full max-h-full rounded-lg" />
-            <button class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300"
-                    onclick="closePhotoModal()">
-                <i class="fas fa-times"></i>
-            </button>
+    <!-- ══ CHECK-IN SUMMARY ══ -->
+    <div class="detail-card fade-up" style="transition-delay:.08s">
+      <div class="card-pad">
+        <div class="card-title">
+          <div class="card-title-icon" style="background:#f0fdf4"><i class="fas fa-clipboard-check text-green-600"></i></div>
+          Check-in Summary
         </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <div class="detail-row">
+              <span class="lbl">Checked in by</span>
+              <div class="user-row">
+                <a href="{% url 'places:profile' checkin.user.username %}" class="user-avatar">{{ checkin.user.username|first|upper }}</a>
+                <a href="{% url 'places:profile' checkin.user.username %}" class="user-name-link">{{ checkin.user.username }}</a>
+              </div>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Date & Time</span>
+              <span style="font-weight:600;color:#374151"><i class="fas fa-calendar text-blue-400 mr-1"></i>{{ checkin.created_at|date:"M j, Y, g:i a" }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Points Earned</span>
+              <div class="points-big">+{{ checkin.points_awarded }} <span>pts</span></div>
+            </div>
+          </div>
+          <div>
+            <div class="detail-row">
+              <span class="lbl">Location Verified</span>
+              {% if checkin.location_verified %}
+                <span class="badge-pill badge-yes"><i class="fas fa-check-circle" style="font-size:.65rem"></i> Yes</span>
+              {% else %}
+                <span class="badge-pill badge-no"><i class="fas fa-times-circle" style="font-size:.65rem"></i> No</span>
+              {% endif %}
+            </div>
+            <div class="detail-row">
+              <span class="lbl">Photo Proof</span>
+              {% if checkin.photo_proof %}
+                <span class="badge-pill badge-photo"><i class="fas fa-camera" style="font-size:.65rem"></i> Provided</span>
+              {% else %}
+                <span class="badge-pill badge-none"><i class="fas fa-camera-slash" style="font-size:.65rem"></i> No photo</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        {% if checkin.notes %}
+        <div class="notes-box mt-5">
+          <p class="section-label mb-2">Visitor Note</p>
+          <p>"{{ checkin.notes }}"</p>
+        </div>
+        {% endif %}
+      </div>
     </div>
+
+    <!-- ══ PHOTO PROOF ══ -->
+    {% if checkin.photo_proof %}
+    <div class="detail-card fade-up" style="transition-delay:.14s">
+      <div class="card-pad">
+        <div class="card-title">
+          <div class="card-title-icon" style="background:#ede9fe"><i class="fas fa-image text-purple-600"></i></div>
+          Photo Proof
+        </div>
+        <div class="photo-wrapper" onclick="openPhotoModal(this.querySelector('img').src)">
+          <img src="{{ checkin.photo_proof.url }}" alt="Photo proof at {{ place.name }}">
+          <div class="photo-overlay">
+            <i class="fas fa-search-plus"></i>
+          </div>
+        </div>
+        <p class="text-xs text-gray-400 text-center mt-3"><i class="fas fa-mouse-pointer mr-1"></i>Click to view full size</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ══ COMMENTS ══ -->
+    <div class="detail-card fade-up" style="transition-delay:.18s" id="comments">
+      <div class="card-pad">
+        <div class="card-title">
+          <div class="card-title-icon" style="background:#dbeafe"><i class="fas fa-comments text-blue-600"></i></div>
+          Visitor Comments
+          <span class="text-sm font-normal text-gray-400 ml-1">({{ comments.count|default:0 }})</span>
+        </div>
+
+        {% if comments %}
+        <div id="comments-list">
+          {% for comment in comments %}
+          <div class="comment-item" data-comment-id="{{ comment.id }}">
+            <div class="flex items-start gap-3">
+              <a href="{% url 'places:profile' comment.user.username %}" class="comment-avatar">{{ comment.user.username|first|upper }}</a>
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-8px mb-2" style="gap:8px">
+                  <span style="font-weight:600;color:#111827;font-size:.9rem">{{ comment.user.username }}</span>
+                  <span style="color:#9ca3af;font-size:.73rem">{{ comment.created_at|timesince }} ago</span>
+                  {% if comment.rating %}
+                  <div class="star-row">
+                    {% for i in "12345" %}
+                      <i class="{% if forloop.counter <= comment.rating %}fas{% else %}far{% endif %} fa-star" style="color:{% if forloop.counter <= comment.rating %}#f59e0b{% else %}#d1d5db{% endif %}"></i>
+                    {% endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+                <p style="font-size:.87rem;color:#374151;line-height:1.6;margin-bottom:10px">{{ comment.text }}</p>
+
+                {% if comment.youtube_id %}
+                <div class="mb-3">
+                  <a href="https://www.youtube.com/watch?v={{ comment.youtube_id }}" target="_blank" rel="noopener">
+                    <img src="https://img.youtube.com/vi/{{ comment.youtube_id }}/0.jpg" alt="YouTube thumbnail"
+                         style="border-radius:10px;max-width:240px;display:block;transition:opacity .15s"
+                         onmouseover="this.style.opacity='.8'" onmouseout="this.style.opacity='1'">
+                  </a>
+                </div>
+                {% endif %}
+
+                <div class="flex items-center gap-8px" style="gap:8px">
+                  <button class="vote-btn" onclick="voteComment('{{ comment.id }}','up')">
+                    <i class="fas fa-thumbs-up" style="font-size:.7rem;color:#16a34a"></i>
+                    <span class="vote-count-up">{{ comment.votes }}</span>
+                  </button>
+                  <button class="vote-btn down" onclick="voteComment('{{ comment.id }}','down')">
+                    <i class="fas fa-thumbs-down" style="font-size:.7rem;color:#dc2626"></i>
+                    <span class="vote-count-down">{{ comment.votes }}</span>
+                  </button>
+                  <button class="reply-link" onclick="toggleReplyForm('{{ comment.id }}')">
+                    <i class="fas fa-reply" style="font-size:.65rem"></i> Reply
+                  </button>
+                </div>
+
+                <!-- Reply form -->
+                <div id="reply-form-{{ comment.id }}" class="reply-form-wrap" style="display:none">
+                  <textarea id="reply-text-{{ comment.id }}" class="exp-textarea" rows="2" placeholder="Write your reply…"></textarea>
+                  <div class="flex justify-end gap-2 mt-2">
+                    <button class="reply-cancel-btn" onclick="toggleReplyForm('{{ comment.id }}')">Cancel</button>
+                    <button class="reply-submit-btn" onclick="submitReply('{{ comment.id }}')">Reply</button>
+                  </div>
+                </div>
+
+                <!-- Replies -->
+                {% if comment.replies.all %}
+                <div class="mt-2 space-y-2">
+                  {% for reply in comment.replies.all %}
+                  <div class="reply-item">
+                    <div class="comment-avatar-purple">{{ reply.user.username|first|upper }}</div>
+                    <div>
+                      <div class="flex items-center gap-6px mb-1" style="gap:6px">
+                        <span style="font-weight:600;font-size:.82rem;color:#111827">{{ reply.user.username }}</span>
+                        <span style="font-size:.7rem;color:#9ca3af">{{ reply.created_at|timesince }} ago</span>
+                      </div>
+                      <p style="font-size:.82rem;color:#374151">{{ reply.text }}</p>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-comments">
+          <div class="empty-comments-icon">💬</div>
+          <h4 class="display-font text-xl font-bold text-gray-900 mb-2">No comments yet</h4>
+          <p class="text-gray-500 text-sm">Be the first to share your thoughts about this check-in!</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ══ COMMENT FORM ══ -->
+    {% if user.is_authenticated %}
+    <div class="comment-form-card fade-up" style="transition-delay:.22s">
+      <div class="card-pad">
+        <div class="card-title">
+          <div class="card-title-icon" style="background:#f0fdf4"><i class="fas fa-pen text-green-600"></i></div>
+          Leave a Comment
+        </div>
+        <form method="post" id="comment-form" class="space-y-5">
+          {% csrf_token %}
+          <input type="hidden" name="checkin_id" value="{{ checkin.id }}">
+          <div>
+            <p class="section-label mb-2">Your Comment</p>
+            <textarea name="text" id="comment-text" rows="4" required class="exp-textarea"
+                      placeholder="Share your thoughts about this check-in…"></textarea>
+          </div>
+          <div>
+            <p class="section-label mb-2">Rating (Optional)</p>
+            <div class="rating-stars flex gap-1" id="rating-stars">
+              {% for i in "12345" %}
+              <i class="far fa-star" data-rating="{{ forloop.counter }}" onclick="setRating('{{ forloop.counter }}')"></i>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="rating" id="rating-input" value="">
+          </div>
+          <div class="flex justify-end">
+            <button type="submit" class="submit-btn">
+              <i class="fas fa-paper-plane" style="font-size:.8rem"></i> Post Comment
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="login-prompt fade-up" style="transition-delay:.22s">
+      <div style="width:56px;height:56px;border-radius:50%;background:#d1fae5;border:2px solid #a7f3d0;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;font-size:22px">💬</div>
+      <h3 class="display-font text-xl font-bold text-gray-900 mb-2">Want to leave a comment?</h3>
+      <p class="text-gray-500 text-sm mb-5">Log in to share your thoughts about this check-in.</p>
+      <a href="{% url 'login' %}?next={{ request.path }}" class="inline-flex items-center gap-2 px-7 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full text-sm transition-all shadow-lg shadow-green-900/20">
+        <i class="fas fa-sign-in-alt text-sm"></i> Log In
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- Photo modal -->
+<div id="photo-modal" style="display:none" class="photo-modal-bg" onclick="if(event.target===this)closePhotoModal()">
+  <div style="position:relative">
+    <img id="modal-photo" src="" alt="Full size photo">
+    <button class="modal-close" onclick="closePhotoModal()"><i class="fas fa-times"></i></button>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
-    {# FIX: expose real Django URL patterns to JS — no more hardcoded /api/ paths #}
-    <script>
-    const URLS = {
-        voteComment:  "{% url 'places:vote_comment' 0 %}",   // replace 0 with comment id
-        replyComment: "{% url 'places:reply_comment' %}",
-    };
-    const CSRF_TOKEN = document.querySelector("[name=csrfmiddlewaretoken]").value;
-    </script>
+<script>
+const URLS = {
+  voteComment:  "{% url 'places:vote_comment' 0 %}",
+  replyComment: "{% url 'places:reply_comment' %}",
+};
+const CSRF_TOKEN = document.querySelector('[name=csrfmiddlewaretoken]').value;
 
-    <script>
-    // ── Photo modal ───────────────────────────────────────────────
-    function openPhotoModal(src) {
-        document.getElementById("modal-photo").src = src;
-        document.getElementById("photo-modal").classList.remove("hidden");
-    }
-    function closePhotoModal() {
-        document.getElementById("photo-modal").classList.add("hidden");
-    }
+// ── Fade observer ──
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+}, { threshold: 0.07 });
+document.querySelectorAll('.fade-up').forEach(el => obs.observe(el));
 
-    // ── Rating stars ──────────────────────────────────────────────
-    function setRating(rating) {
-        document.querySelectorAll("#rating-stars i").forEach((star, idx) => {
-            if (idx < rating) {
-                star.classList.replace("far", "fas");
-                star.classList.add("text-yellow-400");
-                star.classList.remove("text-gray-300");
-            } else {
-                star.classList.replace("fas", "far");
-                star.classList.remove("text-yellow-400");
-                star.classList.add("text-gray-300");
-            }
-        });
-        document.getElementById("rating-input").value = rating;
-    }
+// ── Photo modal ──
+function openPhotoModal(src) {
+  document.getElementById('modal-photo').src = src;
+  document.getElementById('photo-modal').style.display = 'flex';
+}
+function closePhotoModal() {
+  document.getElementById('photo-modal').style.display = 'none';
+}
+document.getElementById('photo-modal').addEventListener('click', e => { if (e.target === document.getElementById('photo-modal')) closePhotoModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePhotoModal(); });
 
-    // ── Comment voting ────────────────────────────────────────────
-    function voteComment(commentId, voteType) {
-        // FIX: use URLS object built from Django {% url %} tag — not hardcoded /api/
-        const url = URLS.voteComment.replace("/0/", `/${commentId}/`);
-
-        fetch(url, {
-            method: "POST",
-            headers: {
-                "X-CSRFToken": CSRF_TOKEN,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ vote_type: voteType }),
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (!data.success) return;
-            const commentEl = document.querySelector(`[data-comment-id="${commentId}"]`);
-            if (!commentEl) return;
-            commentEl.querySelector(".vote-count-up").textContent   = data.upvotes;
-            commentEl.querySelector(".vote-count-down").textContent = data.downvotes;
-            // Visual pulse feedback
-            const btn = commentEl.querySelector(`[data-vote-type="${voteType}"]`);
-            if (btn) {
-                btn.classList.add("animate-pulse");
-                setTimeout(() => btn.classList.remove("animate-pulse"), 500);
-            }
-        })
-        .catch(err => console.error("Vote error:", err));
-    }
-
-    // ── Reply form toggle ─────────────────────────────────────────
-    function toggleReplyForm(commentId) {
-        const form = document.getElementById(`reply-form-${commentId}`);
-        form.classList.toggle("hidden");
-        if (!form.classList.contains("hidden")) {
-            document.getElementById(`reply-text-${commentId}`).focus();
-        }
-    }
-
-    // ── Submit reply ──────────────────────────────────────────────
-    function submitReply(commentId) {
-        const text = document.getElementById(`reply-text-${commentId}`).value.trim();
-        if (!text) return;
-
-        // FIX: use URLS.replyComment from Django {% url %} tag
-        const formData = new FormData();
-        formData.append("parent_id", commentId);
-        formData.append("reply_text", text);
-        formData.append("csrfmiddlewaretoken", CSRF_TOKEN);
-
-        fetch(URLS.replyComment, {
-            method: "POST",
-            body: formData,
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert(data.error || "Error submitting reply. Please try again.");
-            }
-        })
-        .catch(err => console.error("Reply error:", err));
-    }
-
-    // ── Comment form ──────────────────────────────────────────────
-    document.getElementById("comment-form")?.addEventListener("submit", function(e) {
-        e.preventDefault();
-        const btn = this.querySelector('button[type="submit"]');
-        const orig = btn.innerHTML;
-        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Posting...';
-        btn.disabled = true;
-
-        fetch(window.location.pathname, {
-            method: "POST",
-            headers: { "X-CSRFToken": CSRF_TOKEN },
-            body: new FormData(this),
-        })
-        .then(r => {
-            if (r.ok) {
-                location.reload();
-            } else {
-                throw new Error("Server error");
-            }
-        })
-        .catch(() => alert("Error submitting comment. Please try again."))
-        .finally(() => { btn.innerHTML = orig; btn.disabled = false; });
+// ── Rating stars ──
+function setRating(rating) {
+  document.querySelectorAll('#rating-stars i').forEach((star, idx) => {
+    const active = idx < parseInt(rating);
+    star.className = (active ? 'fas' : 'far') + ' fa-star' + (active ? ' active' : '');
+  });
+  document.getElementById('rating-input').value = rating;
+}
+document.querySelectorAll('#rating-stars i').forEach(star => {
+  star.addEventListener('mouseover', function() {
+    const r = parseInt(this.dataset.rating);
+    document.querySelectorAll('#rating-stars i').forEach((s, i) => {
+      s.style.color = i < r ? '#f59e0b' : '#d1d5db';
     });
+  });
+  star.addEventListener('mouseout', function() {
+    document.querySelectorAll('#rating-stars i').forEach(s => {
+      s.style.color = s.classList.contains('active') ? '#f59e0b' : '';
+    });
+  });
+});
 
-    // ── Modal keyboard / outside-click close ─────────────────────
-    document.getElementById("photo-modal").addEventListener("click", function(e) {
-        if (e.target === this) closePhotoModal();
-    });
-    document.addEventListener("keydown", e => {
-        if (e.key === "Escape") closePhotoModal();
-    });
+// ── Vote comment ──
+function voteComment(commentId, voteType) {
+  const url = URLS.voteComment.replace('/0/', `/${commentId}/`);
+  fetch(url, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF_TOKEN, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ vote_type: voteType })
+  }).then(r => r.json()).then(data => {
+    if (!data.success) return;
+    const el = document.querySelector(`[data-comment-id="${commentId}"]`);
+    if (!el) return;
+    el.querySelector('.vote-count-up').textContent   = data.upvotes;
+    el.querySelector('.vote-count-down').textContent = data.downvotes;
+  }).catch(e => console.error('Vote error:', e));
+}
 
-    // ── Auto-scroll ───────────────────────────────────────────────
-    // FIX: only scroll to comments when URL explicitly contains #comments,
-    // not on every page load (which was scrolling all visitors past the content)
-    document.addEventListener("DOMContentLoaded", function() {
-        if (window.location.hash === "#comments") {
-            document.getElementById("comments")
-                    ?.scrollIntoView({ behavior: "smooth" });
-        }
-    });
-    </script>
+// ── Reply form ──
+function toggleReplyForm(commentId) {
+  const form = document.getElementById(`reply-form-${commentId}`);
+  const isHidden = form.style.display === 'none' || form.style.display === '';
+  form.style.display = isHidden ? 'block' : 'none';
+  if (isHidden) document.getElementById(`reply-text-${commentId}`).focus();
+}
+
+function submitReply(commentId) {
+  const text = document.getElementById(`reply-text-${commentId}`).value.trim();
+  if (!text) return;
+  const fd = new FormData();
+  fd.append('parent_id', commentId);
+  fd.append('reply_text', text);
+  fd.append('csrfmiddlewaretoken', CSRF_TOKEN);
+  fetch(URLS.replyComment, { method: 'POST', body: fd })
+    .then(r => r.json())
+    .then(data => { if (data.success) location.reload(); else alert(data.error || 'Error submitting reply.'); })
+    .catch(e => console.error('Reply error:', e));
+}
+
+// ── Comment form submit ──
+document.getElementById('comment-form')?.addEventListener('submit', function(e) {
+  e.preventDefault();
+  const btn = this.querySelector('button[type="submit"]');
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size:.8rem"></i> Posting…';
+  btn.disabled = true;
+  fetch(window.location.pathname, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF_TOKEN },
+    body: new FormData(this)
+  }).then(r => {
+    if (r.ok) location.reload();
+    else throw new Error();
+  }).catch(() => alert('Error submitting comment. Please try again.'))
+    .finally(() => { btn.innerHTML = orig; btn.disabled = false; });
+});
+
+// ── Scroll to comments if hash ──
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.location.hash === '#comments') {
+    document.getElementById('comments')?.scrollIntoView({ behavior: 'smooth' });
+  }
+});
+</script>
 {% endblock %}

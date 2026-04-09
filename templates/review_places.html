@@ -1,177 +1,433 @@
 {% extends 'base.html' %}
-{% block title %}Review Places - Expearls Admin{% endblock %}
+{% block title %}Review Places — Expearls Admin{% endblock %}
+
 {% block content %}
-    {% csrf_token %}
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">🔍 Review Submitted Places</h1>
-            <p class="text-gray-600">Review and approve places submitted by the community.</p>
-        </div>
-        {% if places %}
-            <div class="space-y-6">
-                {% for place in places %}
-                    <div class="bg-white rounded-lg shadow-lg overflow-hidden"
-                         id="place-{{ place.slug }}">
-                        <div class="md:flex">
-                            <!-- Image -->
-                            <div class="md:w-1/3">
-                                {% if place.image %}
-                                    <img src="{{ place.image.url }}"
-                                         alt="{{ place.name }}"
-                                         class="w-full h-48 md:h-full object-cover">
-                                {% else %}
-                                    <div class="w-full h-48 md:h-full bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                                        <span class="text-white text-6xl">🏛️</span>
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <!-- Content -->
-                            <div class="md:w-2/3 p-6">
-                                <div class="flex items-start justify-between mb-4">
-                                    <div>
-                                        <h3 class="text-2xl font-bold text-gray-800 mb-2">{{ place.name }}</h3>
-                                        <div class="flex items-center text-sm text-gray-600 mb-2">
-                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                            </svg>
-                                            Submitted by {{ place.created_by.username }}
-                                            <span class="mx-2">•</span>
-                                            {{ place.created_at|date:"M d, Y H:i" }}
-                                        </div>
-                                        <div class="flex items-center text-sm text-gray-600">
-                                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd">
-                                                </path>
-                                            </svg>
-                                            {{ place.latitude|floatformat:6 }}, {{ place.longitude|floatformat:6 }}
-                                        </div>
-                                    </div>
-                                    <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium">
-                                        {{ place.get_status_display }}
-                                    </span>
-                                </div>
-                                <p class="text-gray-700 mb-6 leading-relaxed">{{ place.description|linebreaks }}</p>
-                                <!-- Action Buttons -->
-                                <div class="flex flex-col sm:flex-row gap-3">
-                                    <button onclick="updatePlaceStatus('{{ place.slug }}', 'approved')"
-                                            class="flex-1 bg-green-500 hover:bg-green-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
-                                        ✅ Approve
-                                    </button>
-                                    <button onclick="updatePlaceStatus('{{ place.slug }}', 'rejected')"
-                                            class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 px-4 rounded-lg font-medium transition-colors">
-                                        ❌ Reject
-                                    </button>
-                                    <a href="{% url 'places:place_detail' place.slug %}"
-                                       class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center">
-                                        👁️ View Details
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Map Preview -->
-                        <div class="border-t border-gray-200 p-4">
-                            <div id="map-{{ place.slug }}" style="height: 200px;"></div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <div class="text-center py-16">
-                <div class="text-6xl mb-4">✅</div>
-                <h2 class="text-2xl font-bold text-gray-800 mb-4">All Caught Up!</h2>
-                <p class="text-gray-600 mb-8">There are no places pending review at the moment.</p>
-                <a href="{% url 'places:home' %}"
-                   class="btn-primary text-white px-8 py-3 rounded-lg font-semibold inline-block">Back to Home</a>
-            </div>
-        {% endif %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .review-page { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* ── Hero ── */
+  .hero-review {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-review::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-review::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 64px; background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px; background: #86efac; border-radius: 50%;
+    display: inline-block; margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(1.4); }
+  }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    background: #fff; border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.10);
+  }
+  .stat-item + .stat-item { border-left: 1px solid #e5e7eb; }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: .68rem; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; color: #16a34a;
+  }
+
+  /* ── Place review card ── */
+  .place-card {
+    background: #fff;
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    transition: transform .25s, box-shadow .25s, opacity .3s;
+  }
+  .place-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 32px rgba(0,0,0,.09);
+  }
+
+  .card-thumb {
+    width: 260px; flex-shrink: 0; position: relative; overflow: hidden;
+  }
+  @media (max-width: 768px) { .card-thumb { width: 100%; height: 200px; } }
+  .card-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb-placeholder {
+    width: 100%; height: 100%; min-height: 220px;
+    background: linear-gradient(135deg, #0a3d2e, #34d399);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 3.5rem;
+  }
+
+  .status-badge {
+    position: absolute; top: 12px; right: 12px;
+    padding: 4px 12px; border-radius: 50px;
+    font-size: .7rem; font-weight: 700;
+    letter-spacing: .04em; text-transform: uppercase;
+  }
+  .status-pending  { background: #fef9c3; color: #854d0e; }
+  .status-approved { background: #dcfce7; color: #15803d; }
+  .status-rejected { background: #fee2e2; color: #991b1b; }
+
+  .card-body { flex: 1; padding: 28px; display: flex; flex-direction: column; }
+
+  .submitter-row {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .submitter-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: #d1fae5; border: 2px solid #a7f3d0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 700; color: #065f46;
+  }
+  .meta-pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px; border-radius: 50px;
+    font-size: .72rem; background: #f3f4f6; color: #6b7280;
+  }
+
+  .desc-text {
+    font-size: .9rem; color: #4b5563; line-height: 1.7;
+    flex: 1; margin-bottom: 20px;
+  }
+
+  /* Action buttons */
+  .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .act-btn {
+    flex: 1; min-width: 110px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 11px 18px; border-radius: 50px;
+    font-family: 'DM Sans', sans-serif; font-size: .83rem; font-weight: 600;
+    border: none; cursor: pointer; transition: all .2s; text-decoration: none;
+  }
+  .act-approve {
+    background: linear-gradient(135deg, #16a34a, #059669);
+    color: #fff; box-shadow: 0 3px 12px rgba(22,163,74,.3);
+  }
+  .act-approve:hover { transform: translateY(-1px); box-shadow: 0 5px 18px rgba(22,163,74,.4); }
+  .act-reject {
+    background: #fee2e2; color: #991b1b;
+  }
+  .act-reject:hover { background: #fecaca; }
+  .act-view {
+    background: #eff6ff; color: #1d4ed8;
+  }
+  .act-view:hover { background: #dbeafe; }
+
+  /* Map strip */
+  .map-strip {
+    border-top: 1px solid #f3f4f6;
+    overflow: hidden; border-radius: 0 0 20px 20px;
+  }
+  .map-strip-header {
+    padding: 10px 20px;
+    display: flex; align-items: center; gap: 8px;
+    background: #f9fafb; border-bottom: 1px solid #f3f4f6;
+  }
+  .map-strip-header span { font-size: .75rem; color: #6b7280; }
+  .map-strip-header strong { font-size: .75rem; color: #374151; font-family: 'DM Sans', sans-serif; }
+
+  /* Confirmation dialog */
+  .confirm-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.5);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999; padding: 20px;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .confirm-overlay.open { opacity: 1; pointer-events: all; }
+  .confirm-dialog {
+    background: #fff; border-radius: 20px;
+    padding: 32px; max-width: 420px; width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,.2);
+    transform: scale(.95); transition: transform .2s;
+  }
+  .confirm-overlay.open .confirm-dialog { transform: scale(1); }
+  .confirm-icon {
+    width: 56px; height: 56px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; margin: 0 auto 16px;
+  }
+  .confirm-icon.approve { background: #dcfce7; }
+  .confirm-icon.reject  { background: #fee2e2; }
+
+  /* Toast */
+  #toast-container {
+    position: fixed; top: 20px; right: 20px; z-index: 99999;
+    display: flex; flex-direction: column; gap: 10px;
+    pointer-events: none;
+  }
+  .toast {
+    padding: 14px 20px; border-radius: 14px;
+    font-size: .85rem; font-weight: 500; font-family: 'DM Sans', sans-serif;
+    box-shadow: 0 6px 24px rgba(0,0,0,.15);
+    display: flex; align-items: center; gap: 10px;
+    animation: toastIn .3s ease;
+    pointer-events: all;
+  }
+  @keyframes toastIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:translateX(0); } }
+  .toast-success { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+  .toast-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+  /* Empty state */
+  .empty-box {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    text-align: center; padding: 72px 32px;
+  }
+  .empty-icon-wrap {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: #f0fdf4; border: 2px solid #d1fae5;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px; font-size: 36px;
+  }
+
+  /* Fade entrance */
+  .fade-up {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+
+{% csrf_token %}
+
+<div class="review-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-review pt-14 pb-24 px-4">
+    <div class="max-w-4xl mx-auto relative z-10 text-center">
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-6 tracking-wide uppercase">
+        <span class="hero-dot"></span> Admin Panel
+      </span>
+      <h1 class="display-font text-5xl md:text-6xl font-black text-white leading-tight mb-4">
+        Review <em class="text-green-300 not-italic">Submissions</em>
+      </h1>
+      <p class="text-green-100 text-lg font-light">Approve or reject community-submitted places to keep Expearls accurate and trustworthy.</p>
     </div>
-    <!-- Success/Error Messages -->
-    <div id="message-container" class="fixed top-20 right-4 z-50"></div>
-{% endblock %}
-{% block extra_js %}
-    <script>
-    // Initialize maps for each place
-    document.addEventListener('DOMContentLoaded', function() {
-        // Create a hidden CSRF token input for AJAX requests
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = 'csrfmiddlewaretoken';
-        csrfInput.value = '{{ csrf_token }}';
-        document.body.appendChild(csrfInput);
+  </section>
 
+  <div class="max-w-5xl mx-auto px-4 -mt-8 pb-20 relative z-10">
+
+    <!-- ══ STATS BAR ══ -->
+    <div class="stats-bar grid grid-cols-3 mb-8 fade-up">
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-gray-900">{{ places|length }}</div>
+        <div class="text-sm text-gray-500 mt-1">Pending Review</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-green-600">
+          <i class="fas fa-check-circle text-2xl"></i>
+        </div>
+        <div class="text-sm text-gray-500 mt-1">Approve to Publish</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-red-400">
+          <i class="fas fa-times-circle text-2xl"></i>
+        </div>
+        <div class="text-sm text-gray-500 mt-1">Reject to Remove</div>
+      </div>
+    </div>
+
+    <!-- ══ PLACE CARDS ══ -->
+    {% if places %}
+      <div class="space-y-6" id="places-list">
         {% for place in places %}
-        {
-            const map = L.map('map-{{ place.slug }}').setView([{{ place.latitude }}, {{ place.longitude }}], 13);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
-            L.marker([{{ place.latitude }}, {{ place.longitude }}]).addTo(map);
-        }
+        <div class="place-card fade-up" id="place-{{ place.slug }}" style="transition-delay:{{ forloop.counter0 }}00ms">
+          <div class="flex flex-col md:flex-row">
+
+            <!-- Thumb -->
+            <div class="card-thumb">
+              {% if place.image %}
+                <img src="{{ place.image.url }}" alt="{{ place.name }}">
+              {% else %}
+                <div class="thumb-placeholder">🏛️</div>
+              {% endif %}
+              <span class="status-badge status-{{ place.status }}">{{ place.get_status_display }}</span>
+            </div>
+
+            <!-- Body -->
+            <div class="card-body">
+              <div class="submitter-row">
+                <div class="submitter-avatar">{{ place.created_by.username|slice:":2"|upper }}</div>
+                <span class="meta-pill"><i class="fas fa-user text-xs"></i> {{ place.created_by.username }}</span>
+                <span class="meta-pill"><i class="fas fa-calendar text-xs"></i> {{ place.created_at|date:"M d, Y H:i" }}</span>
+                <span class="meta-pill"><i class="fas fa-map-marker-alt text-xs"></i> {{ place.latitude|floatformat:4 }}, {{ place.longitude|floatformat:4 }}</span>
+              </div>
+
+              <h3 class="display-font text-2xl font-bold text-gray-900 mb-3">{{ place.name }}</h3>
+
+              <div class="flex flex-wrap gap-2 mb-4">
+                {% for cat in place.category.all %}
+                  <span class="meta-pill" style="background:#d1fae5;color:#065f46;">{{ cat.name }}</span>
+                {% endfor %}
+                {% if place.difficulty %}
+                  <span class="meta-pill">{{ place.get_difficulty_display }}</span>
+                {% endif %}
+              </div>
+
+              <p class="desc-text">{{ place.description|truncatewords:50 }}</p>
+
+              <div class="action-row">
+                <button onclick="confirmAction('{{ place.slug }}', 'approved')" class="act-btn act-approve">
+                  <i class="fas fa-check text-sm"></i> Approve
+                </button>
+                <button onclick="confirmAction('{{ place.slug }}', 'rejected')" class="act-btn act-reject">
+                  <i class="fas fa-times text-sm"></i> Reject
+                </button>
+                <a href="{% url 'places:place_detail' place.slug %}" class="act-btn act-view" target="_blank">
+                  <i class="fas fa-external-link-alt text-sm"></i> Preview
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Map strip -->
+          <div class="map-strip">
+            <div class="map-strip-header">
+              <i class="fas fa-map-marked-alt text-green-500 text-xs"></i>
+              <span>Location preview —</span>
+              <strong>{{ place.latitude|floatformat:6 }}, {{ place.longitude|floatformat:6 }}</strong>
+            </div>
+            <div id="map-{{ place.slug }}" style="height:180px;"></div>
+          </div>
+        </div>
         {% endfor %}
-    });
+      </div>
 
-    // Function to update place status
-    function updatePlaceStatus(placeSlug, status) {
-        if (!confirm(`Are you sure you want to ${status} this place?`)) return;
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
-        fetch(`/place/${placeSlug}/update-status/`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'X-CSRFToken': csrfToken
-            },
-            body: `status=${status}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Remove the place card from the page
-                const placeCard = document.getElementById(`place-${placeSlug}`);
-                placeCard.style.transition = 'opacity 0.3s ease';
-                placeCard.style.opacity = '0';
-                
-                setTimeout(() => {
-                    placeCard.remove();
-                    
-                    // Check if there are no more places to review
-                    const remainingPlaces = document.querySelectorAll('[id^="place-"]');
-                    if (remainingPlaces.length === 0) {
-                        location.reload();
-                    }
-                }, 300);
-                
-                // Show success message
-                showMessage(`Place ${status} successfully!`, 'success');
-            } else {
-                showMessage('Error updating place status', 'error');
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showMessage('Error updating place status', 'error');
-        });
+    {% else %}
+      <!-- Empty state -->
+      <div class="empty-box fade-up">
+        <div class="empty-icon-wrap">✅</div>
+        <h2 class="display-font text-3xl font-bold text-gray-900 mb-3">All Caught Up!</h2>
+        <p class="text-gray-500 mb-8 max-w-sm mx-auto">There are no places pending review right now. Check back later.</p>
+        <a href="{% url 'places:home' %}" class="inline-flex items-center gap-2 px-7 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full text-sm transition-all shadow-lg shadow-green-900/20">
+          <i class="fas fa-compass text-sm"></i> Back to Home
+        </a>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- ══ CONFIRM DIALOG ══ -->
+<div class="confirm-overlay" id="confirm-overlay" onclick="if(event.target===this)closeConfirm()">
+  <div class="confirm-dialog">
+    <div class="confirm-icon" id="confirm-icon">❓</div>
+    <h3 class="display-font text-2xl font-bold text-gray-900 text-center mb-2" id="confirm-title">Are you sure?</h3>
+    <p class="text-gray-500 text-sm text-center mb-6" id="confirm-body">This action will update the place status.</p>
+    <div class="flex gap-3">
+      <button onclick="closeConfirm()" class="flex-1 py-3 rounded-full bg-gray-100 text-gray-600 font-medium text-sm hover:bg-gray-200 transition-all">Cancel</button>
+      <button onclick="executeAction()" id="confirm-btn" class="flex-1 py-3 rounded-full font-semibold text-sm transition-all">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast-container"></div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let _pendingSlug = null, _pendingStatus = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+  {% for place in places %}
+  {
+    const map = L.map('map-{{ place.slug }}', { zoomControl: false, dragging: false, scrollWheelZoom: false })
+      .setView([{{ place.latitude }}, {{ place.longitude }}], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+    L.marker([{{ place.latitude }}, {{ place.longitude }}]).addTo(map);
+  }
+  {% endfor %}
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+});
+
+function confirmAction(slug, status) {
+  _pendingSlug   = slug;
+  _pendingStatus = status;
+  const isApprove = status === 'approved';
+  const icon  = document.getElementById('confirm-icon');
+  const title = document.getElementById('confirm-title');
+  const body  = document.getElementById('confirm-body');
+  const btn   = document.getElementById('confirm-btn');
+
+  icon.className  = 'confirm-icon ' + (isApprove ? 'approve' : 'reject');
+  icon.textContent = isApprove ? '✅' : '❌';
+  title.textContent = isApprove ? 'Approve this place?' : 'Reject this place?';
+  body.textContent  = isApprove
+    ? 'This will publish the place and notify the submitter.'
+    : 'This will remove the submission from the review queue.';
+  btn.className = 'flex-1 py-3 rounded-full font-semibold text-sm transition-all ' +
+    (isApprove ? 'bg-green-600 hover:bg-green-700 text-white' : 'bg-red-500 hover:bg-red-600 text-white');
+
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+}
+
+function executeAction() {
+  closeConfirm();
+  const slug   = _pendingSlug;
+  const status = _pendingStatus;
+  const csrf   = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+  fetch(`/place/${slug}/update-status/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': csrf },
+    body: `status=${status}`
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      const card = document.getElementById(`place-${slug}`);
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(-10px)';
+      setTimeout(() => {
+        card.remove();
+        if (!document.querySelector('[id^="place-"]')) location.reload();
+      }, 350);
+      showToast(`Place ${status} successfully!`, 'success');
+    } else {
+      showToast('Error updating place status', 'error');
     }
+  })
+  .catch(() => showToast('Network error — please try again', 'error'));
+}
 
-    // Function to show messages
-    function showMessage(message, type) {
-        const messageContainer = document.getElementById('message-container');
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `mb-4 p-4 rounded-lg ${type === 'success' ? 'bg-green-100 text-green-700 border border-green-400' : 'bg-red-100 text-red-700 border border-red-400'}`;
-        messageDiv.textContent = message;
-        
-        messageContainer.appendChild(messageDiv);
-        
-        // Remove message after 3 seconds
-        setTimeout(() => {
-            messageDiv.remove();
-        }, 3000);
-    }
-
-    // // Add CSRF token to all forms (if any)
-    // document.addEventListener('DOMContentLoaded', function() {
-        
-    // });
-    </script>
+function showToast(message, type) {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'times-circle'} text-sm"></i> ${message}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+</script>
 {% endblock %}

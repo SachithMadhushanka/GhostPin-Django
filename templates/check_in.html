@@ -1,251 +1,490 @@
 {% extends 'base.html' %}
-{% block title %}Check In at {{ place.name }} - Expearls{% endblock %}
+{% block title %}Check In at {{ place.name }} — Expearls{% endblock %}
+
 {% block content %}
-    <div class="max-w-2xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                <i class="fas fa-map-pin text-green-600 mr-2"></i>
-                Check In
-            </h1>
-            <p class="text-gray-600">Verify your visit to earn points and share your experience</p>
-        </div>
-        <!-- Place Info Card -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div class="flex items-start space-x-4">
-                {% if place.image %}
-                    <img src="{{ place.image.url }}"
-                         alt="{{ place.name }}"
-                         class="w-20 h-20 rounded-lg object-cover flex-shrink-0">
-                {% else %}
-                    <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-2xl flex-shrink-0">
-                        🏛️
-                    </div>
-                {% endif %}
-                <div class="flex-1">
-                    <h2 class="text-xl font-bold text-gray-900 mb-1">{{ place.name }}</h2>
-                    <p class="text-gray-600 text-sm mb-2">{{ place.description|truncatewords:20 }}</p>
-                    <div class="flex flex-wrap items-center gap-3 text-sm">
-                        {# FIX: added correct Tailwind color prefix bg-blue-100 text-blue-800 #}
-                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                            {% for cat in place.category.all %}
-                                {{ cat.name }}{% if not forloop.last %},{% endif %}
-                            {% endfor %}
-                        </span>
-                        <span class="text-gray-500">
-                            <i class="fas fa-signal mr-1"></i>
-                            {{ place.get_difficulty_display }}
-                        </span>
-                        {% if place.average_rating > 0 %}
-                            <span class="text-gray-500">
-                                <i class="fas fa-star text-yellow-500 mr-1"></i>
-                                {{ place.average_rating|floatformat:1 }}
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- Check-in Form -->
-        <div class="bg-white rounded-lg shadow-lg p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-6">
-                <i class="fas fa-camera text-blue-600 mr-2"></i>
-                Complete Your Check-in
-            </h3>
-            <form method="post" enctype="multipart/form-data" class="space-y-6">
-                {% csrf_token %}
-                {# FIX: moved hidden input outside photo div so it's always in the form #}
-                <input type="hidden" name="location_verified" id="location-verified-input" value="false">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
-                <!-- Photo Proof -->
-                <div>
-                    <label for="{{ form.photo_proof.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-camera mr-1"></i>
-                        Photo Proof (Optional but Recommended)
-                    </label>
-                    {{ form.photo_proof }}
-                    <p class="mt-2 text-sm text-gray-500">
-                        Upload a photo of yourself at this location to verify your visit and earn bonus points!
-                    </p>
-                    <!-- Photo Preview -->
-                    <div id="photo-preview" class="mt-4 hidden">
-                        <img id="preview-image"
-                             class="w-full max-w-md h-48 object-cover rounded-lg border-2 border-dashed border-gray-300">
-                    </div>
-                </div>
-                <!-- Notes -->
-                <div>
-                    <label for="{{ form.notes.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-2">
-                        <i class="fas fa-sticky-note mr-1"></i>
-                        Your Experience
-                    </label>
-                    {{ form.notes }}
-                    <p class="mt-2 text-sm text-gray-500">Share your thoughts, tips, or interesting observations about this place.</p>
-                </div>
-                <!-- Location Verification -->
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div class="flex items-start space-x-3">
-                        <i class="fas fa-info-circle text-blue-600 mt-1"></i>
-                        <div>
-                            <h4 class="font-semibold text-blue-900 mb-1">Location Verification</h4>
-                            <p class="text-blue-800 text-sm mb-3">
-                                We'll verify your location to ensure authentic check-ins.
-                                Being within 500m of the place earns you +5 bonus points.
-                            </p>
-                            <button type="button"
-                                    id="verify-location"
-                                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm transition-colors">
-                                <i class="fas fa-crosshairs mr-1"></i>
-                                Verify My Location
-                            </button>
-                            <div id="location-status" class="mt-2 text-sm"></div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Points Info -->
-                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <div class="flex items-center space-x-3">
-                        <i class="fas fa-coins text-green-600 text-xl"></i>
-                        <div>
-                            <h4 class="font-semibold text-green-900 mb-1">Points You'll Earn</h4>
-                            <div class="text-green-800 text-sm space-y-1">
-                                <div class="flex justify-between">
-                                    <span>Basic check-in:</span>
-                                    <span class="font-semibold">+10 points</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>With photo proof:</span>
-                                    <span class="font-semibold">+5 bonus points</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Location verified:</span>
-                                    <span class="font-semibold">+5 bonus points</span>
-                                </div>
-                                <div class="border-t border-green-300 pt-1 mt-2">
-                                    <div class="flex justify-between font-bold">
-                                        <span>Potential total:</span>
-                                        <span>+20 points</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Submit Button -->
-                <div class="flex space-x-4">
-                    <button type="submit"
-                            class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors">
-                        <i class="fas fa-check-circle mr-2"></i>
-                        Complete Check-in
-                    </button>
-                    <a href="{% url 'places:place_detail' place.slug %}"
-                       class="bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors">
-                        <i class="fas fa-times mr-2"></i>
-                        Cancel
-                    </a>
-                </div>
-            </form>
-        </div>
-        <!-- Tips -->
-        <div class="mt-8 bg-white rounded-lg shadow-lg p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-4">
-                <i class="fas fa-lightbulb text-yellow-500 mr-2"></i>
-                Tips for Better Check-ins
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                <div class="flex items-start space-x-2">
-                    <i class="fas fa-camera text-green-500 mt-1"></i>
-                    <span>Take a clear photo showing you at the location</span>
-                </div>
-                <div class="flex items-start space-x-2">
-                    <i class="fas fa-map-marker-alt text-blue-500 mt-1"></i>
-                    <span>Enable location services for automatic verification</span>
-                </div>
-                <div class="flex items-start space-x-2">
-                    <i class="fas fa-pen text-purple-500 mt-1"></i>
-                    <span>Share interesting details or facts you learned</span>
-                </div>
-                <div class="flex items-start space-x-2">
-                    <i class="fas fa-clock text-orange-500 mt-1"></i>
-                    <span>Check in during your actual visit for authenticity</span>
-                </div>
+  .checkin-page { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* Hero */
+  .hero-checkin {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-checkin::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-checkin::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 64px;
+    background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+
+  /* Breadcrumb pill */
+  .breadcrumb-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 50px;
+    background: rgba(255,255,255,0.10);
+    color: #bbf7d0;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background .2s;
+  }
+  .breadcrumb-pill:hover { background: rgba(255,255,255,0.18); }
+  .breadcrumb-sep { color: rgba(255,255,255,0.3); }
+
+  /* Place card inside hero */
+  .place-hero-card {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 18px;
+    backdrop-filter: blur(4px);
+  }
+
+  /* Floating card */
+  .form-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    border: 1px solid #f3f4f6;
+  }
+
+  /* Section heading inside card */
+  .section-label {
+    font-size: .7rem;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: #16a34a;
+    margin-bottom: 6px;
+  }
+
+  /* Custom file input */
+  .file-drop {
+    border: 2px dashed #d1fae5;
+    border-radius: 14px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    background: #f0fdf4;
+    position: relative;
+  }
+  .file-drop:hover { border-color: #34d399; background: #ecfdf5; }
+  .file-drop input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .file-icon {
+    width: 48px; height: 48px;
+    background: #d1fae5;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px;
+    font-size: 20px;
+  }
+
+  /* Photo preview */
+  #photo-preview {
+    border-radius: 14px;
+    overflow: hidden;
+    border: 2px solid #d1fae5;
+    margin-top: 14px;
+    display: none;
+  }
+  #photo-preview img {
+    width: 100%; max-height: 260px; object-fit: cover; display: block;
+  }
+
+  /* Textarea */
+  .exp-textarea {
+    width: 100%;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .9rem;
+    color: #111827;
+    resize: vertical;
+    transition: border-color .2s;
+    min-height: 110px;
+  }
+  .exp-textarea:focus { outline: none; border-color: #34d399; }
+
+  /* GPS card */
+  .gps-card {
+    border-radius: 14px;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    padding: 20px;
+  }
+  .gps-card.unverified { background: #eff6ff; border-color: #bfdbfe; }
+  .gps-card.success   { background: #f0fdf4; border-color: #6ee7b7; }
+  .gps-card.warning   { background: #fffbeb; border-color: #fcd34d; }
+
+  .gps-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all .2s;
+    background: #2563eb;
+    color: #fff;
+  }
+  .gps-btn:hover { background: #1d4ed8; transform: translateY(-1px); }
+  .gps-btn.verified { background: #16a34a; }
+  .gps-btn:disabled { opacity: .7; cursor: wait; }
+
+  /* Points breakdown */
+  .points-table { width: 100%; }
+  .points-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: .875rem;
+  }
+  .points-row:last-child { border-bottom: none; }
+  .points-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 10px;
+    border-radius: 50px;
+    font-size: .78rem;
+    font-weight: 600;
+  }
+  .badge-gray   { background: #f3f4f6; color: #6b7280; }
+  .badge-yellow { background: #fef9c3; color: #854d0e; }
+  .badge-green  { background: #dcfce7; color: #15803d; }
+  .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+  .badge-max    { background: #f0fdf4; color: #15803d; border: 1.5px solid #bbf7d0; }
+
+  /* Submit button */
+  .submit-btn {
+    flex: 1;
+    background: linear-gradient(135deg, #16a34a, #059669);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 28px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .2s;
+    box-shadow: 0 4px 14px rgba(22,163,74,.3);
+  }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(22,163,74,.4); }
+
+  .cancel-btn {
+    padding: 14px 22px;
+    border-radius: 50px;
+    background: #f3f4f6;
+    color: #6b7280;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .95rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background .2s;
+  }
+  .cancel-btn:hover { background: #e5e7eb; color: #374151; }
+
+  /* Tips card */
+  .tips-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 600px) { .tips-grid { grid-template-columns: 1fr; } }
+  .tip-item {
+    display: flex; gap: 12px;
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 14px;
+    font-size: .85rem;
+    color: #6b7280;
+    line-height: 1.5;
+    border: 1px solid #f3f4f6;
+  }
+  .tip-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* Fade entrance */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+
+<div class="checkin-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-checkin pt-12 pb-24 px-4">
+    <div class="max-w-3xl mx-auto relative z-10">
+
+      <!-- Breadcrumb -->
+      <div class="flex items-center gap-2 mb-8 text-sm">
+        <a href="{% url 'places:home' %}" class="breadcrumb-pill">
+          <i class="fas fa-compass text-xs"></i> Explore
+        </a>
+        <span class="breadcrumb-sep">/</span>
+        <a href="{% url 'places:place_detail' place.slug %}" class="breadcrumb-pill">
+          {{ place.name|truncatechars:28 }}
+        </a>
+        <span class="breadcrumb-sep">/</span>
+        <span class="text-green-300 text-xs font-medium uppercase tracking-wide">Check In</span>
+      </div>
+
+      <h1 class="display-font text-4xl md:text-5xl font-black text-white leading-tight mb-4">
+        You're at<br>
+        <em class="text-green-300 not-italic">{{ place.name }}</em>
+      </h1>
+      <p class="text-green-100 font-light mb-8 max-w-lg">Verify your visit to earn points and add your story to the Expearls community.</p>
+
+      <!-- Place summary card in hero -->
+      <div class="place-hero-card p-4 flex items-center gap-4 max-w-lg">
+        {% if place.image %}
+          <img src="{{ place.image.url }}" alt="{{ place.name }}" class="w-16 h-16 rounded-xl object-cover flex-shrink-0">
+        {% else %}
+          <div class="w-16 h-16 rounded-xl bg-green-800 flex items-center justify-center text-2xl flex-shrink-0">🏛️</div>
+        {% endif %}
+        <div>
+          <div class="flex flex-wrap gap-2 mb-1">
+            {% for cat in place.category.all %}
+              <span class="text-xs bg-green-800 text-green-200 px-2 py-0.5 rounded-full">{{ cat.name }}</span>
+            {% endfor %}
+            <span class="text-xs bg-white bg-opacity-10 text-green-100 px-2 py-0.5 rounded-full">{{ place.get_difficulty_display }}</span>
+          </div>
+          {% if place.average_rating > 0 %}
+            <div class="flex items-center gap-1 text-yellow-300 text-sm">
+              <i class="fas fa-star text-xs"></i>
+              <span class="font-semibold">{{ place.average_rating|floatformat:1 }}</span>
+              <span class="text-green-300 font-light text-xs">avg rating</span>
             </div>
+          {% endif %}
+          <p class="text-green-200 text-xs leading-relaxed mt-1">{{ place.description|truncatewords:16 }}</p>
         </div>
+      </div>
     </div>
+  </section>
+
+  <!-- ══ FORM ══ -->
+  <section class="max-w-3xl mx-auto px-4 -mt-8 pb-20 relative z-10">
+    <div class="form-card p-8 mb-6 fade-up">
+      <p class="section-label">Step 1</p>
+      <h2 class="display-font text-2xl font-bold text-gray-900 mb-6">Complete Your Check-in</h2>
+
+      <form method="post" enctype="multipart/form-data" class="space-y-8">
+        {% csrf_token %}
+        <input type="hidden" name="location_verified" id="location-verified-input" value="false">
+
+        <!-- Photo -->
+        <div>
+          <p class="section-label">Photo Proof <span class="normal-case font-normal text-gray-400">(optional — earns bonus points)</span></p>
+          <div class="file-drop" id="file-drop-zone">
+            <input type="file" name="{{ form.photo_proof.html_name }}" id="{{ form.photo_proof.id_for_label }}" accept="image/*">
+            <div class="file-icon"><i class="fas fa-camera text-green-600"></i></div>
+            <p class="text-sm font-medium text-gray-700 mb-1">Tap to upload a photo</p>
+            <p class="text-xs text-gray-400">Photos shot on your phone at this location embed GPS — maximum points!</p>
+          </div>
+          <div id="photo-preview">
+            <img id="preview-image" src="" alt="Preview">
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <p class="section-label">Your Experience</p>
+          <textarea name="{{ form.notes.html_name }}" id="{{ form.notes.id_for_label }}"
+                    class="exp-textarea"
+                    placeholder="Share your thoughts, tips, or something memorable about this place…"></textarea>
+        </div>
+
+        <!-- GPS verification -->
+        <div>
+          <p class="section-label">Location Verification</p>
+          <div class="gps-card unverified" id="gps-card">
+            <p class="text-sm text-blue-700 mb-3">Being within 500 m of the place earns you extra points.</p>
+            <button type="button" class="gps-btn" id="verify-location">
+              <i class="fas fa-crosshairs text-xs"></i> Verify My Location
+            </button>
+            <div id="location-status" class="mt-3 text-sm"></div>
+          </div>
+        </div>
+
+        <!-- Points breakdown -->
+        <div class="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+          <p class="section-label mb-4">How Points Are Calculated</p>
+          <div class="points-table">
+            <div class="points-row">
+              <span class="flex items-center gap-2 text-gray-600">
+                <span class="points-badge badge-gray">⚪ Basic</span>
+                Check-in (no photo)
+              </span>
+              <span class="font-semibold text-gray-800">+{{ base_checkin_points }} pts</span>
+            </div>
+            <div class="points-row">
+              <span class="flex items-center gap-2 text-gray-600">
+                <span class="points-badge badge-yellow">📷 Photo</span>
+                Upload a photo
+              </span>
+              <span class="font-semibold text-gray-800">+{{ photo_bonus_points }} pts</span>
+            </div>
+            <div class="points-row">
+              <span class="flex items-center gap-2 text-gray-600">
+                <span class="points-badge badge-green">✅ EXIF</span>
+                GPS + timestamp in photo
+              </span>
+              <span class="font-semibold text-gray-800">+6 pts</span>
+            </div>
+            <div class="points-row">
+              <span class="flex items-center gap-2 text-gray-600">
+                <span class="points-badge badge-blue">📍 Live GPS</span>
+                Within 500 m right now
+              </span>
+              <span class="font-semibold text-gray-800">+{{ verified_bonus_points }} pts</span>
+            </div>
+            <div class="points-row" style="border-top: 1.5px solid #d1fae5; padding-top: 14px; margin-top: 4px;">
+              <span class="font-semibold text-gray-900">Maximum possible</span>
+              <span class="points-badge badge-max text-base">+{{ max_points }} pts</span>
+            </div>
+          </div>
+          <p class="text-xs text-gray-400 mt-4"><i class="fas fa-shield-alt mr-1"></i>Photos are scanned for GPS metadata. Reusing a previous check-in photo is not allowed.</p>
+        </div>
+
+        <!-- Submit row -->
+        <div class="flex items-center gap-4 pt-2">
+          <button type="submit" class="submit-btn">
+            <i class="fas fa-check-circle text-sm"></i> Complete Check-in
+          </button>
+          <a href="{% url 'places:place_detail' place.slug %}" class="cancel-btn">
+            <i class="fas fa-times text-sm"></i> Cancel
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <!-- Tips -->
+    <div class="form-card p-8 fade-up" style="transition-delay:.12s">
+      <p class="section-label mb-4">Tips for Maximum Points</p>
+      <div class="tips-grid">
+        <div class="tip-item">
+          <div class="tip-icon bg-green-100"><i class="fas fa-camera text-green-600"></i></div>
+          <span>Take the photo <strong>on your phone</strong> at the location — this embeds GPS automatically.</span>
+        </div>
+        <div class="tip-item">
+          <div class="tip-icon bg-blue-100"><i class="fas fa-map-marker-alt text-blue-600"></i></div>
+          <span>Tap <em>"Verify My Location"</em> while standing at the place for full GPS credit.</span>
+        </div>
+        <div class="tip-item">
+          <div class="tip-icon bg-red-100"><i class="fas fa-ban text-red-500"></i></div>
+          <span>Screenshots and downloaded images are detected and rejected automatically.</span>
+        </div>
+        <div class="tip-item">
+          <div class="tip-icon bg-orange-100"><i class="fas fa-clock text-orange-500"></i></div>
+          <span>Check in on the same day — photos more than 12 hours old receive reduced credit.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
 {% endblock %}
+
 {% block extra_js %}
-    <script>
-    // Photo preview
-    document.getElementById('{{ form.photo_proof.id_for_label }}').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('preview-image').src = e.target.result;
-                document.getElementById('photo-preview').classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+<script>
+const photoInput = document.getElementById('{{ form.photo_proof.id_for_label }}');
 
-    // Location verification
-    document.getElementById('verify-location').addEventListener('click', function() {
-        const button = this;
-        const status = document.getElementById('location-status');
-        const verifiedInput = document.getElementById('location-verified-input');
+photoInput.addEventListener('change', function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('preview-image').src = e.target.result;
+    document.getElementById('photo-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+});
 
-        button.disabled = true;
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Verifying...';
-        status.innerHTML = '<span class="text-blue-600">Getting your location...</span>';
+document.getElementById('verify-location').addEventListener('click', function() {
+  const btn = this;
+  const status = document.getElementById('location-status');
+  const verifiedInput = document.getElementById('location-verified-input');
+  const card = document.getElementById('gps-card');
 
-        if (!navigator.geolocation) {
-            status.innerHTML = '<span class="text-red-600">Geolocation is not supported by this browser.</span>';
-            button.innerHTML = '<i class="fas fa-crosshairs mr-1"></i> Verify My Location';
-            button.disabled = false;
-            return;
-        }
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i> Verifying…';
+  status.innerHTML = '<span style="color:#2563eb">Getting your location…</span>';
 
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                const userLat  = position.coords.latitude;
-                const userLng  = position.coords.longitude;
-                const placeLat = {{ place.latitude }};
-                const placeLng = {{ place.longitude }};
+  if (!navigator.geolocation) {
+    status.innerHTML = '<span style="color:#dc2626">Geolocation not supported by your browser.</span>';
+    btn.innerHTML = '<i class="fas fa-crosshairs text-xs"></i> Verify My Location';
+    btn.disabled = false; return;
+  }
 
-                // Haversine distance in metres
-                const R    = 6371000;
-                const dLat = (placeLat - userLat) * Math.PI / 180;
-                const dLng = (placeLng - userLng) * Math.PI / 180;
-                const a    = Math.sin(dLat/2) * Math.sin(dLat/2)
-                           + Math.cos(userLat * Math.PI/180) * Math.cos(placeLat * Math.PI/180)
-                           * Math.sin(dLng/2) * Math.sin(dLng/2);
-                const distance = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  navigator.geolocation.getCurrentPosition(
+    function(pos) {
+      const R = 6371000;
+      const dLat = ({{ place.latitude }} - pos.coords.latitude) * Math.PI / 180;
+      const dLng = ({{ place.longitude }} - pos.coords.longitude) * Math.PI / 180;
+      const a = Math.sin(dLat/2)**2 + Math.cos(pos.coords.latitude*Math.PI/180) * Math.cos({{ place.latitude }}*Math.PI/180) * Math.sin(dLng/2)**2;
+      const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
 
-                // FIX: raised threshold to 500m to accommodate large heritage sites
-                if (distance <= 500) {
-                    // FIX: actually set the hidden input to 'true' so the view records it
-                    verifiedInput.value = 'true';
-                    status.innerHTML = '<span class="text-green-600"><i class="fas fa-check-circle mr-1"></i> Location verified! You\'re at the right place.</span>';
-                    button.innerHTML = '<i class="fas fa-check-circle mr-1"></i> Location Verified';
-                    button.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    button.classList.add('bg-green-600', 'hover:bg-green-700');
-                } else {
-                    verifiedInput.value = 'false';
-                    status.innerHTML = `<span class="text-orange-600"><i class="fas fa-exclamation-triangle mr-1"></i> You're ${Math.round(distance)}m away. Get within 500m for verification.</span>`;
-                    button.innerHTML = '<i class="fas fa-crosshairs mr-1"></i> Try Again';
-                    button.disabled = false;
-                }
-            },
-            function(error) {
-                verifiedInput.value = 'false';
-                status.innerHTML = '<span class="text-red-600"><i class="fas fa-times-circle mr-1"></i> Location access denied. You can still check in without verification.</span>';
-                button.innerHTML = '<i class="fas fa-crosshairs mr-1"></i> Verify My Location';
-                button.disabled = false;
-            },
-            { timeout: 10000, maximumAge: 0 }
-        );
-    });
-    </script>
+      if (dist <= 500) {
+        verifiedInput.value = 'true';
+        card.className = 'gps-card success';
+        status.innerHTML = '<span style="color:#15803d"><i class="fas fa-check-circle mr-1"></i>Location verified — you\'re at the right spot!</span>';
+        btn.innerHTML = '<i class="fas fa-check-circle text-xs"></i> Verified';
+        btn.classList.add('verified');
+      } else {
+        verifiedInput.value = 'false';
+        card.className = 'gps-card warning';
+        status.innerHTML = `<span style="color:#92400e"><i class="fas fa-exclamation-triangle mr-1"></i>You're ${Math.round(dist)} m away. Get within 500 m for verification.</span>`;
+        btn.innerHTML = '<i class="fas fa-crosshairs text-xs"></i> Try Again';
+        btn.disabled = false;
+      }
+    },
+    function() {
+      verifiedInput.value = 'false';
+      status.innerHTML = '<span style="color:#dc2626"><i class="fas fa-times-circle mr-1"></i>Location access denied. You can still check in without GPS.</span>';
+      btn.innerHTML = '<i class="fas fa-crosshairs text-xs"></i> Verify My Location';
+      btn.disabled = false;
+    },
+    { timeout: 10000, maximumAge: 0 }
+  );
+});
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
 {% endblock %}

@@ -1,236 +1,561 @@
 {% extends 'base.html' %}
-{% block title %}{{ action }} Challenge - Expearls{% endblock %}
+{% block title %}{{ action }} Challenge — Expearls{% endblock %}
+
 {% block content %}
-  <div class="max-w-3xl mx-auto">
-    <!-- Header -->
-    <div class="flex items-center justify-between mb-8">
-      <div>
-        <h1 class="text-3xl font-bold text-gray-900">
-          <i class="fas fa-tasks text-blue-600 mr-3"></i>{{ action }} Challenge
-        </h1>
-        <p class="text-gray-500 mt-1">Fill in the details below to {{ action|lower }} a community challenge.</p>
-      </div>
-      <a href="{% url 'places:challenges' %}"
-         class="text-gray-600 hover:text-gray-900 flex items-center gap-2 text-sm font-medium">
-        <i class="fas fa-arrow-left"></i> Back to Challenges
-      </a>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .challenge-page { font-family: 'DM Sans', sans-serif; }
+  .display-font   { font-family: 'Playfair Display', serif; }
+
+  /* ── Hero ─────────────────────────────────────────────── */
+  .hero-challenge {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-challenge::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-challenge::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 80px;
+    background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px;
+    background: #86efac;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(1.4); }
+  }
+
+  /* ── Form card ────────────────────────────────────────── */
+  .form-card {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.08);
+    border: 1px solid #f3f4f6;
+  }
+
+  /* ── Section heading ──────────────────────────────────── */
+  .form-section-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+    padding-bottom: 12px;
+    border-bottom: 1.5px solid #f0fdf4;
+    margin-bottom: 20px;
+  }
+  .form-section-icon {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: #f0fdf4;
+    border: 1.5px solid #bbf7d0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* ── Field helpers ────────────────────────────────────── */
+  .field-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 6px;
+  }
+  .field-label .req { color: #16a34a; margin-left: 2px; }
+  .field-hint  { font-size: 0.75rem; color: #9ca3af; margin-top: 5px; line-height: 1.4; }
+  .field-error { font-size: 0.75rem; color: #dc2626; margin-top: 4px; }
+
+  /* ── Inputs ───────────────────────────────────────────── */
+  .challenge-page input[type="text"],
+  .challenge-page input[type="number"],
+  .challenge-page input[type="datetime-local"],
+  .challenge-page select,
+  .challenge-page textarea {
+    width: 100%;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    color: #111827;
+    background: #fafafa;
+    transition: border-color .2s, box-shadow .2s, background .2s;
+    outline: none;
+  }
+  .challenge-page input:focus,
+  .challenge-page select:focus,
+  .challenge-page textarea:focus {
+    border-color: #34d399;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(52,211,153,.12);
+  }
+  .challenge-page input.is-error,
+  .challenge-page select.is-error,
+  .challenge-page textarea.is-error {
+    border-color: #fca5a5;
+    background: #fff5f5;
+  }
+  .challenge-page textarea { resize: vertical; min-height: 100px; }
+
+  /* ── Checkbox card ────────────────────────────────────── */
+  .check-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    border: 1.5px solid #e5e7eb;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+  }
+  .check-card:hover { border-color: #34d399; background: #f0fdf4; }
+  .check-card input[type="checkbox"] { display: none; }
+  .check-box {
+    width: 20px; height: 20px;
+    border-radius: 6px;
+    border: 1.5px solid #d1d5db;
+    background: #fff;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+    transition: all .2s;
+  }
+  .check-card.checked { border-color: #34d399; background: #f0fdf4; }
+  .check-card.checked .check-box {
+    background: #16a34a;
+    border-color: #16a34a;
+  }
+  .check-card.checked .check-box i { display: block !important; }
+
+  /* ── Toggle switch ────────────────────────────────────── */
+  .toggle-wrap { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+  .toggle-track {
+    width: 44px; height: 24px;
+    border-radius: 50px;
+    background: #e5e7eb;
+    position: relative;
+    transition: background .2s;
+    flex-shrink: 0;
+  }
+  .toggle-thumb {
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.15);
+    position: absolute;
+    top: 3px; left: 3px;
+    transition: transform .2s;
+  }
+  .toggle-wrap.on .toggle-track { background: #16a34a; }
+  .toggle-wrap.on .toggle-thumb { transform: translateX(20px); }
+  .toggle-wrap input[type="checkbox"] { display: none; }
+
+  /* ── Error alert ──────────────────────────────────────── */
+  .error-alert {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 14px;
+    padding: 16px 18px;
+  }
+
+  /* ── Buttons ──────────────────────────────────────────── */
+  .btn-submit {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    color: #fff;
+    border: none;
+    border-radius: 50px;
+    padding: 13px 32px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .25s;
+    box-shadow: 0 4px 16px rgba(22,163,74,.3);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(22,163,74,.35);
+  }
+  .btn-danger {
+    background: #fff;
+    color: #dc2626;
+    border: 1.5px solid #fecaca;
+    border-radius: 50px;
+    padding: 12px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-danger:hover { background: #fef2f2; border-color: #dc2626; }
+  .btn-cancel {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color .2s;
+  }
+  .btn-cancel:hover { color: #111827; }
+
+  /* ── Entrance animation ───────────────────────────────── */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity .6s ease, transform .6s ease;
+  }
+  .fade-up.visible { opacity:1; transform:translateY(0); }
+
+  /* ── Visit count widget ───────────────────────────────── */
+  .count-widget {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .count-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid #d1fae5;
+    background: #f0fdf4;
+    color: #16a34a;
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all .2s;
+    flex-shrink: 0;
+  }
+  .count-btn:hover { background: #dcfce7; border-color: #34d399; }
+  .count-display {
+    width: 70px;
+    text-align: center;
+  }
+</style>
+
+<div class="challenge-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-challenge pt-20 pb-32 px-4 text-center">
+    <div class="max-w-2xl mx-auto relative z-10">
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-6 tracking-wide uppercase">
+        <span class="hero-dot"></span> Community Challenges
+      </span>
+      <h1 class="display-font text-5xl md:text-6xl font-black text-white leading-tight mb-4">
+        {{ action }} a<br>
+        <em class="text-green-300 not-italic">Challenge</em>
+      </h1>
+      <p class="text-green-100 text-lg font-light max-w-lg mx-auto leading-relaxed">
+        Set up a community challenge that pushes explorers to discover more of Sri Lanka.
+      </p>
     </div>
-    <!-- Form card -->
+  </section>
+
+  <!-- ══ CONTENT ══ -->
+  <section class="max-w-3xl mx-auto px-4 -mt-10 pb-20 relative z-10">
+
+    <!-- Error alert -->
+    {% if form.non_field_errors %}
+    <div class="error-alert mb-6 fade-up">
+      <div class="flex items-start gap-3">
+        <i class="fas fa-exclamation-circle text-red-500 mt-0.5"></i>
+        <div>
+          <p class="text-sm font-semibold text-red-800 mb-1">Please fix the following:</p>
+          <ul class="text-sm text-red-700 space-y-0.5 list-disc list-inside">
+            {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
     <form method="POST" novalidate>
       {% csrf_token %}
-      <!-- Non-field errors -->
-      {% if form.non_field_errors %}
-        <div class="mb-6 bg-red-50 border border-red-200 text-red-700 rounded-lg p-4">
-          {% for error in form.non_field_errors %}
-            <p class="text-sm">
-              <i class="fas fa-exclamation-circle mr-2"></i>{{ error }}
-            </p>
-          {% endfor %}
-        </div>
-      {% endif %}
-      <!-- ── Section 1: Basic Info ─────────────────────────────────── -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
-          <span class="w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">1</span>
+
+      <!-- ── Section 1: Basic Info ── -->
+      <div class="form-card p-8 mb-6 fade-up">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-info text-green-600"></i></div>
           Basic Information
-        </h2>
+        </div>
+
         <!-- Title -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-                 for="{{ form.title.id_for_label }}">
-            Challenge Title <span class="text-red-500">*</span>
+        <div class="mb-5">
+          <label class="field-label" for="{{ form.title.id_for_label }}">
+            Challenge Title <span class="req">*</span>
           </label>
           <input type="text"
                  name="{{ form.title.html_name }}"
                  id="{{ form.title.id_for_label }}"
                  value="{{ form.title.value|default:'' }}"
                  placeholder="e.g. Waterfall Weekend Explorer"
-                 class="w-full border {% if form.title.errors %}border-red-400{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-          {% for e in form.title.errors %}<p class="text-red-500 text-xs mt-1">{{ e }}</p>{% endfor %}
+                 class="{% if form.title.errors %}is-error{% endif %}">
+          {% for e in form.title.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
         </div>
+
         <!-- Description -->
-        <div class="mb-4">
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-                 for="{{ form.description.id_for_label }}">
-            Description <span class="text-red-500">*</span>
+        <div class="mb-5">
+          <label class="field-label" for="{{ form.description.id_for_label }}">
+            Description <span class="req">*</span>
           </label>
           <textarea name="{{ form.description.html_name }}"
                     id="{{ form.description.id_for_label }}"
                     rows="4"
                     placeholder="Describe what explorers need to do…"
-                    class="w-full border {% if form.description.errors %}border-red-400{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">{{ form.description.value|default:'' }}</textarea>
-          {% for e in form.description.errors %}<p class="text-red-500 text-xs mt-1">{{ e }}</p>{% endfor %}
+                    class="{% if form.description.errors %}is-error{% endif %}">{{ form.description.value|default:'' }}</textarea>
+          {% for e in form.description.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
         </div>
-        <!-- Type + Points side by side -->
+
+        <!-- Type + Points -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-                   for="{{ form.challenge_type.id_for_label }}">
-              Challenge Type <span class="text-red-500">*</span>
+            <label class="field-label" for="{{ form.challenge_type.id_for_label }}">
+              Challenge Type <span class="req">*</span>
             </label>
             <select name="{{ form.challenge_type.html_name }}"
                     id="{{ form.challenge_type.id_for_label }}"
-                    class="w-full border {% if form.challenge_type.errors %}border-red-400{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    class="{% if form.challenge_type.errors %}is-error{% endif %}">
               {% for val, label in form.fields.challenge_type.choices %}
-                <option value="{{ val }}"
-                        {% if form.challenge_type.value == val %}selected{% endif %}>{{ label }}</option>
+                <option value="{{ val }}" {% if form.challenge_type.value == val %}selected{% endif %}>{{ label }}</option>
               {% endfor %}
             </select>
+            {% for e in form.challenge_type.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-                   for="{{ form.reward_points.id_for_label }}">
-              Reward Points <span class="text-red-500">*</span>
+            <label class="field-label" for="{{ form.reward_points.id_for_label }}">
+              Reward Points <span class="req">*</span>
             </label>
             <input type="number"
                    name="{{ form.reward_points.html_name }}"
                    id="{{ form.reward_points.id_for_label }}"
                    value="{{ form.reward_points.value|default:50 }}"
                    min="1"
-                   class="w-full border {% if form.reward_points.errors %}border-red-400{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            {% for e in form.reward_points.errors %}<p class="text-red-500 text-xs mt-1">{{ e }}</p>{% endfor %}
+                   class="{% if form.reward_points.errors %}is-error{% endif %}">
+            <p class="field-hint">Points awarded on completion.</p>
+            {% for e in form.reward_points.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
           </div>
         </div>
       </div>
-      <!-- ── Section 2: Schedule ───────────────────────────────────── -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-5 flex items-center gap-2">
-          <span class="w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">2</span>
+
+      <!-- ── Section 2: Schedule ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.1s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-calendar-alt text-green-600"></i></div>
           Schedule
-        </h2>
+        </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-                   for="{{ form.start_date.id_for_label }}">
-              Start Date &amp; Time <span class="text-red-500">*</span>
+            <label class="field-label" for="{{ form.start_date.id_for_label }}">
+              Start Date & Time <span class="req">*</span>
             </label>
             <input type="datetime-local"
                    name="{{ form.start_date.html_name }}"
                    id="{{ form.start_date.id_for_label }}"
                    value="{{ form.start_date.value|default:''|date:'Y-m-d\TH:i' }}"
-                   class="w-full border {% if form.start_date.errors %}border-red-400{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            {% for e in form.start_date.errors %}<p class="text-red-500 text-xs mt-1">{{ e }}</p>{% endfor %}
+                   class="{% if form.start_date.errors %}is-error{% endif %}">
+            {% for e in form.start_date.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-                   for="{{ form.end_date.id_for_label }}">
-              End Date &amp; Time <span class="text-red-500">*</span>
+            <label class="field-label" for="{{ form.end_date.id_for_label }}">
+              End Date & Time <span class="req">*</span>
             </label>
             <input type="datetime-local"
                    name="{{ form.end_date.html_name }}"
                    id="{{ form.end_date.id_for_label }}"
                    value="{{ form.end_date.value|default:''|date:'Y-m-d\TH:i' }}"
-                   class="w-full border {% if form.end_date.errors %}border-red-400{% else %}border-gray-300{% endif %} rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            {% for e in form.end_date.errors %}<p class="text-red-500 text-xs mt-1">{{ e }}</p>{% endfor %}
+                   class="{% if form.end_date.errors %}is-error{% endif %}">
+            {% for e in form.end_date.errors %}<p class="field-error">{{ e }}</p>{% endfor %}
           </div>
         </div>
       </div>
-      <!-- ── Section 3: Criteria ───────────────────────────────────── -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-        <h2 class="text-lg font-semibold text-gray-800 mb-1 flex items-center gap-2">
-          <span class="w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">3</span>
+
+      <!-- ── Section 3: Completion Criteria ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.2s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-tasks text-green-600"></i></div>
           Completion Criteria
-        </h2>
-        <p class="text-sm text-gray-500 mb-5 ml-9">Define what users must do to complete this challenge.</p>
+        </div>
+        <p class="text-sm text-gray-500 mb-5 -mt-2">Define what explorers must do to complete this challenge.</p>
+
         <!-- Visit count -->
         <div class="mb-5">
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-                 for="{{ form.criteria_visit_count.id_for_label }}">
-            Number of Places to Visit <span class="text-red-500">*</span>
+          <label class="field-label" for="{{ form.criteria_visit_count.id_for_label }}">
+            Number of Places to Visit <span class="req">*</span>
           </label>
-          <div class="flex items-center gap-3">
+          <div class="count-widget">
+            <button type="button" class="count-btn" onclick="adjustCount(-1)">−</button>
             <input type="number"
                    name="{{ form.criteria_visit_count.html_name }}"
                    id="{{ form.criteria_visit_count.id_for_label }}"
                    value="{{ form.criteria_visit_count.value|default:5 }}"
-                   min="1"
-                   max="100"
-                   class="w-32 border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <span class="text-sm text-gray-500">check-ins required to complete the challenge</span>
+                   min="1" max="100"
+                   class="count-display">
+            <button type="button" class="count-btn" onclick="adjustCount(1)">+</button>
+            <span class="text-sm text-gray-500">check-ins required</span>
           </div>
         </div>
-        <!-- Category filter -->
+
+        <!-- Category -->
         <div class="mb-5">
-          <label class="block text-sm font-medium text-gray-700 mb-1"
-                 for="{{ form.criteria_category.id_for_label }}">
-            Category Restriction <span class="text-gray-400 font-normal">(optional)</span>
+          <label class="field-label" for="{{ form.criteria_category.id_for_label }}">
+            Category Restriction
+            <span class="text-gray-400 font-normal">(optional)</span>
           </label>
           <input type="text"
                  name="{{ form.criteria_category.html_name }}"
                  id="{{ form.criteria_category.id_for_label }}"
                  value="{{ form.criteria_category.value|default:'' }}"
-                 placeholder="Leave blank for any category, or enter a slug e.g. waterfall"
-                 class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                 placeholder="Leave blank for any category, or enter a slug e.g. waterfall">
+          <p class="field-hint">Restrict check-ins to a specific place category.</p>
         </div>
+
         <!-- Checkboxes -->
         <div class="space-y-3">
-          <label class="flex items-center gap-3 cursor-pointer group">
+          <label class="check-card {% if form.criteria_require_photo.value %}checked{% endif %}"
+                 onclick="toggleCheck(this)">
             <input type="checkbox"
                    name="{{ form.criteria_require_photo.html_name }}"
                    id="{{ form.criteria_require_photo.id_for_label }}"
-                   {% if form.criteria_require_photo.value %}checked{% endif %}
-                   class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-            <span class="text-sm text-gray-700 group-hover:text-gray-900">
-              <i class="fas fa-camera text-blue-500 mr-1"></i>
-              Require photo proof at each check-in
-            </span>
+                   {% if form.criteria_require_photo.value %}checked{% endif %}>
+            <div class="check-box"><i class="fas fa-check text-white text-xs" style="display:none"></i></div>
+            <div>
+              <p class="text-sm font-semibold text-gray-800">Require photo proof</p>
+              <p class="text-xs text-gray-500 mt-0.5">Explorers must upload a photo at each check-in.</p>
+            </div>
           </label>
-          <label class="flex items-center gap-3 cursor-pointer group">
+
+          <label class="check-card {% if form.criteria_require_review.value %}checked{% endif %}"
+                 onclick="toggleCheck(this)">
             <input type="checkbox"
                    name="{{ form.criteria_require_review.html_name }}"
                    id="{{ form.criteria_require_review.id_for_label }}"
-                   {% if form.criteria_require_review.value %}checked{% endif %}
-                   class="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
-            <span class="text-sm text-gray-700 group-hover:text-gray-900">
-              <i class="fas fa-pen text-blue-500 mr-1"></i>
-              Require a written review (comment) for each place
-            </span>
+                   {% if form.criteria_require_review.value %}checked{% endif %}>
+            <div class="check-box"><i class="fas fa-check text-white text-xs" style="display:none"></i></div>
+            <div>
+              <p class="text-sm font-semibold text-gray-800">Require written review</p>
+              <p class="text-xs text-gray-500 mt-0.5">Explorers must leave a comment for each place visited.</p>
+            </div>
           </label>
         </div>
       </div>
-      <!-- ── Section 4: Visibility ─────────────────────────────────── -->
-      <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-        <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <span class="w-7 h-7 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">4</span>
+
+      <!-- ── Section 4: Visibility ── -->
+      <div class="form-card p-8 mb-6 fade-up" style="transition-delay:.3s">
+        <div class="form-section-title">
+          <div class="form-section-icon"><i class="fas fa-eye text-green-600"></i></div>
           Visibility
-        </h2>
-        <label class="flex items-center gap-3 cursor-pointer">
+        </div>
+
+        <label class="toggle-wrap {% if form.is_active.value %}on{% endif %}" onclick="toggleSwitch(this)">
           <input type="checkbox"
                  name="{{ form.is_active.html_name }}"
                  id="{{ form.is_active.id_for_label }}"
-                 {% if form.is_active.value %}checked{% endif %}
-                 class="w-4 h-4 text-green-600 rounded border-gray-300 focus:ring-green-500">
+                 {% if form.is_active.value %}checked{% endif %}>
+          <div class="toggle-track"><div class="toggle-thumb"></div></div>
           <div>
-            <span class="text-sm font-medium text-gray-700">Make this challenge active immediately</span>
-            <p class="text-xs text-gray-500">Uncheck to save as a draft and publish later.</p>
+            <p class="text-sm font-semibold text-gray-800">Make this challenge active immediately</p>
+            <p class="text-xs text-gray-500 mt-0.5">Turn off to save as a draft and publish later.</p>
           </div>
         </label>
       </div>
-      <!-- Action buttons -->
-      <div class="flex items-center justify-between gap-4">
-        <a href="{% url 'places:challenges' %}"
-           class="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-          Cancel
-        </a>
-        <div class="flex gap-3">
+
+      <!-- ── Actions ── -->
+      <div class="flex items-center justify-between gap-4 fade-up" style="transition-delay:.4s">
+        <div class="flex items-center gap-3">
+          <a href="{% url 'places:challenges' %}" class="btn-cancel">
+            <i class="fas fa-arrow-left text-xs"></i> Cancel
+          </a>
           {% if challenge %}
-            <!-- Delete button (edit mode) -->
-            <form method="POST"
-                  action="{% url 'places:delete_challenge' challenge.pk %}"
-                  onsubmit="return confirm('Delete this challenge? This cannot be undone.')">
-              {% csrf_token %}
-              <button type="submit"
-                      class="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors">
-                <i class="fas fa-trash mr-2"></i>Delete
-              </button>
-            </form>
+          <form method="POST" action="{% url 'places:delete_challenge' challenge.pk %}"
+                onsubmit="return confirm('Delete this challenge? This cannot be undone.')">
+            {% csrf_token %}
+            <button type="submit" class="btn-danger">
+              <i class="fas fa-trash-alt text-sm"></i> Delete
+            </button>
+          </form>
           {% endif %}
-          <button type="submit"
-                  class="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm">
-            <i class="fas fa-save mr-2"></i>{{ action }} Challenge
-          </button>
         </div>
+
+        <button type="submit" class="btn-submit">
+          <i class="fas fa-save text-sm"></i>
+          {{ action }} Challenge
+        </button>
       </div>
+
     </form>
-  </div>
+  </section>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Visit count stepper ─────────────────────────────────
+function adjustCount(delta) {
+  const input = document.getElementById('{{ form.criteria_visit_count.id_for_label }}');
+  const val = parseInt(input.value) || 1;
+  input.value = Math.max(1, Math.min(100, val + delta));
+}
+
+// ── Checkbox card toggle ────────────────────────────────
+function toggleCheck(label) {
+  const cb   = label.querySelector('input[type="checkbox"]');
+  const icon = label.querySelector('.check-box i');
+  cb.checked = !cb.checked;
+  label.classList.toggle('checked', cb.checked);
+  icon.style.display = cb.checked ? 'block' : 'none';
+}
+// Init icons on load
+document.querySelectorAll('.check-card.checked .check-box i').forEach(i => i.style.display = 'block');
+
+// ── Toggle switch ───────────────────────────────────────
+function toggleSwitch(label) {
+  const cb = label.querySelector('input[type="checkbox"]');
+  cb.checked = !cb.checked;
+  label.classList.toggle('on', cb.checked);
+}
+
+// ── Scroll entrance animations ──────────────────────────
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+</script>
 {% endblock %}

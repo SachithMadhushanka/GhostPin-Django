@@ -239,10 +239,10 @@
 
         <!-- CTAs -->
         <div class="flex flex-wrap gap-3 mb-10 anim-4">
-          <a href="{% url 'places:home' %}"
+          <a href="{% url 'places:nearby_places' %}"
              class="inline-flex items-center gap-2 bg-white text-[var(--forest)] font-semibold
                     px-6 py-3.5 rounded-xl hover:bg-[var(--cream)] transition-all active:scale-95 shadow-lg">
-            <i class="fas fa-compass text-[var(--fern)]"></i> Explore Places
+            <i class="fas fa-compass text-[var(--fern)]"></i> Explore Nearby Places
           </a>
           <a href="{% url 'places:trails' %}"
              class="inline-flex items-center gap-2 border border-white/30 text-white font-semibold
@@ -410,11 +410,11 @@
           The most visited, loved, and talked-about spots across the island right now.
         </p>
       </div>
-      <a href="{% url 'places:home' %}"
+      <a href="{% url 'places:nearby_places' %}"
          class="hidden md:inline-flex items-center gap-2 text-sm font-semibold text-[var(--fern)]
                 hover:text-[var(--forest)] transition-colors border-b-2 border-transparent
                 hover:border-[var(--fern)] pb-0.5">
-        All Places <i class="fas fa-arrow-right text-xs"></i>
+        All Nearby Places <i class="fas fa-arrow-right text-xs"></i>
       </a>
     </div>
 

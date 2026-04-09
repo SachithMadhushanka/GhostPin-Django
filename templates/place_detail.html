@@ -1,841 +1,1078 @@
 {% extends 'base.html' %}
 {% block title %}{{ place.name }} - Expearls{% endblock %}
+
+{# Override the main wrapper so the hero can go full-width without the base padding #}
+{% block main_class %}p-0 pb-24{% endblock %}
+
 {% block content %}
-    <div class="max-w-4xl mx-auto">
-        <!-- Back Button -->
-        <div class="mb-6 flex items-center justify-between">
-            <!-- Left side: Back button -->
-            <a href="{% url 'places:home' %}"
-               class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
-                <svg class="w-5 h-5 mr-2"
-                     fill="none"
-                     stroke="currentColor"
-                     viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                Back to Places
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --forest: #1a3a2a;
+    --moss: #2d5a3d;
+    --sage: #5a8a6a;
+    --mist: #e8f0e9;
+    --sand: #f5f0e8;
+    --gold: #c8a84b;
+    --ember: #c0392b;
+    --ink: #1c1c1c;
+    --smoke: #6b7280;
+    --cream: #faf8f4;
+    --white: #ffffff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+  }
+
+  /* ── Hero ─────────────────────────────────── */
+  .hero {
+    position: relative;
+    height: 92vh;
+    min-height: 560px;
+    overflow: hidden;
+  }
+
+  .hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.04);
+    animation: slowZoom 18s ease-out forwards;
+  }
+
+  @keyframes slowZoom {
+    to { transform: scale(1); }
+  }
+
+  .hero-placeholder {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, var(--forest) 0%, var(--moss) 60%, var(--sage) 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 7rem;
+  }
+
+  .hero-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.08) 0%,
+      rgba(0,0,0,0.01) 40%,
+      rgba(0,0,0,0.55) 75%,
+      rgba(0,0,0,0.82) 100%
+    );
+  }
+
+  .hero-nav {
+    position: absolute; top: 0; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.5rem 2.5rem;
+    z-index: 10;
+  }
+
+  .nav-btn {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    color: rgba(255,255,255,0.9);
+    text-decoration: none;
+    font-size: 0.82rem; font-weight: 500; letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 0.5rem 1rem;
+    border-radius: 100px;
+    transition: background 0.2s, border-color 0.2s;
+    cursor: pointer;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.4); color: #fff; }
+  .nav-btn svg, .nav-btn i { font-size: 0.9rem; }
+
+  .hero-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: flex-end; }
+
+  .hero-content {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 3rem 2.5rem 2.5rem;
+    z-index: 5;
+  }
+
+  .place-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+
+  .badge {
+    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 0.8rem;
+    border-radius: 100px;
+    backdrop-filter: blur(8px);
+  }
+  .badge-category { background: rgba(200,168,75,0.25); color: var(--gold); border: 1px solid rgba(200,168,75,0.4); }
+  .badge-status-pending { background: rgba(251,191,36,0.2); color: #fbbf24; border: 1px solid rgba(251,191,36,0.4); }
+  .badge-status-rejected { background: rgba(239,68,68,0.2); color: #f87171; border: 1px solid rgba(239,68,68,0.4); }
+
+  .hero-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(2.4rem, 6vw, 4.5rem);
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    margin-bottom: 1rem;
+    text-shadow: 0 2px 24px rgba(0,0,0,0.25);
+  }
+
+  .hero-meta {
+    display: flex; align-items: center; gap: 1.2rem; flex-wrap: wrap;
+    color: rgba(255,255,255,0.75);
+    font-size: 0.82rem;
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 0.35rem; }
+
+  .hero-fab {
+    position: absolute; right: 2.5rem; bottom: 2.5rem; z-index: 10;
+    display: flex; flex-direction: column; gap: 0.7rem;
+  }
+
+  .fab-btn {
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+  }
+  .fab-btn:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(0,0,0,0.4); }
+  .fab-heart { background: var(--white); color: var(--ember); }
+  .fab-heart.favorited { background: var(--ember); color: #fff; }
+  .fab-camera { background: var(--forest); color: #fff; }
+  .fab-video { background: #6d28d9; color: #fff; }
+  .fab-checkin { background: var(--gold); color: var(--forest); }
+
+  /* ── Main Layout ──────────────────────────── */
+  .page-wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 0 1.5rem 4rem;
+  }
+
+  /* ── Sticky Quick Bar ─────────────────────── */
+  .quick-bar {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(250,248,244,0.92);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding: 0.9rem 1.5rem;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 1rem;
+    margin: 0 -1.5rem;
+  }
+  .quick-bar-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem; font-weight: 600;
+    color: var(--forest);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .quick-bar-links { display: flex; gap: 1rem; flex-shrink: 0; }
+  .qb-link {
+    font-size: 0.78rem; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase;
+    color: var(--smoke); text-decoration: none; transition: color 0.15s;
+  }
+  .qb-link:hover { color: var(--forest); }
+
+  /* ── Cards ────────────────────────────────── */
+  .card {
+    background: var(--white);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.05);
+    margin-top: 2rem;
+  }
+  .card-body { padding: 2rem; }
+  .section-label {
+    font-size: 0.72rem; font-weight: 500; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--sage);
+    margin-bottom: 0.5rem;
+  }
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem; font-weight: 600;
+    color: var(--forest); margin-bottom: 1.2rem;
+  }
+
+  /* ── About / Description ──────────────────── */
+  .description-text {
+    font-size: 1rem; line-height: 1.85;
+    color: #3a3a3a;
+  }
+
+  /* ── Detail Grid ──────────────────────────── */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .detail-tile {
+    background: var(--mist);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+    border: 1px solid rgba(90,138,106,0.15);
+  }
+  .detail-tile-label {
+    font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--sage); margin-bottom: 0.3rem;
+  }
+  .detail-tile-value {
+    font-size: 0.97rem; font-weight: 500; color: var(--forest);
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+
+  .shield-row { display: flex; gap: 3px; margin-top: 0.1rem; }
+  .shield { font-size: 1rem; line-height: 1; }
+  .shield.active { filter: none; }
+  .shield.inactive { opacity: 0.22; }
+
+  /* ── Map ──────────────────────────────────── */
+  #map {
+    width: 100%; height: 380px;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .map-coords {
+    display: flex; gap: 0.5rem; align-items: center;
+    font-size: 0.8rem; color: var(--smoke);
+    padding: 0.8rem 2rem;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+
+  /* ── Photo Grid ───────────────────────────── */
+  .photo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 0.75rem;
+    padding: 0 2rem 2rem;
+  }
+
+  .photo-thumb {
+    position: relative; border-radius: 12px; overflow: hidden;
+    aspect-ratio: 4/3; cursor: pointer;
+    background: var(--mist);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .photo-thumb:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.14); }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .photo-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 50%);
+    opacity: 0; transition: opacity 0.2s;
+    display: flex; align-items: flex-end;
+    padding: 0.6rem;
+  }
+  .photo-thumb:hover .photo-overlay { opacity: 1; }
+  .photo-meta { font-size: 0.68rem; color: rgba(255,255,255,0.85); }
+
+  /* ── Video Grid ───────────────────────────── */
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 0.75rem;
+    padding: 0 2rem 2rem;
+  }
+
+  .video-thumb {
+    position: relative; border-radius: 12px; overflow: hidden;
+    aspect-ratio: 16/9; background: var(--ink);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    transition: transform 0.2s;
+  }
+  .video-thumb:hover { transform: translateY(-2px); }
+  .video-thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; }
+
+  .play-btn {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .play-circle {
+    width: 44px; height: 44px; border-radius: 50%;
+    background: rgba(255,255,255,0.9);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem; color: var(--ink);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    transition: transform 0.2s;
+  }
+  .video-thumb:hover .play-circle { transform: scale(1.1); }
+
+  .platform-pill {
+    position: absolute; top: 0.5rem; left: 0.5rem;
+    font-size: 0.62rem; font-weight: 600; letter-spacing: 0.04em;
+    padding: 0.2rem 0.55rem; border-radius: 6px; color: #fff;
+  }
+  .pl-youtube { background: #e60023; }
+  .pl-tiktok { background: #010101; }
+  .pl-instagram { background: #c13584; }
+  .pl-facebook { background: #1877f2; }
+
+  .video-meta { padding: 0.55rem 0.7rem; font-size: 0.68rem; color: var(--smoke); background: var(--white); }
+
+  /* ── Related ──────────────────────────────── */
+  .related-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    padding: 0 2rem 2rem;
+  }
+  .related-card {
+    border-radius: 14px; overflow: hidden;
+    text-decoration: none; color: inherit;
+    background: var(--white);
+    border: 1px solid rgba(0,0,0,0.07);
+    transition: transform 0.2s, box-shadow 0.2s;
+    display: block;
+  }
+  .related-card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,0.1); }
+  .related-card img { width: 100%; height: 130px; object-fit: cover; }
+  .related-card-placeholder {
+    width: 100%; height: 130px;
+    background: linear-gradient(135deg, var(--forest), var(--sage));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem;
+  }
+  .related-info { padding: 0.8rem; }
+  .related-name { font-weight: 600; font-size: 0.9rem; color: var(--forest); margin-bottom: 0.2rem; }
+  .related-cat { font-size: 0.72rem; color: var(--sage); margin-bottom: 0.3rem; }
+  .related-desc { font-size: 0.78rem; color: var(--smoke); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* ── Comments ─────────────────────────────── */
+  .comment-item {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    animation: fadeUp 0.3s ease both;
+  }
+  .comment-item:last-child { border-bottom: none; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .comment-layout { display: flex; gap: 1rem; align-items: flex-start; }
+
+  .avatar {
+    width: 40px; height: 40px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.9rem; color: #fff;
+    flex-shrink: 0; text-decoration: none;
+    background: linear-gradient(135deg, var(--moss), var(--sage));
+    transition: opacity 0.15s;
+  }
+  .avatar:hover { opacity: 0.85; }
+  .avatar-sm {
+    width: 32px; height: 32px; font-size: 0.8rem;
+    background: linear-gradient(135deg, #7c3aed, #db2777);
+  }
+
+  .comment-body { flex: 1; }
+  .comment-header { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+  .comment-author { font-weight: 600; font-size: 0.92rem; color: var(--forest); }
+  .comment-time { font-size: 0.77rem; color: var(--smoke); }
+
+  .stars-row { display: flex; gap: 2px; }
+  .star { font-size: 0.72rem; }
+  .star.filled { color: var(--gold); }
+  .star.empty { color: #d1d5db; }
+
+  .comment-text { font-size: 0.93rem; line-height: 1.7; color: #3a3a3a; margin-bottom: 0.8rem; }
+
+  .vote-row { display: flex; align-items: center; gap: 1.2rem; }
+  .vote-btn-grp { display: flex; align-items: center; gap: 0.4rem; }
+  .vote-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.88rem; padding: 0.25rem 0.5rem;
+    border-radius: 8px; transition: background 0.15s;
+    color: var(--smoke);
+  }
+  .vote-btn:hover { background: var(--mist); }
+  .vote-count { font-size: 0.8rem; color: var(--smoke); }
+  .reply-btn {
+    background: none; border: none; cursor: pointer;
+    font-size: 0.78rem; font-weight: 500; letter-spacing: 0.04em;
+    color: var(--sage); padding: 0.25rem 0.6rem;
+    border-radius: 8px; transition: background 0.15s;
+  }
+  .reply-btn:hover { background: var(--mist); color: var(--forest); }
+
+  .replies-wrap { margin-top: 1rem; padding-left: 1rem; border-left: 2px solid var(--mist); display: flex; flex-direction: column; gap: 0.8rem; }
+  .reply-item { display: flex; gap: 0.7rem; align-items: flex-start; }
+  .reply-body { background: var(--sand); border-radius: 10px; padding: 0.7rem 0.9rem; flex: 1; }
+  .reply-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem; }
+  .reply-author { font-weight: 600; font-size: 0.82rem; color: var(--forest); }
+  .reply-time { font-size: 0.72rem; color: var(--smoke); }
+  .reply-text { font-size: 0.86rem; color: #3a3a3a; line-height: 1.6; }
+
+  .reply-form-wrap { margin-top: 0.9rem; }
+  .reply-textarea {
+    width: 100%; padding: 0.7rem 1rem;
+    border: 1.5px solid rgba(90,138,106,0.3);
+    border-radius: 12px; resize: none;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
+    background: var(--mist); color: var(--ink);
+    outline: none; transition: border-color 0.15s;
+  }
+  .reply-textarea:focus { border-color: var(--sage); background: #fff; }
+  .reply-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.5rem; }
+
+  .btn { padding: 0.45rem 1.1rem; border-radius: 10px; border: none; cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500; transition: background 0.15s; }
+  .btn-ghost { background: transparent; color: var(--smoke); border: 1px solid rgba(0,0,0,0.12); }
+  .btn-ghost:hover { background: var(--mist); }
+  .btn-primary { background: var(--forest); color: #fff; }
+  .btn-primary:hover { background: var(--moss); }
+  .btn-accent { background: var(--gold); color: var(--forest); font-weight: 600; }
+  .btn-accent:hover { background: #b89035; }
+
+  /* ── Empty State ──────────────────────────── */
+  .empty-state {
+    text-align: center; padding: 3rem 2rem;
+  }
+  .empty-icon { font-size: 3.5rem; margin-bottom: 1rem; opacity: 0.35; }
+  .empty-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--forest); margin-bottom: 0.4rem; }
+  .empty-sub { font-size: 0.88rem; color: var(--smoke); }
+
+  /* ── Comment Form ─────────────────────────── */
+  .comment-form-card { background: var(--white); border-radius: 20px; padding: 2rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.05); margin-top: 2rem; }
+  .comment-textarea {
+    width: 100%;
+    padding: 1rem 1.2rem;
+    border: 1.5px solid rgba(90,138,106,0.25);
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+    background: var(--mist); color: var(--ink);
+    resize: none; outline: none;
+    transition: border-color 0.15s, background 0.15s;
+    line-height: 1.7;
+  }
+  .comment-textarea:focus { border-color: var(--sage); background: #fff; }
+  .rating-stars { display: flex; gap: 0.3rem; cursor: pointer; }
+  .r-star { font-size: 1.4rem; color: #d1d5db; transition: color 0.12s; }
+  .r-star.active { color: var(--gold); }
+  .form-label { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sage); margin-bottom: 0.5rem; display: block; }
+  .form-actions { display: flex; justify-content: flex-end; margin-top: 1rem; }
+
+  /* ── Photo Modal ──────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 1000;
+    background: rgba(0,0,0,0.88);
+    display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px);
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.25s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal-img { max-width: 92vw; max-height: 88vh; border-radius: 12px; box-shadow: 0 24px 64px rgba(0,0,0,0.5); }
+  .modal-close {
+    position: absolute; top: 1.2rem; right: 1.5rem;
+    background: rgba(255,255,255,0.12); border: none; cursor: pointer;
+    width: 40px; height: 40px; border-radius: 50%;
+    color: #fff; font-size: 1.3rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .modal-close:hover { background: rgba(255,255,255,0.25); }
+
+  /* ── Upload Modals ────────────────────────── */
+  .upload-modal-overlay {
+    position: fixed; inset: 0; z-index: 900;
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .upload-modal-overlay.open { opacity: 1; pointer-events: all; }
+  .upload-modal {
+    background: var(--white);
+    border-radius: 20px;
+    padding: 2rem;
+    width: 100%; max-width: 420px;
+    margin: 1rem;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.25);
+    transform: translateY(16px); transition: transform 0.25s;
+  }
+  .upload-modal-overlay.open .upload-modal { transform: translateY(0); }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; color: var(--forest); }
+  .modal-x { background: none; border: none; cursor: pointer; font-size: 1.4rem; color: var(--smoke); line-height: 1; }
+  .modal-x:hover { color: var(--ink); }
+
+  .file-input-wrap {
+    border: 2px dashed rgba(90,138,106,0.35);
+    border-radius: 14px;
+    padding: 2rem;
+    text-align: center;
+    background: var(--mist);
+    margin-bottom: 1rem;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .file-input-wrap:hover { border-color: var(--sage); background: #e0ece2; }
+  .file-input-wrap input { display: none; }
+  .file-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .file-hint { font-size: 0.82rem; color: var(--smoke); }
+
+  .preview-img { width: 100%; height: 160px; object-fit: cover; border-radius: 10px; margin-bottom: 1rem; display: none; }
+
+  .url-input {
+    width: 100%; padding: 0.75rem 1rem;
+    border: 1.5px solid rgba(90,138,106,0.25);
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+    background: var(--mist); color: var(--ink); outline: none;
+    transition: border-color 0.15s;
+  }
+  .url-input:focus { border-color: var(--sage); background: #fff; }
+  .url-hint { font-size: 0.76rem; color: var(--smoke); margin-top: 0.4rem; }
+
+  .modal-footer { display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 1.2rem; }
+
+  /* ── Responsive ───────────────────────────── */
+  @media (max-width: 640px) {
+    .hero-nav { padding: 1rem 1.2rem; gap: 0.5rem; flex-wrap: wrap; }
+    .hero-content { padding: 2rem 1.2rem 1.5rem; }
+    .hero-fab { right: 1.2rem; bottom: 1.5rem; }
+    .card-body { padding: 1.2rem; }
+    .quick-bar { padding: 0.75rem 1rem; }
+    .photo-grid, .video-grid, .related-grid { padding: 0 1rem 1.5rem; }
+  }
+</style>
+
+<!-- ───────── HERO ───────── -->
+<div class="hero">
+  {% if place.image %}
+    <img class="hero-img" src="{{ place.image.url }}" alt="{{ place.name }}">
+  {% else %}
+    <div class="hero-placeholder">🏛️</div>
+  {% endif %}
+  <div class="hero-overlay"></div>
+
+  <!-- Top nav -->
+  <nav class="hero-nav">
+    <a href="{% url 'places:home' %}" class="nav-btn">
+      <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      Back
+    </a>
+
+    <div class="hero-actions">
+      <a href="{% url 'places:route_planner' %}?destination={{ place.slug }}" class="nav-btn">
+        <i class="fas fa-route"></i> Route
+      </a>
+      <a href="{% url 'places:place_checkins' place.slug %}" class="nav-btn">
+        <i class="fas fa-bell"></i> Check-ins
+      </a>
+      {% if user == place.created_by or user.is_staff %}
+        <a href="{% url 'places:edit_place' place.slug %}" class="nav-btn">
+          <i class="fas fa-edit"></i> Edit
+        </a>
+      {% endif %}
+    </div>
+  </nav>
+
+  <!-- Bottom content -->
+  <div class="hero-content">
+    <div class="place-badges">
+      {% for cat in place.category.all %}
+        <span class="badge badge-category">🏷 {{ cat.name }}</span>
+      {% endfor %}
+      {% if place.status != 'approved' %}
+        <span class="badge badge-status-{{ place.status }}">{{ place.get_status_display }}</span>
+      {% endif %}
+    </div>
+    <h1 class="hero-title">{{ place.name }}</h1>
+    <div class="hero-meta">
+      <span>📍 {{ place.latitude|floatformat:4 }}, {{ place.longitude|floatformat:4 }}</span>
+      <span>·</span>
+      <span>Added {{ place.created_at|date:"M d, Y" }} by {{ place.created_by.username }}</span>
+    </div>
+  </div>
+
+  <!-- FABs -->
+  {% if user.is_authenticated %}
+  <div class="hero-fab">
+    <form method="post" action="{% url 'places:toggle_favorite' place.slug %}" style="margin:0">
+      {% csrf_token %}
+      <button type="submit" class="fab-btn fab-heart {% if is_favorited %}favorited{% endif %}" title="Favourite">
+        <i class="fas fa-heart"></i>
+      </button>
+    </form>
+    <a href="{% url 'places:check_in' place.slug %}" class="fab-btn fab-checkin" title="Check In">
+      <i class="fas fa-check"></i>
+    </a>
+    <button class="fab-btn fab-camera" title="Add Photo" onclick="openModal('image-modal')">
+      <i class="fas fa-camera"></i>
+    </button>
+    <button class="fab-btn fab-video" title="Add Video" onclick="openModal('video-modal')">
+      <i class="fas fa-video"></i>
+    </button>
+  </div>
+  {% endif %}
+</div>
+
+<!-- ───────── STICKY BAR ───────── -->
+<div class="quick-bar">
+  <span class="quick-bar-title">{{ place.name }}</span>
+  <nav class="quick-bar-links">
+    <a class="qb-link" href="#about">About</a>
+    <a class="qb-link" href="#map-section">Map</a>
+    {% if place_images %}<a class="qb-link" href="#photos">Photos</a>{% endif %}
+    <a class="qb-link" href="#comments">Comments</a>
+  </nav>
+</div>
+
+<!-- ───────── PAGE BODY ───────── -->
+<div class="page-wrap">
+
+  <!-- About -->
+  <div class="card" id="about">
+    <div class="card-body">
+      <p class="section-label">About This Place</p>
+      <h2 class="section-title">{{ place.name }}</h2>
+      <p class="description-text">{{ place.description|linebreaks }}</p>
+
+      <div class="detail-grid">
+        {% if place.difficulty %}
+        <div class="detail-tile">
+          <p class="detail-tile-label">Difficulty</p>
+          <p class="detail-tile-value">🧭 {{ place.difficulty }}</p>
+        </div>
+        {% endif %}
+
+        {% if place.best_time_to_visit %}
+        <div class="detail-tile">
+          <p class="detail-tile-label">Best Time</p>
+          <p class="detail-tile-value">📅 {{ place.best_time_to_visit }}</p>
+        </div>
+        {% endif %}
+
+        {% if place.safety_rating %}
+        <div class="detail-tile">
+          <p class="detail-tile-label">Safety Rating</p>
+          <div class="shield-row">
+            {% for i in "12345" %}
+              <span class="shield {% if forloop.counter <= place.safety_rating %}active{% else %}inactive{% endif %}">🛡</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if place.accessibility_info %}
+      <div class="detail-tile" style="margin-top:1rem; border-radius:14px; padding:1.2rem 1.4rem; background:var(--mist);">
+        <p class="detail-tile-label" style="margin-bottom:.5rem">Accessibility & Visitor Info</p>
+        <p class="description-text" style="font-size:.9rem">{{ place.accessibility_info|linebreaks }}</p>
+      </div>
+      {% endif %}
+
+      {% if place.legends_stories %}
+      <div class="detail-tile" style="margin-top:1rem; border-radius:14px; padding:1.2rem 1.4rem; background:#fdf6e8; border-color:rgba(200,168,75,0.25);">
+        <p class="detail-tile-label" style="margin-bottom:.5rem; color:var(--gold)">📖 Legends & Stories</p>
+        <p class="description-text" style="font-size:.9rem; white-space:pre-line">{{ place.legends_stories|linebreaks }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="card" id="map-section">
+    <div class="card-body" style="padding-bottom:1rem">
+      <p class="section-label">Location</p>
+      <h2 class="section-title" style="margin-bottom:1rem">📍 Find It Here</h2>
+    </div>
+    <div id="map"></div>
+    <p class="map-coords">
+      <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+      {{ place.latitude|floatformat:6 }}, {{ place.longitude|floatformat:6 }}
+    </p>
+  </div>
+
+  <!-- Photos -->
+  {% if place_images %}
+  <div class="card" id="photos">
+    <div class="card-body" style="padding-bottom:0.5rem">
+      <p class="section-label">Gallery</p>
+      <h2 class="section-title" style="margin-bottom:0">Photos <span style="font-family:'DM Sans';font-size:1rem;font-weight:400;color:var(--smoke);">({{ place_images.count }})</span></h2>
+    </div>
+    <div class="photo-grid">
+      {% for img in place_images %}
+      <div class="photo-thumb" onclick="openPhotoModal('{{ img.image.url }}')">
+        <img src="{{ img.image.url }}" alt="Place photo" loading="lazy">
+        <div class="photo-overlay">
+          <p class="photo-meta">{{ img.uploaded_by.username }} · {{ img.created_at|timesince }} ago</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Videos -->
+  {% if place_videos %}
+  <div class="card">
+    <div class="card-body" style="padding-bottom:0.5rem">
+      <p class="section-label">Media</p>
+      <h2 class="section-title" style="margin-bottom:0">Videos <span style="font-family:'DM Sans';font-size:1rem;font-weight:400;color:var(--smoke);">({{ place_videos.count }})</span></h2>
+    </div>
+    <div class="video-grid">
+      {% for video in place_videos %}
+      <a href="{{ video.url }}" target="_blank" rel="noopener" class="video-thumb">
+        <img src="{{ video.thumbnail_url }}" alt="Video thumbnail" loading="lazy">
+        <div class="play-btn"><div class="play-circle"><i class="fas fa-play" style="margin-left:2px"></i></div></div>
+        <span class="platform-pill pl-{{ video.platform }}">
+          {% if video.platform == 'youtube' %}<i class="fab fa-youtube"></i> YouTube
+          {% elif video.platform == 'tiktok' %}<i class="fab fa-tiktok"></i> TikTok
+          {% elif video.platform == 'instagram' %}<i class="fab fa-instagram"></i> Instagram
+          {% elif video.platform == 'facebook' %}<i class="fab fa-facebook"></i> Facebook
+          {% endif %}
+        </span>
+        <div class="video-meta">by {{ video.uploaded_by.username }} · {{ video.created_at|timesince }} ago</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Related Places -->
+  {% if related_places %}
+  <div class="card">
+    <div class="card-body" style="padding-bottom:0.5rem">
+      <p class="section-label">Discover More</p>
+      <h2 class="section-title" style="margin-bottom:0">Related Places</h2>
+    </div>
+    <div class="related-grid">
+      {% for related in related_places %}
+      <a href="{% url 'places:place_detail' related.slug %}" class="related-card">
+        {% if related.image %}
+          <img src="{{ related.image.url }}" alt="{{ related.name }}">
+        {% else %}
+          <div class="related-card-placeholder">🏛️</div>
+        {% endif %}
+        <div class="related-info">
+          <p class="related-name">{{ related.name }}</p>
+          <p class="related-cat">{% for cat in related.category.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>
+          <p class="related-desc">{{ related.description|truncatewords:12 }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Comments -->
+  <div class="card" id="comments">
+    <div class="card-body" style="padding-bottom:0">
+      <p class="section-label">Community</p>
+      <h2 class="section-title">
+        Visitor Comments
+        <span style="font-family:'DM Sans';font-size:1rem;font-weight:400;color:var(--smoke);">({{ comments.count|default:0 }})</span>
+      </h2>
+    </div>
+
+    {% if comments %}
+    <div style="padding:0 2rem 1rem;" id="comments-list">
+      {% for comment in comments %}
+      <div class="comment-item" data-comment-id="{{ comment.id }}">
+        <div class="comment-layout">
+          <a href="{% url 'places:profile' comment.user.username %}" class="avatar">{{ comment.user.username|first|upper }}</a>
+          <div class="comment-body">
+            <div class="comment-header">
+              <span class="comment-author">{{ comment.user.username }}</span>
+              <span class="comment-time">{{ comment.created_at|timesince }} ago</span>
+              {% if comment.rating %}
+              <div class="stars-row">
+                {% for i in "12345" %}
+                  <span class="star {% if forloop.counter <= comment.rating %}filled{% else %}empty{% endif %}">★</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+            <p class="comment-text">{{ comment.text }}</p>
+
+            {% if comment.youtube_id %}
+            <a href="https://www.youtube.com/watch?v={{ comment.youtube_id }}" target="_blank" rel="noopener" style="display:inline-block;margin-bottom:.8rem;border-radius:10px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,.12)">
+              <img src="https://img.youtube.com/vi/{{ comment.youtube_id }}/0.jpg" alt="YouTube" style="width:100%;max-width:300px;display:block;">
             </a>
-            <!-- Route Planning Button -->
-            <a href="{% url 'places:route_planner' %}?destination={{ place.slug }}"
-               class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
-                <i class="fas fa-route mr-2"></i>
-                Plan Route
-            </a>
-            <!-- View Check-ins button -->
-            <a href="{% url 'places:place_checkins' place.slug %}"
-               class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     class="w-5 h-5 mr-2"
-                     fill="none"
-                     viewBox="0 0 24 24"
-                     stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                View Check-ins
-            </a>
-            <!-- Right side: Edit button (only for owner or staff) -->
-            {% if user == place.created_by or user.is_staff %}
-                <a href="{% url 'places:edit_place' place.slug %}"
-                   class="inline-flex items-center text-green-800 hover:text-green-800 font-medium">
-                    <i class="fas fa-edit text-green-800 mr-2"></i>
-                    Edit Place
-                </a>
             {% endif %}
-        </div>
-        <!-- Place Header -->
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden mb-8">
-            {% if place.image %}
-                <img src="{{ place.image.url }}"
-                     alt="{{ place.name }}"
-                     class="w-full h-64 md:h-96 object-cover cursor-pointer"
-                     onclick="openPhotoModal(this.src)">
-            {% else %}
-                <div class="w-full h-64 md:h-96 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                    <span class="text-white text-8xl">🏛️</span>
+
+            <div class="vote-row">
+              <div class="vote-btn-grp">
+                <button class="vote-btn" data-comment-id="{{ comment.id }}" data-vote-type="up" onclick="voteComment('{{ comment.id }}','up')" aria-label="Upvote">
+                  <i class="fas fa-thumbs-up" style="color:var(--sage)"></i>
+                </button>
+                <span class="vote-count vote-count-up">{{ comment.upvotes|default:0 }}</span>
+              </div>
+              <div class="vote-btn-grp">
+                <button class="vote-btn" data-comment-id="{{ comment.id }}" data-vote-type="down" onclick="voteComment('{{ comment.id }}','down')" aria-label="Downvote">
+                  <i class="fas fa-thumbs-down" style="color:var(--ember)"></i>
+                </button>
+                <span class="vote-count vote-count-down">{{ comment.downvotes|default:0 }}</span>
+              </div>
+              <button class="reply-btn" onclick="toggleReplyForm('{{ comment.id }}')">
+                <i class="fas fa-reply"></i> Reply
+              </button>
+            </div>
+
+            <!-- Reply form -->
+            <div id="reply-form-{{ comment.id }}" class="reply-form-wrap" style="display:none">
+              <form onsubmit="submitReply(event,'{{ comment.id }}')">
+                {% csrf_token %}
+                <textarea class="reply-textarea" name="reply_text" rows="2" placeholder="Write a reply…"></textarea>
+                <div class="reply-actions">
+                  <button type="button" class="btn btn-ghost" onclick="toggleReplyForm('{{ comment.id }}')">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Reply</button>
                 </div>
+              </form>
+            </div>
+
+            <!-- Replies -->
+            {% if comment.replies.all %}
+            <div class="replies-wrap">
+              {% for reply in comment.replies.all %}
+              <div class="reply-item">
+                <div class="avatar avatar-sm">{{ reply.user.username|first|upper }}</div>
+                <div class="reply-body">
+                  <div class="reply-header">
+                    <span class="reply-author">{{ reply.user.username }}</span>
+                    <span class="reply-time">{{ reply.created_at|timesince }} ago</span>
+                  </div>
+                  <p class="reply-text">{{ reply.text }}</p>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
             {% endif %}
-            <div class="p-6 md:p-8">
-                <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
-                    <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-0">{{ place.name }}</h1>
-                    <div class="flex items-center space-x-3">
-                        {% if user.is_authenticated %}
-                            <form method="post" action="{% url 'places:toggle_favorite' place.slug %}">
-                                {% csrf_token %}
-                                <button type="submit" class="focus:outline-none">
-                                    {% if is_favorited %}
-                                        <!-- Filled heart -->
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="h-8 w-8 text-red-800 hover:text-red-900 transition-colors"
-                                             fill="currentColor"
-                                             viewBox="0 0 20 20">
-                                            <path d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" />
-                                        </svg>
-                                    {% else %}
-                                        <!-- Outline heart -->
-                                        <svg xmlns="http://www.w3.org/2000/svg"
-                                             class="h-8 w-8 text-gray-800 hover:text-red-800 transition-colors"
-                                             fill="none"
-                                             viewBox="0 0 24 24"
-                                             stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                                        </svg>
-                                    {% endif %}
-                                </button>
-                            </form>
-                            <!-- Check-in Button -->
-                            <a href="{% url 'places:check_in' place.slug %}"
-                               class="inline-flex items-center text-green-800 hover:text-green-900 font-medium">
-                                <svg xmlns="http://www.w3.org/2000/svg"
-                                     class="h-5 w-5"
-                                     fill="none"
-                                     viewBox="0 0 24 24"
-                                     stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                <span>Check In</span>
-                            </a>
-                        {% endif %}
-                        {% if user.is_authenticated %}
-                            <button onclick="document.getElementById('video-modal').classList.remove('hidden')"
-                                    class="inline-flex items-center text-green-800 hover:text-green-900 font-medium">
-                                <i class="fas fa-video mr-2"></i>
-                                Add Video
-                            </button>
-                        {% endif %}
-                        {% if user.is_authenticated %}
-                            <button onclick="document.getElementById('image-upload-modal').classList.remove('hidden')"
-                                    class="inline-flex items-center text-green-800 hover:text-green-900 font-medium">
-                                <i class="fas fa-camera mr-2"></i>
-                                Add Photo
-                            </button>
-                        {% endif %}
-                        {% if place.status != 'approved' %}
-                            <span class="inline-block px-3 py-1 rounded-full text-sm font-medium {% if place.status == 'pending' %}bg-yellow-200 text-yellow-900 {% elif place.status == 'rejected' %}bg-red-200 text-red-900{% endif %}">
-                                {{ place.get_status_display }}
-                            </span>
-                        {% endif %}
-                    </div>
-                </div>
-                <div class="flex items-center text-gray-800 mb-4">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd">
-                        </path>
-                    </svg>
-                    <span>{{ place.latitude|floatformat:6 }}, {{ place.longitude|floatformat:6 }}</span>
-                    <span class="mx-2">•</span>
-                    <span>Added {{ place.created_at|date:"M d, Y" }} by {{ place.created_by.username }}</span>
-                </div>
-                <p class="text-gray-800 text-lg leading-relaxed">{{ place.description|linebreaks }}</p>
-                <!-- Enhanced Additional Details -->
-                <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {% if place.category.exists %}
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Category</h2>
-                            <div class="text-lg font-medium text-gray-800 flex items-center">
-                                <span class="text-xl mr-2">🏷️</span>
-                                {% for cat in place.category.all %}
-                                    {{ cat.name }}
-                                    {% if not forloop.last %},{% endif %}
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endif %}
-                    {% if place.difficulty %}
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Difficulty</h2>
-                            <div class="text-lg font-medium text-gray-800 flex items-center">
-                                <span class="text-xl mr-2">🧭</span>{{ place.difficulty }}
-                            </div>
-                        </div>
-                    {% endif %}
-                    {% if place.safety_rating %}
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Safety Rating</h2>
-                            <div class="text-lg font-medium text-gray-800 flex items-center">
-                                <div>
-                                    <div class="flex text-base leading-none">
-                                        {% for i in "12345" %}
-                                            {% if forloop.counter <= place.safety_rating %}
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="h-6 w-6 text-yellow-600"
-                                                     fill="currentColor"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor"
-                                                     stroke-width="2"
-                                                     title="Safety Level {{ forloop.counter }}">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 6v6c0 5.25 3.75 10 9 10s9-4.75 9-10V6l-9-4z" />
-                                                </svg>
-                                            {% else %}
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     class="h-6 w-6 text-gray-800"
-                                                     fill="currentColor"
-                                                     viewBox="0 0 24 24"
-                                                     stroke="currentColor"
-                                                     stroke-width="2"
-                                                     title="No Shield">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2L3 6v6c0 5.25 3.75 10 9 10s9-4.75 9-10V6l-9-4z" />
-                                                </svg>
-                                            {% endif %}
-                                        {% endfor %}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endif %}
-                    {% if place.best_time_to_visit %}
-                        <div class="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                            <h2 class="text-sm font-semibold text-gray-800 uppercase mb-1">Best Time to Visit</h2>
-                            <div class="text-lg font-medium text-gray-800 flex items-center">
-                                <span class="text-xl mr-2">📅</span>{{ place.best_time_to_visit }}
-                            </div>
-                        </div>
-                    {% endif %}
-                    {% if place.accessibility_info %}
-                        <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-2">Accessibility & Visitor Information</h2>
-                            <p class="text-gray-800 leading-relaxed text-base">{{ place.accessibility_info|linebreaks }}</p>
-                        </div>
-                    {% endif %}
-                    {% if place.legends_stories %}
-                        <div class="md:col-span-2 bg-gray-50 rounded-lg p-6 border border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-800 flex items-center mb-2">📖 Legends & Stories</h2>
-                            <p class="text-gray-800 leading-relaxed text-base whitespace-pre-line">{{ place.legends_stories|linebreaks }}</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
+
+          </div>
         </div>
-        <!-- Map -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">📍 Location</h2>
-            <div id="map" class="w-full h-64 md:h-96 rounded-lg"></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">💬</div>
+      <p class="empty-title">No comments yet</p>
+      <p class="empty-sub">Be the first to share your experience!</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Comment Form -->
+  {% if user.is_authenticated %}
+  <div class="comment-form-card">
+    <p class="section-label">Share Your Experience</p>
+    <h2 class="section-title" style="font-size:1.3rem;margin-bottom:1.2rem">Leave a Comment</h2>
+    <form method="post" id="comment-form">
+      {% csrf_token %}
+      <input type="hidden" name="checkin_id" value="{{ checkin.id }}">
+      <label class="form-label" for="comment-text">Your thoughts</label>
+      <textarea class="comment-textarea" id="comment-text" name="text" rows="4" required placeholder="What did you discover here?"></textarea>
+
+      <div style="margin-top:1rem">
+        <label class="form-label">Rating (optional)</label>
+        <div class="rating-stars" id="rating-stars">
+          {% for i in "12345" %}
+            <span class="r-star" data-rating="{{ forloop.counter }}" onclick="setRating({{ forloop.counter }})">★</span>
+          {% endfor %}
         </div>
-        {% if place_images %}
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-images text-green-700 mr-2"></i>
-                    Photos
-                    <span class="text-sm font-normal text-gray-600 ml-2">({{ place_images.count }})</span>
-                </h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {% for img in place_images %}
-                        <div class="relative group rounded-lg overflow-hidden border border-gray-200 hover:shadow-md transition-shadow cursor-pointer"
-                             onclick="openPhotoModal('{{ img.image.url }}')">
-                            <img src="{{ img.image.url }}"
-                                 alt="Place photo"
-                                 class="w-full h-32 object-cover group-hover:opacity-90 transition-opacity">
-                            <!-- Hover overlay -->
-                            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition flex items-center justify-center">
-                                <i class="fas fa-expand text-white opacity-0 group-hover:opacity-100 transition text-lg"></i>
-                            </div>
-                            <!-- Uploader info -->
-                            <div class="p-2 bg-white">
-                                <p class="text-xs text-gray-500 truncate">by {{ img.uploaded_by.username }} · {{ img.created_at|timesince }} ago</p>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endif %}
-        {% if place_videos %}
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-film text-purple-700 mr-2"></i>
-                    Videos
-                    <span class="text-sm font-normal text-gray-600 ml-2">({{ place_videos.count }})</span>
-                </h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {% for video in place_videos %}
-                        <a href="{{ video.url }}"
-                           target="_blank"
-                           rel="noopener"
-                           class="block relative group rounded-lg overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
-                            <img src="{{ video.thumbnail_url }}"
-                                 alt="Video thumbnail"
-                                 class="w-full h-28 object-cover group-hover:opacity-80 transition-opacity">
-                            <!-- Play overlay -->
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="bg-black bg-opacity-40 rounded-full w-10 h-10 flex items-center justify-center group-hover:bg-opacity-60 transition">
-                                    <i class="fas fa-play text-white text-sm ml-1"></i>
-                                </div>
-                            </div>
-                            <!-- Platform badge -->
-                            <div class="absolute top-2 left-2">
-                                {% if video.platform == 'youtube' %}
-                                    <span class="bg-red-600 text-white text-xs px-2 py-0.5 rounded font-medium">
-                                        <i class="fab fa-youtube mr-1"></i>YouTube
-                                    </span>
-                                {% elif video.platform == 'tiktok' %}
-                                    <span class="bg-black text-white text-xs px-2 py-0.5 rounded font-medium">
-                                        <i class="fab fa-tiktok mr-1"></i>TikTok
-                                    </span>
-                                {% elif video.platform == 'instagram' %}
-                                    <span class="bg-pink-600 text-white text-xs px-2 py-0.5 rounded font-medium">
-                                        <i class="fab fa-instagram mr-1"></i>Instagram
-                                    </span>
-                                {% elif video.platform == 'facebook' %}
-                                    <span class="bg-blue-600 text-white text-xs px-2 py-0.5 rounded font-medium">
-                                        <i class="fab fa-facebook mr-1"></i>Facebook
-                                    </span>
-                                {% endif %}
-                            </div>
-                            <!-- Uploader -->
-                            <div class="p-2 bg-white">
-                                <p class="text-xs text-gray-500 truncate">
-                                    by {{ video.uploaded_by.username }} · {{ video.created_at|timesince }} ago
-                                </p>
-                            </div>
-                        </a>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endif %}
-        {% if related_places %}
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-map-marked-alt text-green-700 mr-2"></i>
-                    Related Places
-                </h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {% for related in related_places %}
-                        <a href="{% url 'places:place_detail' related.slug %}"
-                           class="block border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                            {% if related.image %}
-                                <img src="{{ related.image.url }}"
-                                     alt="{{ related.name }}"
-                                     class="w-full h-32 object-cover">
-                            {% else %}
-                                <div class="w-full h-32 bg-gradient-to-br from-green-400 to-green-600 flex items-center justify-center">
-                                    <span class="text-4xl">🏛️</span>
-                                </div>
-                            {% endif %}
-                            <div class="p-3">
-                                <h3 class="font-semibold text-gray-900 text-sm mb-1 truncate">{{ related.name }}</h3>
-                                <p class="text-xs text-gray-600 mb-1">
-                                    {% for cat in related.category.all %}
-                                        {{ cat.name }}
-                                        {% if not forloop.last %},{% endif %}
-                                    {% endfor %}
-                                </p>
-                                <p class="text-xs text-gray-500 line-clamp-2">{{ related.description|truncatewords:12 }}</p>
-                            </div>
-                        </a>
-                    {% endfor %}
-                </div>
-            </div>
-        {% endif %}
-        <!-- Comments Section -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6">
-                <i class="fas fa-comments text-blue-700 mr-2"></i>
-                Visitor Comments
-                <span class="text-sm font-normal text-gray-800 ml-2">({{ comments.count|default:0 }})</span>
-            </h2>
-            {% if comments %}
-                <div class="space-y-6" id="comments-list">
-                    {% for comment in comments %}
-                        <div class="comment-item border-b border-gray-100 pb-6 last:border-b-0"
-                             data-comment-id="{{ comment.id }}">
-                            <div class="flex items-start space-x-4">
-                                <!-- Clickable User Avatar -->
-                                <a href="{% url 'places:profile' comment.user.username %}"
-                                   class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 hover:opacity-90 transition">
-                                    {{ comment.user.username|first|upper }}
-                                </a>
-                                <!-- Comment Content -->
-                                <div class="flex-1">
-                                    <div class="flex items-center space-x-2 mb-2">
-                                        <span class="font-semibold text-gray-900">{{ comment.user.username }}</span>
-                                        <span class="text-gray-800 text-sm">{{ comment.created_at|timesince }} ago</span>
-                                        {% if comment.rating %}
-                                            <div class="flex items-center space-x-1">
-                                                {% for i in "12345" %}
-                                                    {% if forloop.counter <= comment.rating %}
-                                                        <i class="fas fa-star text-yellow-600 text-xs"></i>
-                                                    {% else %}
-                                                        <i class="far fa-star text-gray-800 text-xs"></i>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <!-- Comment Text -->
-                                    <p class="text-gray-800 mb-3">{{ comment.text }}</p>
-                                    <!-- YouTube Thumbnail (if exists) -->
-                                    {% if comment.youtube_id %}
-                                        <div class="mb-3">
-                                            <a href="https://www.youtube.com/watch?v={{ comment.youtube_id }}"
-                                               target="_blank"
-                                               rel="noopener">
-                                                <img src="https://img.youtube.com/vi/{{ comment.youtube_id }}/0.jpg"
-                                                     alt="YouTube thumbnail"
-                                                     class="rounded-lg shadow-md hover:opacity-80 transition w-full max-w-xs">
-                                            </a>
-                                        </div>
-                                    {% endif %}
-                                    <!-- Voting Controls -->
-                                    <div class="flex items-center space-x-4">
-                                        <div class="flex items-center space-x-2">
-                                            <button class="vote-btn"
-                                                    aria-label="Upvote comment"
-                                                    data-comment-id="{{ comment.id }}"
-                                                    data-vote-type="up"
-                                                    onclick="voteComment('{{ comment.id }}', 'up')">
-                                                <i class="fas fa-thumbs-up text-green-800 hover:text-green-900 cursor-pointer transition-colors"></i>
-                                            </button>
-                                            <span class="text-sm text-gray-800 vote-count-up">{{ comment.upvotes|default:0 }}</span>
-                                        </div>
-                                        <div class="flex items-center space-x-2">
-                                            <button class="vote-btn"
-                                                    aria-label="Downvote comment"
-                                                    data-comment-id="{{ comment.id }}"
-                                                    data-vote-type="down"
-                                                    onclick="voteComment('{{ comment.id }}', 'down')">
-                                                <i class="fas fa-thumbs-down text-red-800 hover:text-red-900 cursor-pointer transition-colors"></i>
-                                            </button>
-                                            <span class="text-sm text-gray-800 vote-count-down">{{ comment.downvotes|default:0 }}</span>
-                                        </div>
-                                        <button class="text-sm text-blue-700 hover:text-blue-800 cursor-pointer"
-                                                aria-label="Reply to comment"
-                                                onclick="toggleReplyForm('{{ comment.id }}')">
-                                            <i class="fas fa-reply mr-1"></i>
-                                            Reply
-                                        </button>
-                                    </div>
-                                    <!-- Reply Form (Hidden by default) -->
-                                    <div id="reply-form-{{ comment.id }}"
-                                         class="hidden mt-4 ml-4 p-4 bg-gray-50 rounded-lg">
-                                        <form onsubmit="submitReply(event, '{{ comment.id }}')">
-                                            {% csrf_token %}
-                                            <textarea name="reply_text"
-                                                      rows="2"
-                                                      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                                                      placeholder="Write your reply..."></textarea>
-                                            <div class="flex justify-end space-x-2 mt-2">
-                                                <button type="button"
-                                                        onclick="toggleReplyForm('{{ comment.id }}')"
-                                                        class="px-3 py-1 text-sm text-gray-800 hover:text-gray-600">
-                                                    Cancel
-                                                </button>
-                                                <button type="submit"
-                                                        class="px-4 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
-                                                    Reply
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                    <!-- Replies -->
-                                    {% if comment.replies.all %}
-                                        <div class="mt-4 ml-4 space-y-4">
-                                            {% for reply in comment.replies.all %}
-                                                <div class="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                                                    <div class="w-8 h-8 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                                                        {{ reply.user.username|first|upper }}
-                                                    </div>
-                                                    <div class="flex-1">
-                                                        <div class="flex items-center space-x-2 mb-1">
-                                                            <span class="font-medium text-gray-900 text-sm">{{ reply.user.username }}</span>
-                                                            <span class="text-gray-800 text-xs">{{ reply.created_at|timesince }} ago</span>
-                                                        </div>
-                                                        <p class="text-gray-800 text-sm">{{ reply.text }}</p>
-                                                    </div>
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <!-- Empty State -->
-                <div class="text-center py-12">
-                    <i class="fas fa-comments text-6xl text-gray-800 mb-4"></i>
-                    <h4 class="text-xl font-semibold text-gray-900 mb-2">No comments yet</h4>
-                    <p class="text-gray-800 mb-6">Be the first to share your thoughts about this check-in!</p>
-                </div>
-            {% endif %}
-        </div>
-        <!-- Comment Form -->
-        {% if user.is_authenticated %}
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h2 class="text-xl font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-pen text-green-800 mr-2"></i>
-                    Leave a Comment
-                </h2>
-                <form method="post" id="comment-form" class="space-y-4">
-                    {% csrf_token %}
-                    <input type="hidden" name="checkin_id" value="{{ checkin.id }}">
-                    <!-- Comment Text -->
-                    <div>
-                        <label for="comment-text"
-                               class="block text-sm font-medium text-gray-800 mb-2">Your Comment</label>
-                        <textarea name="text"
-                                  id="comment-text"
-                                  rows="4"
-                                  required
-                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                                  placeholder="Write something about this check-in..."></textarea>
-                    </div>
-                    <!-- Rating (Optional) -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-800 mb-2">Rating (Optional)</label>
-                        <div class="flex items-center space-x-1" id="rating-stars">
-                            {% for i in "12345" %}
-                                <i class="far fa-star text-gray-800 text-xl cursor-pointer hover:text-yellow-600 transition-colors"
-                                   data-rating="{{ forloop.counter }}"
-                                   onclick="setRating('{{ forloop.counter }}')"></i>
-                            {% endfor %}
-                        </div>
-                        <input type="hidden" name="rating" id="rating-input" value="">
-                    </div>
-                    <!-- Submit Button -->
-                    <div class="flex justify-end">
-                        <button type="submit"
-                                name="comment_submit"
-                                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors">
-                            <i class="fas fa-paper-plane mr-2"></i>
-                            Post Comment
-                        </button>
-                    </div>
-                </form>
-            </div>
-        {% endif %}
-        <!-- Photo Modal -->
-        <div id="photo-modal"
-             class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
-            <div class="max-w-4xl max-h-full p-4 relative">
-                <img id="modal-photo"
-                     src=""
-                     alt="Full-size photo"
-                     class="max-w-full max-h-full rounded-lg shadow-lg">
-                <button class="absolute top-4 right-4 text-white text-2xl hover:text-gray-300"
-                        onclick="closePhotoModal()">&times;</button>
-            </div>
-        </div>
-        <!-- Image Upload Modal -->
-        <div id="image-upload-modal"
-             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-camera text-green-700 mr-2"></i>
-                        Upload a Photo
-                    </h3>
-                    <button onclick="document.getElementById('image-upload-modal').classList.add('hidden')"
-                            class="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
-                </div>
-                <form method="post" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Select Image:</label>
-                        <input type="file"
-                               name="image"
-                               accept="image/*"
-                               required
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-                               onchange="previewImage(event)">
-                    </div>
-                    <!-- Image Preview -->
-                    <div id="image-preview-container" class="mb-4 hidden">
-                        <img id="image-preview"
-                             src=""
-                             alt="Preview"
-                             class="w-full h-48 object-cover rounded-lg border border-gray-200">
-                    </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button"
-                                onclick="document.getElementById('image-upload-modal').classList.add('hidden')"
-                                class="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                                name="image_submit"
-                                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
-                            <i class="fas fa-upload mr-2"></i>Upload
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-        <!-- Video Upload Modal -->
-        <div id="video-modal"
-             class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-            <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        <i class="fas fa-video text-green-700 mr-2"></i>
-                        Add a Video
-                    </h3>
-                    <button onclick="document.getElementById('video-modal').classList.add('hidden')"
-                            class="text-gray-500 hover:text-gray-700 text-xl">&times;</button>
-                </div>
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Paste your video link:</label>
-                        <input type="url"
-                               name="video_url"
-                               required
-                               placeholder="https://youtube.com/watch?v=... or TikTok, Instagram, Facebook"
-                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500">
-                        <p class="text-xs text-gray-500 mt-1">Supports: YouTube, TikTok, Instagram, Facebook</p>
-                    </div>
-                    <div class="flex justify-end space-x-2">
-                        <button type="button"
-                                onclick="document.getElementById('video-modal').classList.add('hidden')"
-                                class="px-4 py-2 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50">
-                            Cancel
-                        </button>
-                        <button type="submit"
-                                name="video_submit"
-                                class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md">
-                            <i class="fas fa-upload mr-2"></i>Add Video
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    {% endblock %}
-    {% block extra_js %}
-        <script>
-    // Initialize map
-    const latitude = parseFloat("{{ place.latitude|escapejs }}");
-    const longitude = parseFloat("{{ place.longitude|escapejs }}");
+        <input type="hidden" name="rating" id="rating-input">
+      </div>
 
-    const map = L.map('map').setView([latitude, longitude], 15);
+      <div class="form-actions">
+        <button type="submit" name="comment_submit" class="btn btn-accent" style="padding:.6rem 1.6rem;font-size:.9rem">
+          <i class="fas fa-paper-plane" style="margin-right:.5rem"></i>Post Comment
+        </button>
+      </div>
+    </form>
+  </div>
+  {% endif %}
 
-    
-    // Add tile layer
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-    
-    // Add marker
-    const marker = L.marker([latitude, longitude]).addTo(map);
-    marker.bindPopup('<b>{{ place.name|escapejs }}</b><br>{{ place.description|truncatewords:10|escapejs }}');
-    
-    // Open popup by default
-    marker.openPopup();
+</div><!-- /page-wrap -->
 
-    // Rating system
-    function setRating(rating) {
-        const stars = document.querySelectorAll('#rating-stars i');
-        const ratingInput = document.getElementById('rating-input');
-        
-        stars.forEach((star, index) => {
-            if (index < rating) {
-                star.classList.remove('far', 'text-gray-800');
-                star.classList.add('fas', 'text-yellow-600');
-            } else {
-                star.classList.remove('fas', 'text-yellow-600');
-                star.classList.add('far', 'text-gray-800');
-            }
-        });
-        
-        ratingInput.value = rating;
-    }
-    
-    // Comment voting
-    function voteComment(commentId, voteType) {
-        fetch(`/api/comments/${commentId}/vote/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                vote_type: voteType
-            })
-        })
-        .then(response => response.json())
-        .then (data => {
-            if (data.success) {
-                // Update vote counts
-                const comment = document.querySelector(`[data-comment-id="${commentId}"]`);
-                const upCount = comment.querySelector('.vote-count-up');
-                const downCount = comment.querySelector('.vote-count-down');
-                
-                upCount.textContent = data.upvotes;
-                downCount.textContent = data.downvotes;
-                
-                // Visual feedback
-                const voteBtn = comment.querySelector(`[data-vote-type="${voteType}"]`);
-                voteBtn.classList.add('animate-pulse');
-                setTimeout(() => voteBtn.classList.remove('animate-pulse'), 500);
-            }
-        })
-        .catch(error => {
-            console.error('Error voting:', error);
-            alert('Error submitting vote. Please try again.');
-        });
-    }
-    
-    // Reply form toggle
-    function toggleReplyForm(commentId) {
-        const replyForm = document.getElementById(`reply-form-${commentId}`);
-        replyForm.classList.toggle('hidden');
-        
-        if (!replyForm.classList.contains('hidden')) {
-            const textarea = replyForm.querySelector('textarea');
-            textarea.focus();
-        }
-    }
-    
-    // Submit reply
-    function submitReply(event, commentId) {
-        event.preventDefault();
-        
-        const form = event.target;
-        const formData = new FormData(form);
-        formData.append('parent_id', commentId);
-        
-        fetch(`/api/comments/reply/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Reload page to show new reply
-                location.reload();
-            } else {
-                alert('Error submitting reply. Please try again.');
-            }
-        })
-        .catch(error => {
-            console.error('Error submitting reply:', error);
-            alert('Error submitting reply. Please try again.');
-        });
-    }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const commentForm = document.getElementById('comment-form');
-        if (commentForm) {
-            commentForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                // Comment form submission
-                    const formData = new FormData(this);
-                    formData.append('comment_submit', 'true');
-                    const submitBtn = this.querySelector('button[type="submit"]');
-                    const originalText = submitBtn.innerHTML;
-                    
-                    // Show loading state
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Posting...';
-                    submitBtn.disabled = true;
-                    
-                    fetch(window.location.pathname, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                        },
-                        body: formData
-                    })
-                    .then(response => {
-                        if (response.ok) {
-                            // Reload page to show new comment
-                            location.reload();
-                        } else {
-                            throw new Error('Network response was not ok');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error submitting comment:', error);
-                        alert('Error submitting comment. Please try again.');
-                    })
-                    .finally(() => {
-                        // Reset button
-                        submitBtn.innerHTML = originalText;
-                        submitBtn.disabled = false;
-                    });
-                });
-        }
+<!-- ───────── PHOTO MODAL ───────── -->
+<div class="modal-overlay" id="photo-modal" onclick="closePhotoModal(event)">
+  <img class="modal-img" id="modal-photo" src="" alt="Full photo">
+  <button class="modal-close" onclick="closePhotoModal()">&times;</button>
+</div>
+
+<!-- ───────── IMAGE UPLOAD MODAL ───────── -->
+<div class="upload-modal-overlay" id="image-modal">
+  <div class="upload-modal">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fas fa-camera" style="color:var(--sage);margin-right:.5rem"></i>Upload a Photo</h3>
+      <button class="modal-x" onclick="closeModal('image-modal')">&times;</button>
+    </div>
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="file-input-wrap" onclick="this.querySelector('input').click()">
+        <input type="file" name="image" accept="image/*" onchange="previewImage(event)">
+        <div class="file-icon">📷</div>
+        <p class="file-hint">Click to choose a photo from your device</p>
+      </div>
+      <img id="image-preview" class="preview-img" src="" alt="Preview">
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('image-modal')">Cancel</button>
+        <button type="submit" name="image_submit" class="btn btn-primary">
+          <i class="fas fa-upload" style="margin-right:.4rem"></i>Upload
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ───────── VIDEO MODAL ───────── -->
+<div class="upload-modal-overlay" id="video-modal">
+  <div class="upload-modal">
+    <div class="modal-header">
+      <h3 class="modal-title"><i class="fas fa-video" style="color:#7c3aed;margin-right:.5rem"></i>Add a Video</h3>
+      <button class="modal-x" onclick="closeModal('video-modal')">&times;</button>
+    </div>
+    <form method="post">
+      {% csrf_token %}
+      <label class="form-label">Paste your video link</label>
+      <input class="url-input" type="url" name="video_url" required placeholder="https://youtube.com/watch?v=...">
+      <p class="url-hint">Supports YouTube, TikTok, Instagram, Facebook</p>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" onclick="closeModal('video-modal')">Cancel</button>
+        <button type="submit" name="video_submit" class="btn btn-primary">
+          <i class="fas fa-upload" style="margin-right:.4rem"></i>Add Video
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Map
+  const lat = parseFloat("{{ place.latitude|escapejs }}");
+  const lng = parseFloat("{{ place.longitude|escapejs }}");
+  const map = L.map('map').setView([lat, lng], 15);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd',
+    maxZoom: 19
+  }).addTo(map);
+  const marker = L.marker([lat, lng]).addTo(map);
+  marker.bindPopup('<b>{{ place.name|escapejs }}</b>').openPopup();
+
+  // Rating
+  function setRating(r) {
+    document.querySelectorAll('.r-star').forEach((s, i) => {
+      s.classList.toggle('active', i < r);
     });
-    
-    // Close modal when clicking outside
-    document.addEventListener('DOMContentLoaded', () => {
-        const photoModal = document.getElementById('photo-modal');
-        if (photoModal) {
-            photoModal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closePhotoModal();
-                }
-            });
-        }
-    });
-    
-    // Keyboard shortcuts
-    document.addEventListener('keydown', function(e) {
-        // Escape key to close modal
-        if (e.key === 'Escape') {
-            closePhotoModal();
-        }
-    });
-    
-    // Initialize page
-    document.addEventListener('DOMContentLoaded', function() {
-        // Add smooth scrolling to comments
-        const commentsSection = document.getElementById('comments-list');
-        if (commentsSection) {
-            commentsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-        
-        // Auto-focus comment form if coming from a direct link
-        if (window.location.hash === '#comment') {
-            const commentText = document.getElementById('comment-text');
-            if (commentText) {
-                commentText.focus();
-                commentText.scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-    });
+    document.getElementById('rating-input').value = r;
+  }
 
-    function openPhotoModal(src) {
-        const modal = document.getElementById('photo-modal');
-        const modalPhoto = document.getElementById('modal-photo');
-        modalPhoto.src = src;       // Set the clicked image
-        modal.classList.remove('hidden'); // Show modal
+  // Voting
+  function voteComment(id, type) {
+    fetch(`/api/comments/${id}/vote/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ vote_type: type })
+    }).then(r => r.json()).then(data => {
+      if (data.success) {
+        const el = document.querySelector(`[data-comment-id="${id}"]`);
+        el.querySelector('.vote-count-up').textContent = data.upvotes;
+        el.querySelector('.vote-count-down').textContent = data.downvotes;
+      }
+    }).catch(() => alert('Error submitting vote.'));
+  }
+
+  // Reply toggle
+  function toggleReplyForm(id) {
+    const f = document.getElementById(`reply-form-${id}`);
+    const open = f.style.display === 'none' || !f.style.display;
+    f.style.display = open ? 'block' : 'none';
+    if (open) f.querySelector('textarea').focus();
+  }
+
+  // Submit reply
+  function submitReply(e, id) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    fd.append('parent_id', id);
+    fetch('/api/comments/reply/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+      body: fd
+    }).then(r => r.json()).then(d => { if (d.success) location.reload(); else alert('Error submitting reply.'); });
+  }
+
+  // Comment form
+  const cf = document.getElementById('comment-form');
+  if (cf) {
+    cf.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const fd = new FormData(this);
+      fd.append('comment_submit', 'true');
+      const btn = this.querySelector('button[type=submit]');
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting…';
+      btn.disabled = true;
+      fetch(window.location.pathname, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value },
+        body: fd
+      }).then(r => { if (r.ok) location.reload(); else throw new Error(); })
+        .catch(() => alert('Error submitting. Please try again.'))
+        .finally(() => { btn.innerHTML = '<i class="fas fa-paper-plane" style="margin-right:.5rem"></i>Post Comment'; btn.disabled = false; });
+    });
+  }
+
+  // Photo modal
+  function openPhotoModal(src) {
+    document.getElementById('modal-photo').src = src;
+    document.getElementById('photo-modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closePhotoModal(e) {
+    if (!e || e.target === document.getElementById('photo-modal') || e.currentTarget.classList.contains('modal-close')) {
+      document.getElementById('photo-modal').classList.remove('open');
+      document.body.style.overflow = '';
     }
+  }
 
-    function closePhotoModal() {
-        const modal = document.getElementById('photo-modal');
-        modal.classList.add('hidden'); // Hide modal
+  // Upload modals
+  function openModal(id) { document.getElementById(id).classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function closeModal(id) { document.getElementById(id).classList.remove('open'); document.body.style.overflow = ''; }
+
+  document.querySelectorAll('.upload-modal-overlay').forEach(o => {
+    o.addEventListener('click', function(e) { if (e.target === this) closeModal(this.id); });
+  });
+
+  // Image preview
+  function previewImage(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = ev => {
+      const img = document.getElementById('image-preview');
+      img.src = ev.target.result;
+      img.style.display = 'block';
+    };
+    r.readAsDataURL(file);
+  }
+
+  // Escape key
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closePhotoModal();
+      ['image-modal','video-modal'].forEach(closeModal);
     }
-
-    function previewImage(event) {
-        const file = event.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('image-preview').src = e.target.result;
-                document.getElementById('image-preview-container').classList.remove('hidden');
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    // Optional: close modal when clicking outside the image
-    document.addEventListener('DOMContentLoaded', () => {
-        const photoModal = document.getElementById('photo-modal');
-        if (photoModal) {
-            photoModal.addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closePhotoModal();
-                }
-            });
-        }
-    });
-
-    // Close modal with Escape key
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            closePhotoModal();
-        }
-    });
-
-        </script>
-    {% endblock %}
+  });
+</script>
+{% endblock %}

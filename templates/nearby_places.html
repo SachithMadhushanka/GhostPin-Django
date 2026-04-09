@@ -1,540 +1,597 @@
 {% extends 'base.html' %}
-{% block title %}Nearby Places - Expearls{% endblock %}
+{% block title %}Places Near You — Expearls{% endblock %}
+
 {% block content %}
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-4">
-                <i class="fas fa-location-arrow text-blue-600 mr-2"></i>
-                Places Near You
-            </h1>
-            <p class="text-gray-600 max-w-2xl mx-auto">
-                Discover places in your area. We'll use your location to find interesting places nearby.
-            </p>
-        </div>
-        <style>
-    .map-icon-img {
-        width: 32px;
-        height: 32px;
-        transition: transform 0.2s ease;
-    }
 
-    /* Dynamically scale icons based on zoom level */
-    .leaflet-zoom-17 .map-icon-img { transform: scale(1.6); }
-    .leaflet-zoom-15 .map-icon-img { transform: scale(1.3); }
-    .leaflet-zoom-13 .map-icon-img { transform: scale(1.1); }
-    .leaflet-zoom-11 .map-icon-img { transform: scale(0.9); }
-    .leaflet-zoom-9  .map-icon-img { transform: scale(0.7); }
-    .leaflet-zoom-7  .map-icon-img { transform: scale(0.5); }
-        </style>
-        <!-- Location Status -->
-        <div id="location-status" class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <div id="location-icon"
-                         class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-crosshairs text-blue-600 text-xl"></i>
-                    </div>
-                    <div>
-                        <h3 id="location-title" class="text-lg font-semibold text-gray-900">Getting your location...</h3>
-                        <p id="location-subtitle" class="text-gray-600">Please allow location access to find nearby places</p>
-                    </div>
-                </div>
-                <button id="get-location-btn"
-                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                        onclick="getCurrentLocation()">
-                    <i class="fas fa-crosshairs mr-2"></i>
-                    Get My Location
-                </button>
-            </div>
-        </div>
-        <!-- Weather Info -->
-        <div id="weather-info"
-             class="bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg p-6 text-white mb-8 hidden">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
-                    <div id="weather-icon" class="text-4xl">☀️</div>
-                    <div>
-                        <h3 id="weather-location" class="text-lg font-semibold">Current Weather</h3>
-                        <p id="weather-description" class="text-blue-100">Loading weather...</p>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div id="weather-temp" class="text-3xl font-bold">--°</div>
-                    <div id="weather-feels-like" class="text-blue-100 text-sm">Feels like --°</div>
-                </div>
-            </div>
-        </div>
-        <!-- Distance Filter -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <h3 class="text-lg font-semibold text-gray-900">
-                    <i class="fas fa-ruler text-purple-600 mr-2"></i>
-                    Search Radius
-                </h3>
-                <div class="flex items-center space-x-4">
-                    <label class="text-sm font-medium text-gray-700">Distance:</label>
-                    <select id="distance-filter"
-                            class="border border-gray-300 rounded-md px-3 py-2"
-                            onchange="updateNearbyPlaces()">
-                        <option value="1">Within 1 km</option>
-                        <option value="2" selected>Within 2 km</option>
-                        <option value="3">Within 3 km</option>
-                        <option value="4">Within 4 km</option>
-                        <option value="5">Within 5 km</option>
-                        <option value="10">Within 10 km</option>
-                        <option value="20">Within 20 km</option>
-                        <option value="50">Within 50 km</option>
-                    </select>
-                    <!-- <button class="btn-secondary" onclick="updateNearbyPlaces()">
-                    <i class="fas fa-sync mr-1"></i> Refresh
-                </button> -->
-                </div>
-            </div>
-        </div>
-        <!-- Map and Results -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <!-- Interactive Map -->
-            <div class="bg-white rounded-lg shadow-lg p-6">
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                    <i class="fas fa-map text-green-600 mr-2"></i>
-                    Interactive Map
-                </h3>
-                <div id="nearby-map" class="w-full h-96 rounded-lg"></div>
-                <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
-                    <span><i class="fas fa-info-circle mr-1"></i> Click markers for details</span>
-                    <span id="places-count">0 places found</span>
-                </div>
-            </div>
-            <!-- Right column -->
-            <div>
-                <!-- State divs — SIBLINGS of the list, never wiped -->
-                <div id="loading-places" class="text-center py-12">
-                    <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
-                    <p class="text-gray-600">Finding places near you...</p>
-                </div>
-                <div id="no-location" class="text-center py-12 hidden">
-                    <i class="fas fa-location-slash text-6xl text-gray-300 mb-4"></i>
-                    <h3 class="text-xl font-medium text-gray-900 mb-2">Location Required</h3>
-                    <p class="text-gray-600 mb-6">We need your location to find nearby places.</p>
-                    <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                            onclick="getCurrentLocation()">
-                        <i class="fas fa-crosshairs mr-2"></i> Enable Location
-                    </button>
-                </div>
-                <div id="no-places" class="text-center py-12 hidden">
-                    <i class="fas fa-map-marker-alt text-6xl text-gray-300 mb-4"></i>
-                    <h3 class="text-xl font-medium text-gray-900 mb-2">No Places Nearby</h3>
-                    <p class="text-gray-600 mb-6">Try increasing the search radius.</p>
-                    <div class="space-x-4">
-                        <button class="btn-secondary" onclick="increaseRadius()">
-                            <i class="fas fa-expand-arrows-alt mr-2"></i> Expand Search
-                        </button>
-                        {% if user.is_authenticated %}
-                            <a href="{% url 'places:add_place' %}"
-                               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                <i class="fas fa-plus mr-2"></i> Add a Place
-                            </a>
-                        {% endif %}
-                    </div>
-                </div>
-                <!-- Results injected here — ONLY this gets wiped -->
-                <div class="space-y-6" id="nearby-places-list"></div>
-            </div>
-        </div>
-        <!-- Quick Actions -->
-        <div class="mt-12 bg-white rounded-lg shadow-lg p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                <i class="fas fa-bolt text-yellow-500 mr-2"></i>
-                Quick Actions
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="text-center p-6 bg-green-50 rounded-lg">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-route text-green-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Plan Route</h3>
-                    <p class="text-gray-600 text-sm mb-4">Create a route visiting multiple nearby places</p>
-                    <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                            onclick="planRoute()">
-                        <i class="fas fa-route mr-2"></i> Plan Route
-                    </button>
-                </div>
-                <div class="text-center p-6 bg-blue-50 rounded-lg">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-camera text-blue-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Photo Challenge</h3>
-                    <p class="text-gray-600 text-sm mb-4">Take photos at nearby places for points</p>
-                    <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                            onclick="startPhotoChallenge()">
-                        <i class="fas fa-camera mr-2"></i> Start Challenge
-                    </button>
-                </div>
-                <div class="text-center p-6 bg-purple-50 rounded-lg">
-                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <i class="fas fa-share text-purple-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Share Location</h3>
-                    <p class="text-gray-600 text-sm mb-4">Share your current area with friends</p>
-                    <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                            onclick="shareLocation()">
-                        <i class="fas fa-share mr-2"></i> Share
-                    </button>
-                </div>
-            </div>
-        </div>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .nearby-page { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* Hero */
+  .hero-nearby {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-nearby::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      radial-gradient(circle at 15% 50%, rgba(255,255,255,0.04) 0%, transparent 55%),
+      radial-gradient(circle at 85% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-nearby::after {
+    content: '';
+    position: absolute;
+    bottom: -1px; left: 0; right: 0;
+    height: 72px;
+    background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px;
+    background: #86efac;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(1.4); }
+  }
+
+  /* Status card */
+  .status-card {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    border: 1px solid #f3f4f6;
+    transition: box-shadow .3s;
+  }
+  .status-card:hover { box-shadow: 0 8px 32px rgba(0,0,0,.12); }
+
+  /* Weather pill */
+  .weather-bar {
+    background: linear-gradient(135deg, #0ea5e9, #2563eb);
+    border-radius: 16px;
+    padding: 20px 28px;
+    color: #fff;
+  }
+
+  /* Distance select */
+  .radius-select {
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 9px 16px;
+    font-size: .875rem;
+    font-family: 'DM Sans', sans-serif;
+    background: #fff;
+    color: #374151;
+    outline: none;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .radius-select:focus { border-color: #16a34a; }
+
+  /* Map container */
+  #nearby-map {
+    border-radius: 16px;
+    height: 420px;
+    width: 100%;
+  }
+
+  /* Place card */
+  .place-card {
+    background: #fff;
+    border-radius: 18px;
+    border: 1px solid #f3f4f6;
+    padding: 22px 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    transition: transform .25s, box-shadow .25s;
+  }
+  .place-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,.10);
+  }
+
+  /* Quick action card */
+  .action-card {
+    border-radius: 18px;
+    padding: 28px 24px;
+    text-align: center;
+    border: 1px solid transparent;
+    transition: transform .25s, box-shadow .25s;
+  }
+  .action-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,.08);
+  }
+  .action-icon {
+    width: 60px; height: 60px;
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 24px;
+  }
+
+  /* Spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 3px solid #e5e7eb;
+    border-top-color: #16a34a;
+    border-radius: 50%;
+    animation: spin .75s linear infinite;
+    margin: 0 auto 16px;
+  }
+
+  /* Fade-up animation */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  /* Location status colours */
+  .loc-idle    { background: #eff6ff; }
+  .loc-success { background: #f0fdf4; }
+  .loc-error   { background: #fef2f2; }
+
+  /* Map icon */
+  .emoji-icon {
+    font-size: 24px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,.25));
+  }
+  .user-dot {
+    width: 14px; height: 14px;
+    background: #2563eb;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.3);
+  }
+</style>
+
+<div class="nearby-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-nearby pt-16 pb-28 px-4 text-center">
+    <div class="max-w-2xl mx-auto relative z-10">
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-5 tracking-wide uppercase">
+        <span class="hero-dot"></span> Location-Based Discovery
+      </span>
+      <h1 class="display-font text-5xl md:text-6xl font-black text-white leading-tight mb-4">
+        Places <em class="text-green-300 not-italic">Near You</em>
+      </h1>
+      <p class="text-green-100 text-lg font-light max-w-lg mx-auto leading-relaxed">
+        Discover hidden gems, temples, waterfalls, and local favourites — all within reach of where you are right now.
+      </p>
     </div>
+  </section>
+
+  <div class="max-w-6xl mx-auto px-4 -mt-10 pb-20">
+
+    <!-- ══ LOCATION STATUS ══ -->
+    <div class="status-card p-6 mb-6 fade-up" id="location-status">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div id="location-icon"
+               class="loc-idle w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-colors">
+            <i class="fas fa-crosshairs text-blue-500 text-lg"></i>
+          </div>
+          <div>
+            <p id="location-title" class="font-semibold text-gray-900">Getting your location…</p>
+            <p id="location-subtitle" class="text-sm text-gray-500 mt-0.5">Please allow location access to find nearby places</p>
+          </div>
+        </div>
+        <button id="get-location-btn"
+                onclick="getCurrentLocation()"
+                class="flex-shrink-0 flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-full transition-all shadow-sm">
+          <i class="fas fa-crosshairs text-xs"></i> Get My Location
+        </button>
+      </div>
+    </div>
+
+    <!-- ══ WEATHER ══ -->
+    <div id="weather-info" class="weather-bar mb-6 hidden fade-up">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-4">
+          <div id="weather-icon" class="text-4xl">☀️</div>
+          <div>
+            <p id="weather-location" class="font-semibold text-lg">Current Weather</p>
+            <p id="weather-description" class="text-blue-100 text-sm">Loading…</p>
+          </div>
+        </div>
+        <div class="text-right">
+          <div id="weather-temp" class="text-3xl font-bold">--°C</div>
+          <div id="weather-feels-like" class="text-blue-100 text-sm">Feels like --°C</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ RADIUS FILTER ══ -->
+    <div class="status-card px-6 py-5 mb-8 fade-up flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 bg-purple-50 rounded-lg flex items-center justify-center">
+          <i class="fas fa-ruler text-purple-500 text-sm"></i>
+        </div>
+        <span class="font-semibold text-gray-900">Search Radius</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-500">Distance:</span>
+        <select id="distance-filter" class="radius-select" onchange="updateNearbyPlaces()">
+          <option value="1">Within 1 km</option>
+          <option value="2" selected>Within 2 km</option>
+          <option value="3">Within 3 km</option>
+          <option value="5">Within 5 km</option>
+          <option value="10">Within 10 km</option>
+          <option value="20">Within 20 km</option>
+          <option value="50">Within 50 km</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- ══ MAP + RESULTS ══ -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+
+      <!-- Map -->
+      <div class="status-card p-6 fade-up">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-green-50 rounded-lg flex items-center justify-center">
+              <i class="fas fa-map text-green-600 text-sm"></i>
+            </div>
+            <span class="font-semibold text-gray-900">Interactive Map</span>
+          </div>
+          <span id="places-count" class="text-xs text-gray-400 font-medium bg-gray-100 px-3 py-1 rounded-full">0 places</span>
+        </div>
+        <div id="nearby-map"></div>
+        <p class="text-xs text-gray-400 mt-3 flex items-center gap-1">
+          <i class="fas fa-info-circle"></i> Click any marker for place details
+        </p>
+      </div>
+
+      <!-- Results column -->
+      <div class="flex flex-col gap-4">
+
+        <!-- Loading -->
+        <div id="loading-places" class="status-card p-10 text-center">
+          <div class="spinner"></div>
+          <p class="text-gray-500 text-sm">Finding places near you…</p>
+        </div>
+
+        <!-- No location -->
+        <div id="no-location" class="status-card p-10 text-center hidden">
+          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-location-slash text-gray-400 text-2xl"></i>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-2">Location Required</h3>
+          <p class="text-sm text-gray-500 mb-5">Enable location access to discover nearby places.</p>
+          <button onclick="getCurrentLocation()"
+                  class="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-full transition-all">
+            <i class="fas fa-crosshairs mr-2 text-xs"></i> Enable Location
+          </button>
+        </div>
+
+        <!-- No places -->
+        <div id="no-places" class="status-card p-10 text-center hidden">
+          <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-map-marker-alt text-gray-400 text-2xl"></i>
+          </div>
+          <h3 class="font-semibold text-gray-900 mb-2">No Places Nearby</h3>
+          <p class="text-sm text-gray-500 mb-5">Try expanding the search radius.</p>
+          <div class="flex flex-wrap justify-center gap-3">
+            <button onclick="increaseRadius()"
+                    class="px-5 py-2.5 border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-full transition-all">
+              <i class="fas fa-expand-arrows-alt mr-2 text-xs"></i> Expand Search
+            </button>
+            {% if user.is_authenticated %}
+            <a href="{% url 'places:add_place' %}"
+               class="px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-full transition-all">
+              <i class="fas fa-plus mr-2 text-xs"></i> Add a Place
+            </a>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Place cards injected here -->
+        <div id="nearby-places-list" class="flex flex-col gap-4"></div>
+
+      </div>
+    </div>
+
+    <!-- ══ QUICK ACTIONS ══ -->
+    <!-- <div class="mb-4 fade-up">
+      <div class="flex items-center gap-2 mb-6">
+        <div class="w-8 h-8 bg-yellow-50 rounded-lg flex items-center justify-center">
+          <i class="fas fa-bolt text-yellow-500 text-sm"></i>
+        </div>
+        <h2 class="display-font text-2xl font-bold text-gray-900">Quick Actions</h2>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+        <div class="action-card bg-green-50 border-green-100 fade-up">
+          <div class="action-icon bg-green-100">🗺️</div>
+          <h3 class="font-semibold text-gray-900 mb-1">Plan Route</h3>
+          <p class="text-sm text-gray-500 mb-4 leading-relaxed">Create a multi-stop route through nearby places</p>
+          <button onclick="planRoute()"
+                  class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-full transition-all">
+            <i class="fas fa-route mr-2 text-xs"></i> Plan Route
+          </button>
+        </div>
+
+        <div class="action-card bg-blue-50 border-blue-100 fade-up" style="transition-delay:.1s">
+          <div class="action-icon bg-blue-100">📸</div>
+          <h3 class="font-semibold text-gray-900 mb-1">Photo Challenge</h3>
+          <p class="text-sm text-gray-500 mb-4 leading-relaxed">Snap photos at nearby spots and earn bonus points</p>
+          <button onclick="startPhotoChallenge()"
+                  class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-full transition-all">
+            <i class="fas fa-camera mr-2 text-xs"></i> Start Challenge
+          </button>
+        </div>
+
+        <div class="action-card bg-purple-50 border-purple-100 fade-up" style="transition-delay:.2s">
+          <div class="action-icon bg-purple-100">🔗</div>
+          <h3 class="font-semibold text-gray-900 mb-1">Share Location</h3>
+          <p class="text-sm text-gray-500 mb-4 leading-relaxed">Share your current area with friends and fellow explorers</p>
+          <button onclick="shareLocation()"
+                  class="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-full transition-all">
+            <i class="fas fa-share mr-2 text-xs"></i> Share
+          </button>
+        </div>
+
+      </div>
+    </div> -->
+
+  </div><!-- /container -->
+</div><!-- /nearby-page -->
+
 {% endblock %}
+
 {% block extra_js %}
-    <script>
-    let nearbyMap;
-    let userLocation = null;
-    let nearbyPlaces = [];
-    let markers = [];
+<script>
+  let nearbyMap, userLocation = null, markers = [];
 
-    // Initialize map
-    function initNearbyMap() {
-        nearbyMap = L.map('nearby-map').setView([7.8731, 80.7718], 8);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(nearbyMap);
+  // ── Map init ──────────────────────────────────────────────
+  function initNearbyMap() {
+    nearbyMap = L.map('nearby-map').setView([7.8731, 80.7718], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(nearbyMap);
+  }
 
-        nearbyMap.on('zoomend', () => {
-            const zoom = nearbyMap.getZoom();
-            const mapContainer = document.getElementById('nearby-map');
-            Array.from(mapContainer.classList).forEach(cls => {
-                if (cls.startsWith('leaflet-zoom-')) mapContainer.classList.remove(cls);
-            });
-            mapContainer.classList.add(`leaflet-zoom-${zoom}`);
-        });
+  // ── Get location ──────────────────────────────────────────
+  function getCurrentLocation() {
+    const icon     = document.getElementById('location-icon');
+    const title    = document.getElementById('location-title');
+    const subtitle = document.getElementById('location-subtitle');
+    const btn      = document.getElementById('get-location-btn');
+
+    icon.className = 'loc-idle w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-colors';
+    icon.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-500 text-lg"></i>';
+    title.textContent = 'Getting your location…';
+    subtitle.textContent = 'Please wait a moment';
+    btn.disabled = true;
+
+    if (!navigator.geolocation) {
+      setLocationState('error', 'Geolocation not supported', 'Your browser does not support location access.');
+      btn.disabled = false;
+      return;
     }
 
-    // Get current location
-    function getCurrentLocation() {
-        const statusIcon = document.getElementById('location-icon');
-        const statusTitle = document.getElementById('location-title');
-        const statusSubtitle = document.getElementById('location-subtitle');
-        const getLocationBtn = document.getElementById('get-location-btn');
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setLocationState('success', 'Location found!',
+          `${userLocation.lat.toFixed(4)}° N, ${userLocation.lng.toFixed(4)}° E`);
+        btn.innerHTML = '<i class="fas fa-crosshairs text-xs"></i> Update';
+        btn.disabled = false;
 
-        statusIcon.innerHTML = '<i class="fas fa-spinner fa-spin text-blue-600 text-xl"></i>';
-        statusTitle.textContent = 'Getting your location...';
-        statusSubtitle.textContent = 'Please wait while we locate you';
-        getLocationBtn.disabled = true;
+        nearbyMap.setView([userLocation.lat, userLocation.lng], 13);
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                function(position) {
-                    userLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
+        // Blue dot for user
+        L.marker([userLocation.lat, userLocation.lng], {
+          icon: L.divIcon({
+            className: '',
+            html: '<div class="user-dot"></div>',
+            iconSize: [14, 14], iconAnchor: [7, 7]
+          })
+        }).addTo(nearbyMap).bindPopup('<b>You are here</b>');
 
-                    statusIcon.innerHTML = '<i class="fas fa-check-circle text-green-600 text-xl"></i>';
-                    statusTitle.textContent = 'Location found!';
-                    statusSubtitle.textContent = `Lat: ${userLocation.lat.toFixed(4)}, Lng: ${userLocation.lng.toFixed(4)}`;
-                    getLocationBtn.textContent = 'Update Location';
-                    getLocationBtn.disabled = false;
+        getWeatherInfo(userLocation.lat, userLocation.lng);
+        updateNearbyPlaces();
+      },
+      () => {
+        setLocationState('error', 'Location access denied', 'Please enable location services and try again.');
+        btn.disabled = false;
+        document.getElementById('no-location').classList.remove('hidden');
+        document.getElementById('loading-places').classList.add('hidden');
+      }
+    );
+  }
 
-                    nearbyMap.setView([userLocation.lat, userLocation.lng], 13);
+  function setLocationState(state, titleText, subtitleText) {
+    const icon     = document.getElementById('location-icon');
+    const title    = document.getElementById('location-title');
+    const subtitle = document.getElementById('location-subtitle');
+    const colours  = { success: ['loc-success','text-green-600','fa-check-circle'], error: ['loc-error','text-red-500','fa-exclamation-triangle'], idle: ['loc-idle','text-blue-500','fa-crosshairs'] };
+    const [bg, tc, ic] = colours[state] || colours.idle;
+    icon.className = `${bg} w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 transition-colors`;
+    icon.innerHTML = `<i class="fas ${ic} ${tc} text-lg"></i>`;
+    title.textContent   = titleText;
+    subtitle.textContent = subtitleText;
+  }
 
-                    // User location marker
-                    L.marker([userLocation.lat, userLocation.lng], {
-                        icon: L.divIcon({
-                            className: 'user-location-marker',
-                            html: '<div class="w-4 h-4 bg-blue-600 rounded-full border-2 border-white shadow-lg"></div>',
-                            iconSize: [16, 16],
-                            iconAnchor: [8, 8]
-                        })
-                    }).addTo(nearbyMap).bindPopup('Your Location');
+  // ── Weather ───────────────────────────────────────────────
+  function getWeatherInfo(lat, lng) {
+    const apiKey = '3cd59ab320516a2dcd28df5f428cd9ad';
+    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=metric`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        document.getElementById('weather-icon').innerHTML =
+          `<img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png" class="w-12 h-12">`;
+        document.getElementById('weather-location').textContent    = data.name || 'Your Location';
+        document.getElementById('weather-description').textContent =
+          data.weather[0].description.charAt(0).toUpperCase() + data.weather[0].description.slice(1);
+        document.getElementById('weather-temp').textContent        = `${Math.round(data.main.temp)}°C`;
+        document.getElementById('weather-feels-like').textContent  = `Feels like ${Math.round(data.main.feels_like)}°C`;
+        document.getElementById('weather-info').classList.remove('hidden');
+      })
+      .catch(() => {
+        document.getElementById('weather-description').textContent = 'Weather data unavailable';
+        document.getElementById('weather-info').classList.remove('hidden');
+      });
+  }
 
-                    getWeatherInfo(userLocation.lat, userLocation.lng);
-                    updateNearbyPlaces();
-                },
-                function(error) {
-                    statusIcon.innerHTML = '<i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>';
-                    statusTitle.textContent = 'Location access denied';
-                    statusSubtitle.textContent = 'Please enable location services and try again';
-                    getLocationBtn.disabled = false;
+  // ── Fetch nearby places ───────────────────────────────────
+  function updateNearbyPlaces() {
+    if (!userLocation) { getCurrentLocation(); return; }
 
-                    document.getElementById('no-location').classList.remove('hidden');
-                    document.getElementById('loading-places').classList.add('hidden');
-                }
-            );
-        } else {
-            statusIcon.innerHTML = '<i class="fas fa-times-circle text-red-600 text-xl"></i>';
-            statusTitle.textContent = 'Location not supported';
-            statusSubtitle.textContent = 'Your browser does not support geolocation';
-            getLocationBtn.disabled = false;
-        }
+    const distance = document.getElementById('distance-filter').value;
+    document.getElementById('loading-places').classList.remove('hidden');
+    document.getElementById('no-places').classList.add('hidden');
+    document.getElementById('nearby-places-list').innerHTML = '';
+
+    markers.forEach(m => nearbyMap.removeLayer(m));
+    markers = [];
+
+    fetch(`/api/nearby-places/?lat=${userLocation.lat}&lng=${userLocation.lng}&distance=${distance}`)
+      .then(r => r.json())
+      .then(data => {
+        document.getElementById('loading-places').classList.add('hidden');
+        if (data.error) throw new Error(data.error);
+        displayNearbyPlaces(data.places);
+      })
+      .catch(() => {
+        document.getElementById('loading-places').classList.add('hidden');
+        document.getElementById('places-count').textContent = 'Error';
+        document.getElementById('no-places').classList.remove('hidden');
+      });
+  }
+
+  // ── Render results ────────────────────────────────────────
+  function displayNearbyPlaces(places) {
+    const list   = document.getElementById('nearby-places-list');
+    const count  = document.getElementById('places-count');
+    const noPlc  = document.getElementById('no-places');
+
+    if (!places.length) {
+      count.textContent = '0 places';
+      noPlc.classList.remove('hidden');
+      return;
     }
 
-    // Weather (mock still, optional to change)
-    function getWeatherInfo(lat, lng) {
-        const weatherInfo = document.getElementById('weather-info');
-        const weatherIcon = document.getElementById('weather-icon');
-        const weatherLocation = document.getElementById('weather-location');
-        const weatherDescription = document.getElementById('weather-description');
-        const weatherTemp = document.getElementById('weather-temp');
-        const weatherFeelsLike = document.getElementById('weather-feels-like');
+    count.textContent = `${places.length} place${places.length !== 1 ? 's' : ''}`;
+    const bounds = L.latLngBounds([[userLocation.lat, userLocation.lng]]);
 
-        const apiKey = '3cd59ab320516a2dcd28df5f428cd9ad';  
-        const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${apiKey}&units=metric`;
+    places.forEach(place => {
+      const marker = L.marker([place.latitude, place.longitude], {
+        icon: L.divIcon({
+          className: '',
+          html: '<div style="width:14px;height:14px;background:#16a34a;border-radius:50%;border:3px solid white;box-shadow:0 0 0 3px rgba(22,163,74,.3);"></div>',
+          iconSize: [14, 14], iconAnchor: [7, 14], popupAnchor: [0, -38]
+        })
+      }).bindPopup(`
+        <div style="text-align:center;min-width:140px;font-family:'DM Sans',sans-serif;">
+          <div style="font-size:2rem;margin-bottom:6px;">🏛️</div>
+          <strong style="font-size:.9rem;">${place.name}</strong>
+          <div style="font-size:.78rem;color:#6b7280;margin:4px 0;">${place.distance} km away</div>
+          <a href="/place/${place.slug}/" style="color:#16a34a;font-size:.8rem;font-weight:600;">View Details →</a>
+        </div>
+      `).addTo(nearbyMap);
 
-        fetch(url)
-            .then(response => {
-                if (!response.ok) throw new Error('Weather data not available');
-                return response.json();
-            })
-            .then(data => {
-                const temp = Math.round(data.main.temp);
-                const feelsLike = Math.round(data.main.feels_like);
-                const description = data.weather[0].description;
-                const iconCode = data.weather[0].icon;
-                const city = data.name;
+      markers.push(marker);
+      bounds.extend([place.latitude, place.longitude]);
 
-                // Update UI
-                weatherIcon.innerHTML = `<img src="https://openweathermap.org/img/wn/${iconCode}@2x.png" alt="${description}" class="w-10 h-10">`;
-                weatherLocation.textContent = city || 'Your Location';
-                weatherDescription.textContent = description.charAt(0).toUpperCase() + description.slice(1);
-                weatherTemp.textContent = `${temp}°C`;
-                weatherFeelsLike.textContent = `Feels like ${feelsLike}°C`;
-
-                weatherInfo.classList.remove('hidden');
-            })
-            .catch(error => {
-                console.error('Weather error:', error);
-                weatherDescription.textContent = 'Unable to load weather data.';
-                weatherInfo.classList.remove('hidden');
-            });
-    }
-
-
-    function updateNearbyPlaces() {
-        if (!userLocation) {
-            getCurrentLocation();
-            return;
-        }
-
-        const distance = document.getElementById('distance-filter').value;
-        const loadingPlaces = document.getElementById('loading-places');
-        const nearbyPlacesList = document.getElementById('nearby-places-list');
-        const placesCount = document.getElementById('places-count');
-        const noPlaces = document.getElementById('no-places');
-
-        loadingPlaces.classList.remove('hidden');   // show spinner
-        noPlaces.classList.add('hidden');           // hide no-places
-        nearbyPlacesList.innerHTML = '';            // clear only results
-
-        markers.forEach(marker => nearbyMap.removeLayer(marker));
-        markers = [];
-
-        fetch(`/api/nearby-places/?lat=${userLocation.lat}&lng=${userLocation.lng}&distance=${distance}`)
-            .then(response => response.json())
-            .then(data => {
-                loadingPlaces.classList.add('hidden');   // hide spinner
-                if (data.error) throw new Error(data.error);
-                displayNearbyPlaces(data.places);
-            })
-            .catch(err => {
-                console.error(err);
-                loadingPlaces.classList.add('hidden');
-                placesCount.textContent = 'Error loading places';
-                noPlaces.classList.remove('hidden');
-            });
-    }
-
-    function displayNearbyPlaces(places) {
-        const nearbyPlacesList = document.getElementById('nearby-places-list');
-        const placesCount = document.getElementById('places-count');
-        const noPlaces = document.getElementById('no-places');
-
-        if (!places.length) {
-            placesCount.textContent = '0 places found';
-            noPlaces.classList.remove('hidden');
-            return;
-        }
-
-        placesCount.textContent = `${places.length} places found`;
-
-        let html = '';
-        const bounds = L.latLngBounds();
-        bounds.extend([userLocation.lat, userLocation.lng]);
-
-       places.forEach(place => {
-            // const iconMap = {
-            //     'buddhist_temple': '/static/icons/buddhist_temple.png',
-            //     'hindu_temple': '/static/icons/hindu_temple.png',
-            //     'mosque': '/static/icons/mosque.png',
-            //     'church': '/static/icons/church.png',
-            //     'gurdwara': '/static/icons/gurdwara.png',
-            //     'synagogue': '/static/icons/synagogue.png'
-            // };
-
-            // const iconUrl = iconMap[place.category] || iconMap['other'];
-
-            const marker = L.marker([place.latitude, place.longitude], {
-                icon: L.divIcon({
-                    className: 'emoji-marker',
-                    html: `<div class="emoji-icon">🏛️</div>`,
-                    iconSize: [40, 40],
-                    iconAnchor: [20, 40],
-                    popupAnchor: [0, -40]
-                })
-            }).bindPopup(`
-                <div class="text-center">
-                    <div class="text-3xl mb-2">🏛️</div>
-                    <h3 class="font-semibold">${place.name}</h3>
-                    <p class="text-sm text-gray-600 mt-1">${place.distance} km away</p>
-                    <a href="/place/${place.slug}/" class="text-green-600 hover:text-green-800 text-sm">View Details →</a>
-                </div>
-            `).addTo(nearbyMap);
-
-            markers.push(marker);
-            bounds.extend([place.latitude, place.longitude]);
-
-            html += `
-                <div class="bg-white rounded-lg shadow-lg p-6 card-hover">
-                    <div class="flex items-start justify-between mb-3">
-                        <h3 class="text-xl font-bold text-gray-900">${place.name}</h3>
-                        <div class="text-right">
-                            <div class="text-sm font-semibold text-blue-600">${place.distance} km</div>
-                            <div class="text-xs text-gray-500">away</div>
-                        </div>
-                    </div>
-
-                    <p class="text-gray-600 mb-4">${place.description}</p>
-
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center space-x-3">
-                            <span class="bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                                🏛️ ${Array.isArray(place.category) ? place.category.join(', ') : place.category}
-                            </span>
-                            <span class="flex items-center text-sm text-gray-500">
-                                <i class="fas fa-star text-yellow-500 mr-1"></i>
-                                ${place.rating}
-                            </span>
-                            <span class="flex items-center text-sm text-gray-500">
-                                <i class="fas fa-eye mr-1"></i>
-                                ${place.visit_count}
-                            </span>
-                        </div>
-                    </div>
-
-                    <div class="flex space-x-3">
-                        <a href="/place/${place.slug}/" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            <i class="fas fa-eye mr-1"></i> View Details →
-                        </a>
-                        <button class="inline-flex items-center text-green-600 hover:text-green-700 font-medium" onclick="getDirections(${place.latitude}, ${place.longitude})">
-                            <i class="fas fa-directions mr-1"></i> Directions
-                        </button>
-                    </div>
-                </div>
-            `;
-        });
-
-        nearbyPlacesList.innerHTML = html;
-        nearbyMap.fitBounds(bounds, { padding: [20, 20] });
-    }
-
-    function getDirections(lat, lng) {
-        if (userLocation) {
-            const url = `https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${lat},${lng}`;
-            window.open(url, '_blank');
-        }
-    }
-
-    function increaseRadius() {
-        const distanceFilter = document.getElementById('distance-filter');
-        const currentValue = parseInt(distanceFilter.value);
-        const options = [1, 2, 3, 4, 5, 10, 20, 50];
-        const currentIndex = options.indexOf(currentValue);
-
-        console.log('Current distance:', currentValue);
-        console.log('Current index:', currentIndex);
-
-        if (currentIndex < options.length - 1) {
-            const newValue = options[currentIndex + 1];
-            distanceFilter.value = newValue;
-            console.log('Updated distance:', newValue);
-            updateNearbyPlaces();
-        } else {
-            console.log('Max distance reached');
-        }
-    }
-
-    
-    // Plan route with multiple places
-    function planRoute() {
-        if (!userLocation || !markers.length) {
-            alert("Please make sure your location is set and places are loaded.");
-            return;
-        }
-
-        // Collect coordinates from map markers (excluding user's own marker)
-        const destinations = markers.map(marker => {
-            const latLng = marker.getLatLng();
-            return `${latLng.lat},${latLng.lng}`;
-        });
-
-        // If fewer than 2 places, skip
-        if (destinations.length < 1) {
-            alert("Not enough nearby places to create a route.");
-            return;
-        }
-
-        // Limit to 9 waypoints max (Google Maps limit for non-API URLs)
-        const maxStops = 9;
-        const waypoints = destinations.slice(0, maxStops).join('/');
-
-        const origin = `${userLocation.lat},${userLocation.lng}`;
-        const routeUrl = `https://www.google.com/maps/dir/${origin}/${waypoints}`;
-
-        window.open(routeUrl, '_blank');
-    }
-
-    
-    // Start photo challenge
-    function startPhotoChallenge() {
-        alert('Photo challenge feature coming soon!');
-    }
-    
-    // Share current location
-    function shareLocation() {
-        if (navigator.share && userLocation) {
-            navigator.share({
-                title: 'Check out these places near me!',
-                text: 'I found some interesting places in my area.',
-                url: window.location.href
-            });
-        } else {
-            // Fallback to copying URL
-            navigator.clipboard.writeText(window.location.href);
-            alert('Location URL copied to clipboard!');
-        }
-    }
-    
-    // Initialize when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        initNearbyMap();
-        getCurrentLocation();
+      const card = document.createElement('div');
+      card.className = 'place-card';
+      card.innerHTML = `
+        <div class="flex items-start justify-between mb-3">
+          <h3 class="font-bold text-gray-900 text-base leading-snug pr-4">${place.name}</h3>
+          <div class="flex-shrink-0 text-right">
+            <div class="text-sm font-bold text-blue-600">${place.distance} km</div>
+            <div class="text-xs text-gray-400">away</div>
+          </div>
+        </div>
+        <p class="text-sm text-gray-500 leading-relaxed mb-4">${place.description}</p>
+        <div class="flex items-center gap-3 mb-4 flex-wrap">
+          <span class="inline-flex items-center gap-1 bg-gray-100 text-gray-700 text-xs font-medium px-3 py-1 rounded-full">
+            🏛️ ${Array.isArray(place.category) ? place.category.join(', ') : place.category}
+          </span>
+          <span class="flex items-center gap-1 text-xs text-gray-500">
+            <i class="fas fa-star text-yellow-400"></i> ${place.rating || '—'}
+          </span>
+          <span class="flex items-center gap-1 text-xs text-gray-500">
+            <i class="fas fa-eye text-gray-400"></i> ${place.visit_count}
+          </span>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="/place/${place.slug}/"
+             class="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold rounded-full transition-all">
+            <i class="fas fa-eye text-xs"></i> View Details
+          </a>
+          <button onclick="getDirections(${place.latitude}, ${place.longitude})"
+                  class="flex items-center gap-1.5 px-4 py-2 border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-full transition-all">
+            <i class="fas fa-directions text-green-500 text-xs"></i> Directions
+          </button>
+        </div>
+      `;
+      list.appendChild(card);
     });
 
-    // nearbyMap.on('zoomend', () => {
-    //     const zoom = nearbyMap.getZoom();
-    //     const mapContainer = document.getElementById('nearby-map');
+    nearbyMap.fitBounds(bounds, { padding: [24, 24] });
+  }
 
-    //     // Remove old zoom-level class
-    //     mapContainer.classList.forEach(cls => {
-    //         if (cls.startsWith('leaflet-zoom-')) {
-    //             mapContainer.classList.remove(cls);
-    //         }
-    //     });
+  // ── Helpers ───────────────────────────────────────────────
+  function getDirections(lat, lng) {
+    if (userLocation)
+      window.open(`https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${lat},${lng}`, '_blank');
+  }
 
-    //     // Add new zoom-level class
-    //     mapContainer.classList.add(`leaflet-zoom-${zoom}`);
-    // });
+  function increaseRadius() {
+    const sel = document.getElementById('distance-filter');
+    const opts = [1, 2, 3, 5, 10, 20, 50];
+    const idx  = opts.indexOf(parseInt(sel.value));
+    if (idx < opts.length - 1) { sel.value = opts[idx + 1]; updateNearbyPlaces(); }
+  }
 
-    </script>
+  function planRoute() {
+    if (!userLocation || !markers.length) {
+      alert('Load nearby places first by enabling your location.'); return;
+    }
+    const waypoints = markers.slice(0, 9).map(m => {
+      const ll = m.getLatLng(); return `${ll.lat},${ll.lng}`;
+    }).join('/');
+    window.open(`https://www.google.com/maps/dir/${userLocation.lat},${userLocation.lng}/${waypoints}`, '_blank');
+  }
+
+  function startPhotoChallenge() { alert('Photo challenge coming soon!'); }
+
+  function shareLocation() {
+    if (navigator.share && userLocation) {
+      navigator.share({ title: 'Places near me — Expearls', url: window.location.href });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      alert('Link copied to clipboard!');
+    }
+  }
+
+  // ── Scroll animations ─────────────────────────────────────
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); }});
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+  // ── Boot ──────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    initNearbyMap();
+    getCurrentLocation();
+  });
+</script>
 {% endblock %}

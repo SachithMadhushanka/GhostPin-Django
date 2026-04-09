@@ -1,400 +1,587 @@
 {% extends 'base.html' %}
-{% block title %}Search Results - Expearls{% endblock %}
+{% block title %}Search Results — Expearls{% endblock %}
+{% block main_class %}p-0 pb-24{% endblock %}
+
 {% block content %}
-    <div class="max-w-7xl mx-auto">
-        <!-- Search Header -->
-        <div class="mb-8">
-            <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                <div>
-                    <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                        <i class="fas fa-search text-blue-600 mr-2"></i>
-                        Search Results
-                    </h1>
-                    {% if query %}
-                        <p class="text-gray-600">
-                            Found {{ places.count }} places for "<span class="font-semibold">{{ query }}</span>"
-                        </p>
-                    {% else %}
-                        <p class="text-gray-600">{{ places.count }} places found</p>
-                    {% endif %}
-                </div>
-                <div class="w-full lg:w-auto">
-                    <a href="{% url 'places:nearby_places' %}"
-                       class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                        <i class="fas fa-location-arrow mr-2"></i> Nearby Places
-                    </a>
-                </div>
-                <!-- Search Form -->
-                <div class="w-full lg:w-auto">{% include 'places/_search_form.html' %}</div>
-            </div>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .sr-page { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* ── Hero / banner ── */
+  .sr-hero {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative; overflow: hidden;
+    padding: 3rem 2rem 5rem;
+  }
+  .sr-hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .sr-hero::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 64px; background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px; background: #86efac; border-radius: 50%;
+    display: inline-block; margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(1.4); }
+  }
+  .sr-hero-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1.5rem;
+    position: relative; z-index: 1;
+  }
+  .hero-count {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 14px; border-radius: 50px;
+    background: rgba(255,255,255,0.10);
+    color: #bbf7d0; font-size: .75rem; font-weight: 500;
+    letter-spacing: .06em; text-transform: uppercase; margin-bottom: 12px;
+  }
+  .nearby-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff; font-size: .82rem; font-weight: 500;
+    padding: 9px 18px; border-radius: 50px;
+    text-decoration: none; transition: background .2s;
+  }
+  .nearby-btn:hover { background: rgba(255,255,255,0.22); }
+
+  /* ── Filter bar ── */
+  .sr-filters {
+    background: #fff;
+    border-bottom: 1px solid #f3f4f6;
+    padding: .85rem 2rem;
+    position: sticky; top: 0; z-index: 40;
+    box-shadow: 0 1px 8px rgba(0,0,0,.06);
+  }
+  .sr-filters-inner {
+    max-width: 1280px; margin: 0 auto;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  }
+  .filter-label {
+    font-size: .68rem; font-weight: 600; letter-spacing: .09em;
+    text-transform: uppercase; color: #9ca3af; white-space: nowrap;
+  }
+  .filter-select {
+    appearance: none; -webkit-appearance: none;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 50px;
+    padding: 7px 30px 7px 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: .8rem; color: #374151; background-color: #f9fafb;
+    cursor: pointer; outline: none; transition: border-color .2s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2316a34a'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 11px center;
+  }
+  .filter-select:focus { border-color: #34d399; }
+
+  .filter-divider { width: 1px; height: 22px; background: #e5e7eb; margin: 0 4px; }
+
+  .view-toggle {
+    display: flex; background: #f3f4f6; border-radius: 50px; padding: 4px; gap: 2px;
+    margin-left: auto;
+  }
+  .vt-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 50px; border: none;
+    background: transparent; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: .8rem; font-weight: 500;
+    color: #9ca3af; transition: all .2s;
+  }
+  .vt-btn.active { background: #fff; color: #111827; box-shadow: 0 1px 4px rgba(0,0,0,.10); }
+
+  /* ── Body grid ── */
+  .sr-body {
+    max-width: 1280px; margin: 0 auto;
+    padding: 2rem 1.5rem;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 1024px) { .sr-body { grid-template-columns: 1fr; padding: 1.2rem; } }
+  .sr-body.map-fullscreen { grid-template-columns: 1fr; }
+  .sr-body.map-fullscreen .results-col { display: none; }
+  .sr-body.map-fullscreen .map-col { position: relative; top: 0; }
+  .sr-body.map-fullscreen #search-map { height: 75vh; }
+
+  /* ── Result cards ── */
+  .results-col { display: flex; flex-direction: column; gap: 1rem; }
+
+  .place-card {
+    background: #fff; border-radius: 20px; overflow: hidden;
+    border: 1px solid #f3f4f6; display: flex;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    transition: transform .25s, box-shadow .25s;
+    animation: cardIn .35s ease both;
+  }
+  .place-card:hover { transform: translateY(-3px); box-shadow: 0 10px 32px rgba(0,0,0,.09); }
+  @keyframes cardIn {
+    from { opacity:0; transform:translateY(10px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  .place-card:nth-child(1) { animation-delay:.00s; }
+  .place-card:nth-child(2) { animation-delay:.05s; }
+  .place-card:nth-child(3) { animation-delay:.10s; }
+  .place-card:nth-child(4) { animation-delay:.15s; }
+  .place-card:nth-child(5) { animation-delay:.20s; }
+
+  .card-img-wrap {
+    width: 190px; flex-shrink: 0; position: relative; overflow: hidden;
+  }
+  @media (max-width: 600px) { .card-img-wrap { width: 100%; height: 180px; } .place-card { flex-direction: column; } }
+  .card-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+  .place-card:hover .card-img-wrap img { transform: scale(1.05); }
+  .card-img-placeholder {
+    width: 100%; height: 100%; min-height: 160px;
+    background: linear-gradient(135deg, #0a3d2e, #34d399);
+    display: flex; align-items: center; justify-content: center; font-size: 3rem;
+  }
+  .card-number {
+    position: absolute; top: 10px; left: 10px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: #0a3d2e; color: #fff;
+    font-size: .68rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+
+  .card-body {
+    flex: 1; padding: 20px 22px;
+    display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .card-name-row {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .card-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.15rem; font-weight: 700;
+    color: #0a3d2e; text-decoration: none; line-height: 1.2;
+    transition: color .15s;
+  }
+  .card-name:hover { color: #16a34a; }
+  .card-rating {
+    display: flex; align-items: center; gap: 4px;
+    font-size: .75rem; font-weight: 700; color: #b45309; white-space: nowrap;
+  }
+  .card-views { font-size: .72rem; color: #9ca3af; display: flex; align-items: center; gap: 3px; }
+
+  .card-desc {
+    font-size: .84rem; line-height: 1.65; color: #4b5563;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; margin-bottom: 10px;
+  }
+
+  .card-pills { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 12px; }
+  .pill {
+    font-size: .67rem; font-weight: 500; letter-spacing: .04em;
+    padding: 3px 10px; border-radius: 50px;
+  }
+  .pill-cat  { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+  .pill-easy       { background: #dcfce7; color: #166534; }
+  .pill-moderate   { background: #fef9c3; color: #854d0e; }
+  .pill-challenging{ background: #fee2e2; color: #991b1b; }
+  .pill-meta { background: #f3f4f6; color: #6b7280; }
+
+  .card-actions {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 10px; border-top: 1px solid #f9fafb;
+  }
+  .btn-view {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #dcfce7; color: #15803d;
+    font-size: .78rem; font-weight: 600; padding: 7px 14px;
+    border-radius: 50px; text-decoration: none; transition: background .15s;
+  }
+  .btn-view:hover { background: #bbf7d0; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer;
+    width: 32px; height: 32px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .88rem; color: #9ca3af; transition: background .15s, color .15s;
+  }
+  .icon-btn:hover { background: #f0fdf4; color: #16a34a; }
+  .icon-btn.fav:hover { color: #e11d48; background: #fff1f2; }
+
+  /* ── Empty ── */
+  .empty-state {
+    text-align: center; padding: 64px 24px;
+    background: #fff; border-radius: 20px; border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+  }
+  .empty-icon-wrap {
+    width: 80px; height: 80px; border-radius: 50%;
+    background: #f0fdf4; border: 2px solid #d1fae5;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 20px; font-size: 32px;
+  }
+
+  /* ── Pagination ── */
+  .pagination {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 1.5rem 0;
+  }
+  .page-btn {
+    padding: 8px 16px; border-radius: 50px;
+    border: 1.5px solid #e5e7eb; background: #fff; color: #6b7280;
+    font-size: .8rem; font-weight: 500; text-decoration: none; transition: all .15s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .page-btn:hover { background: #f0fdf4; border-color: #34d399; color: #16a34a; }
+  .page-current {
+    padding: 8px 16px; border-radius: 50px;
+    background: #0a3d2e; color: #fff;
+    font-size: .8rem; font-weight: 600;
+  }
+
+  /* ── Map column ── */
+  .map-col { position: sticky; top: 56px; }
+  .map-card {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    overflow: hidden;
+  }
+  .map-card-header {
+    padding: 14px 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .map-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem; font-weight: 700; color: #0a3d2e;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .map-count {
+    font-size: .72rem; color: #6b7280;
+    background: #f0fdf4; border: 1px solid #d1fae5;
+    padding: 3px 10px; border-radius: 50px; color: #15803d; font-weight: 600;
+  }
+  #search-map { width: 100%; height: 440px; }
+
+  /* Custom map marker */
+  .map-pin-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    cursor: pointer; transition: transform .15s;
+  }
+  .map-pin-wrap:hover { transform: scale(1.15) translateY(-2px); }
+  .map-pin-bubble {
+    background: #0a3d2e; color: #fff;
+    font-size: .64rem; font-weight: 700;
+    padding: 2px 8px; border-radius: 50px;
+    white-space: nowrap; max-width: 90px; overflow: hidden; text-overflow: ellipsis;
+    box-shadow: 0 3px 10px rgba(0,0,0,.25); margin-bottom: 3px;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .map-pin-body {
+    width: 34px; height: 34px; background: #16a34a;
+    border: 3px solid #fff; border-radius: 50% 50% 50% 0;
+    transform: rotate(-45deg);
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,.3); flex-shrink: 0;
+  }
+  .map-pin-body span { transform: rotate(45deg); font-size: .9rem; line-height: 1; }
+  .map-pin-tail { width: 2px; height: 5px; background: rgba(22,163,74,.4); border-radius: 0 0 2px 2px; }
+
+  /* Popup override */
+  .leaflet-popup-content-wrapper {
+    border-radius: 16px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18) !important;
+    border: none !important; padding: 0 !important; overflow: hidden;
+  }
+  .leaflet-popup-content { margin: 0 !important; width: auto !important; min-width: 180px; }
+  .leaflet-popup-tip { background: #fff !important; }
+  .map-popup { padding: 14px 16px; font-family: 'DM Sans', sans-serif; }
+  .map-popup-name {
+    font-family: 'Playfair Display', serif;
+    font-size: .95rem; font-weight: 700; color: #0a3d2e; margin-bottom: 3px;
+  }
+  .map-popup-cat { font-size: .72rem; color: #9ca3af; margin-bottom: 10px; }
+  .map-popup-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #dcfce7; color: #15803d;
+    font-size: .73rem; font-weight: 600;
+    padding: 5px 12px; border-radius: 50px; text-decoration: none;
+  }
+  .map-popup-link:hover { background: #bbf7d0; }
+</style>
+
+<div class="sr-page">
+
+  <!-- ══ HERO ══ -->
+  <div class="sr-hero">
+    <div class="sr-hero-inner">
+      <div>
+        <div class="hero-count">
+          <span class="hero-dot"></span>
+          {% if places %}{{ places.count }} place{% if places.count != 1 %}s{% endif %} found{% else %}No results{% endif %}
         </div>
-        <!-- Filters -->
-        <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-            <div class="flex flex-wrap items-center gap-4">
-                <h3 class="text-lg font-semibold text-gray-900">
-                    <i class="fas fa-filter text-purple-600 mr-2"></i>
-                    Filters
-                </h3>
-                <!-- Category Filter -->
-                <div class="flex items-center space-x-2">
-                    <label class="text-sm font-medium text-gray-700">Category:</label>
-                    <select name="category"
-                            class="border border-gray-300 rounded-md px-3 py-1 text-sm"
-                            onchange="applyFilters()">
-                        <option value="">All Categories</option>
-                        {% for cat in categories %}
-                            <option value="{{ cat.slug }}"
-                                    {% if request.GET.category == cat.slug %}selected{% endif %}>
-                                {{ cat.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <!-- Difficulty Filter -->
-                <div class="flex items-center space-x-2">
-                    <label class="text-sm font-medium text-gray-700">Difficulty:</label>
-                    <select name="difficulty"
-                            class="border border-gray-300 rounded-md px-3 py-1 text-sm"
-                            onchange="applyFilters()">
-                        <option value="">All Levels</option>
-                        <option value="easy"
-                                {% if request.GET.difficulty == 'easy' %}selected{% endif %}>Easy</option>
-                        <option value="moderate"
-                                {% if request.GET.difficulty == 'moderate' %}selected{% endif %}>Moderate</option>
-                        <option value="challenging"
-                                {% if request.GET.difficulty == 'challenging' %}selected{% endif %}>
-                            Challenging
-                        </option>
-                    </select>
-                </div>
-                <!-- Sort Options -->
-                <div class="flex items-center space-x-2">
-                    <label class="text-sm font-medium text-gray-700">Sort by:</label>
-                    <select name="sort"
-                            class="border border-gray-300 rounded-md px-3 py-1 text-sm"
-                            onchange="applyFilters()">
-                        <option value="name" {% if request.GET.sort == 'name' %}selected{% endif %}>Name</option>
-                        <option value="created_at"
-                                {% if request.GET.sort == 'created_at' %}selected{% endif %}>Newest</option>
-                        <option value="visit_count"
-                                {% if request.GET.sort == 'visit_count' %}selected{% endif %}>Most Visited</option>
-                        <option value="rating"
-                                {% if request.GET.sort == 'rating' %}selected{% endif %}>Highest Rated</option>
-                    </select>
-                </div>
-                <!-- View Toggle -->
-                <div class="ml-auto flex items-center space-x-2">
-                    <!-- List View Button -->
-                    <button id="list-view"
-                            aria-label="List View"
-                            class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-600 bg-green-100 text-green-700 font-medium shadow-sm transition-all duration-300 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-400"
-                            onclick="toggleView('list')">
-                        <i class="fas fa-list text-lg"></i>
-                        <span>List</span>
-                    </button>
-                    <!-- Map View Button -->
-                    <button id="map-view"
-                            aria-label="Map View"
-                            class="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-gray-600 bg-green-100 text-green-700 font-medium shadow-sm transition-all duration-300 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-400"
-                            onclick="toggleView('map')">
-                        <i class="fas fa-map-marked-alt text-lg"></i>
-                        <span>Map</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- Results Container -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Results List -->
-            <div id="results-list" class="lg:col-span-2">
-                {% if places %}
-                    <div class="space-y-6">
-                        {% for place in places %}
-                            <div class="bg-white rounded-lg shadow-lg overflow-hidden card-hover">
-                                <div class="flex flex-col sm:flex-row">
-                                    <!-- Place Image -->
-                                    <div class="sm:w-48 h-48 sm:h-auto flex-shrink-0">
-                                        {% if place.image %}
-                                            <img src="{{ place.image.url }}"
-                                                 alt="{{ place.name }}"
-                                                 class="w-full h-full object-cover">
-                                        {% else %}
-                                            <div class="w-full h-full bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-4xl text-white">
-                                                🏛️
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <!-- Place Info -->
-                                    <div class="flex-1 p-6">
-                                        <div class="flex items-start justify-between mb-3">
-                                            <h3 class="text-xl font-bold text-gray-900 hover:text-green-600 transition-colors">
-                                                <a href="{% url 'places:place_detail' place.slug %}">{{ place.name }}</a>
-                                            </h3>
-                                            <div class="flex items-center space-x-2 text-sm">
-                                                {% if place.average_rating > 0 %}
-                                                    <span class="flex items-center text-yellow-500">
-                                                        <i class="fas fa-star mr-1"></i>
-                                                        {{ place.average_rating|floatformat:1 }}
-                                                    </span>
-                                                {% endif %}
-                                                <span class="text-gray-500">
-                                                    <i class="fas fa-eye mr-1"></i>
-                                                    {{ place.visit_count }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <p class="text-gray-600 mb-4 line-clamp-3">{{ place.description|truncatewords:30 }}</p>
-                                        <!-- Place Meta -->
-                                        <div class="flex flex-wrap items-center gap-3 mb-4">
-                                            <span class="bg-gray-100 text-gray-800 text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                                                {% for cat in place.category.all %}
-                                                    {{ cat.name }}
-                                                    {% if not forloop.last %},{% endif %}
-                                                {% endfor %}
-                                            </span>
-                                            <span class="flex items-center text-sm text-gray-500">
-                                                <i class="fas fa-signal mr-1 {% if place.difficulty == 'easy' %}text-green-500 {% elif place.difficulty == 'moderate' %}text-yellow-500 {% else %}text-red-500{% endif %}"></i>
-                                                {{ place.get_difficulty_display }}
-                                            </span>
-                                            <span class="flex items-center text-sm text-gray-500">
-                                                <i class="fas fa-user mr-1"></i>
-                                                {{ place.created_by.username }}
-                                            </span>
-                                            <span class="flex items-center text-sm text-gray-500">
-                                                <i class="fas fa-calendar mr-1"></i>
-                                                {{ place.created_at|date:"M d, Y" }}
-                                            </span>
-                                        </div>
-                                        <!-- Actions -->
-                                        <div class="flex items-center justify-between">
-                                            <a href="{% url 'places:place_detail' place.slug %}"
-                                               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                                <i class="fas fa-eye mr-1"></i> View Details
-                                            </a>
-                                            <div class="flex items-center space-x-2">
-                                                {% if user.is_authenticated %}
-                                                    <button class="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                                                            onclick="toggleFavorite('{{ place.slug }}')">
-                                                        <i class="fas fa-heart"></i>
-                                                    </button>
-                                                    <button class="p-2 text-gray-400 hover:text-blue-500 transition-colors"
-                                                            onclick="focusOnMap({{ place.latitude }}, {{ place.longitude }})">
-                                                        <i class="fas fa-map-marker-alt"></i>
-                                                    </button>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                    <!-- Pagination -->
-                    {% if places.has_other_pages %}
-                        <div class="mt-8 flex justify-center">
-                            <nav class="flex items-center space-x-2">
-                                {% if places.has_previous %}
-                                    <a href="?{% if query %}q={{ query }}&{% endif %}page={{ places.previous_page_number }}"
-                                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                                        Previous
-                                    </a>
-                                {% endif %}
-                                <span class="px-3 py-2 text-sm font-medium text-gray-700">
-                                    Page {{ places.number }} of {{ places.paginator.num_pages }}
-                                </span>
-                                {% if places.has_next %}
-                                    <a href="?{% if query %}q={{ query }}&{% endif %}page={{ places.next_page_number }}"
-                                       class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
-                                        Next
-                                    </a>
-                                {% endif %}
-                            </nav>
-                        </div>
-                    {% endif %}
-                {% else %}
-                    <!-- No Results -->
-                    <div class="text-center py-16">
-                        <i class="fas fa-search text-8xl text-gray-300 mb-6"></i>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4">No places found</h3>
-                        {% if query %}
-                            <p class="text-gray-600 mb-8">
-                                We couldn't find any places matching "<span class="font-semibold">{{ query }}</span>".
-                                Try adjusting your search terms or filters.
-                            </p>
-                        {% else %}
-                            <p class="text-gray-600 mb-8">No places match your current filters. Try adjusting your criteria.</p>
-                        {% endif %}
-                        <div class="space-x-4">
-                            <a href="{% url 'places:home' %}"
-                               class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                <i class="fas fa-home mr-2"></i> Browse All Places
-                            </a>
-                            {% if user.is_authenticated %}
-                                <a href="{% url 'places:add_place' %}" class="btn-secondary">
-                                    <i class="fas fa-plus mr-2"></i> Add New Place
-                                </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-            <style>
-            .custom-div-icon {
-                background: transparent;
-                border: none;
-                text-align: center;
-                line-height: 1;
-            }
-            </style>
-            <!-- Map View -->
-            <div id="map-column" class="lg:col-span-1">
-                <div class="sticky top-24">
-                    <div class="bg-white rounded-lg shadow-lg p-4">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                            <i class="fas fa-map text-green-600 mr-2"></i>
-                            Map View
-                        </h3>
-                        <div id="search-map" class="w-full h-96 rounded-lg"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <h1 class="display-font text-4xl md:text-5xl font-black text-white leading-tight">
+          {% if query %}
+            Results for<br><em class="text-green-300 not-italic">"{{ query }}"</em>
+          {% else %}
+            <em class="text-green-300 not-italic">Explore</em> Places
+          {% endif %}
+        </h1>
+        <p class="text-green-200 text-sm font-light mt-2">
+          {% if places %}Showing {{ places.count }} place{% if places.count != 1 %}s{% endif %}{% if query %} matching your search{% endif %}{% else %}Try different keywords or clear your filters.{% endif %}
+        </p>
+      </div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <div>{% include 'places/_search_form.html' %}</div>
+        <a href="{% url 'places:nearby_places' %}" class="nearby-btn">
+          <i class="fas fa-location-arrow text-xs"></i> Nearby
+        </a>
+      </div>
     </div>
+  </div>
+
+  <!-- ══ FILTER BAR ══ -->
+  <div class="sr-filters">
+    <div class="sr-filters-inner">
+      <i class="fas fa-sliders-h text-green-500" style="font-size:.85rem"></i>
+
+      <div class="flex items-center gap-2">
+        <span class="filter-label">Category</span>
+        <select class="filter-select" name="category" onchange="applyFilters()">
+          <option value="">All</option>
+          {% for cat in categories %}
+            <option value="{{ cat.slug }}" {% if request.GET.category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="flex items-center gap-2">
+        <span class="filter-label">Difficulty</span>
+        <select class="filter-select" name="difficulty" onchange="applyFilters()">
+          <option value="">All</option>
+          <option value="easy"        {% if request.GET.difficulty == 'easy' %}selected{% endif %}>Easy</option>
+          <option value="moderate"    {% if request.GET.difficulty == 'moderate' %}selected{% endif %}>Moderate</option>
+          <option value="challenging" {% if request.GET.difficulty == 'challenging' %}selected{% endif %}>Challenging</option>
+        </select>
+      </div>
+
+      <div class="filter-divider"></div>
+
+      <div class="flex items-center gap-2">
+        <span class="filter-label">Sort</span>
+        <select class="filter-select" name="sort" onchange="applyFilters()">
+          <option value="name"        {% if request.GET.sort == 'name' %}selected{% endif %}>Name</option>
+          <option value="created_at"  {% if request.GET.sort == 'created_at' %}selected{% endif %}>Newest</option>
+          <option value="visit_count" {% if request.GET.sort == 'visit_count' %}selected{% endif %}>Most Visited</option>
+          <option value="rating"      {% if request.GET.sort == 'rating' %}selected{% endif %}>Top Rated</option>
+        </select>
+      </div>
+
+      <div class="view-toggle">
+        <button id="btn-list" class="vt-btn active" onclick="toggleView('list')">
+          <i class="fas fa-list" style="font-size:.75rem"></i> List
+        </button>
+        <button id="btn-map" class="vt-btn" onclick="toggleView('map')">
+          <i class="fas fa-map-marked-alt" style="font-size:.75rem"></i> Map
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ BODY ══ -->
+  <div class="sr-body" id="sr-body">
+
+    <!-- Results -->
+    <div class="results-col">
+      {% if places %}
+        {% for place in places %}
+        <div class="place-card">
+          <div class="card-img-wrap">
+            {% if place.image %}
+              <img src="{{ place.image.url }}" alt="{{ place.name }}" loading="lazy">
+            {% else %}
+              <div class="card-img-placeholder">🏛️</div>
+            {% endif %}
+            <div class="card-number">{{ forloop.counter }}</div>
+          </div>
+          <div class="card-body">
+            <div>
+              <div class="card-name-row">
+                <a href="{% url 'places:place_detail' place.slug %}" class="card-name">{{ place.name }}</a>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0">
+                  {% if place.average_rating > 0 %}
+                    <span class="card-rating"><i class="fas fa-star" style="font-size:.65rem;color:#f59e0b"></i> {{ place.average_rating|floatformat:1 }}</span>
+                  {% endif %}
+                  <span class="card-views"><i class="fas fa-eye" style="font-size:.6rem"></i> {{ place.visit_count }}</span>
+                </div>
+              </div>
+              <p class="card-desc">{{ place.description|truncatewords:25 }}</p>
+              <div class="card-pills">
+                {% for cat in place.category.all %}
+                  <span class="pill pill-cat">{{ cat.name }}</span>
+                {% endfor %}
+                {% if place.difficulty %}
+                  <span class="pill pill-{{ place.difficulty }}">{{ place.get_difficulty_display }}</span>
+                {% endif %}
+                <span class="pill pill-meta"><i class="fas fa-user" style="font-size:.58rem;margin-right:3px"></i>{{ place.created_by.username }}</span>
+                <span class="pill pill-meta"><i class="fas fa-calendar" style="font-size:.58rem;margin-right:3px"></i>{{ place.created_at|date:"M Y" }}</span>
+              </div>
+            </div>
+            <div class="card-actions">
+              <a href="{% url 'places:place_detail' place.slug %}" class="btn-view">
+                <i class="fas fa-arrow-right" style="font-size:.65rem"></i> View Place
+              </a>
+              <div style="display:flex;gap:3px">
+                {% if user.is_authenticated %}
+                  <button class="icon-btn fav" title="Favourite" onclick="toggleFavorite('{{ place.slug }}')">
+                    <i class="fas fa-heart" style="font-size:.85rem"></i>
+                  </button>
+                  <button class="icon-btn" title="Show on map" onclick="focusOnMap({{ place.latitude }}, {{ place.longitude }}, '{{ place.name|escapejs }}')">
+                    <i class="fas fa-map-pin" style="font-size:.85rem"></i>
+                  </button>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+
+        {% if places.has_other_pages %}
+        <div class="pagination">
+          {% if places.has_previous %}
+            <a class="page-btn" href="?{% if query %}q={{ query }}&{% endif %}page={{ places.previous_page_number }}">
+              <i class="fas fa-chevron-left" style="font-size:.65rem"></i> Prev
+            </a>
+          {% endif %}
+          <span class="page-current">{{ places.number }} / {{ places.paginator.num_pages }}</span>
+          {% if places.has_next %}
+            <a class="page-btn" href="?{% if query %}q={{ query }}&{% endif %}page={{ places.next_page_number }}">
+              Next <i class="fas fa-chevron-right" style="font-size:.65rem"></i>
+            </a>
+          {% endif %}
+        </div>
+        {% endif %}
+
+      {% else %}
+        <div class="empty-state">
+          <div class="empty-icon-wrap">🔍</div>
+          <h3 class="display-font text-3xl font-bold text-gray-900 mb-3">No places found</h3>
+          <p class="text-gray-500 text-sm mb-8 max-w-sm mx-auto">
+            {% if query %}Nothing matched "<strong>{{ query }}</strong>". Try different keywords or clear your filters.
+            {% else %}No places match your current filters. Try adjusting your criteria.{% endif %}
+          </p>
+          <a href="{% url 'places:home' %}" class="inline-flex items-center gap-2 px-7 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full text-sm transition-all shadow-lg shadow-green-900/20">
+            <i class="fas fa-compass text-sm"></i> Browse All Places
+          </a>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Map column -->
+    <div class="map-col" id="map-col">
+      <div class="map-card">
+        <div class="map-card-header">
+          <span class="map-card-title"><i class="fas fa-map-marked-alt text-green-500" style="font-size:.9rem"></i> Map View</span>
+          <span class="map-count">{{ places.count }} location{% if places.count != 1 %}s{% endif %}</span>
+        </div>
+        <div id="search-map"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
 {% endblock %}
+
 {% block extra_js %}
-    <script>
-    let searchMap;
-    let markers = [];
-    
-    // Initialize map
-    function initSearchMap() {
-        searchMap = L.map('search-map').setView([7.8731, 80.7718], 8);
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(searchMap);
-        
-        // Add markers for search results
-        const places = [
-            {% for place in places %}
-                {
-                    lat: {{ place.latitude }},
-                    lng: {{ place.longitude }},
-                    name: "{{ place.name|escapejs }}",
-                    icon: "🏛️",
-                    url: "{% url 'places:place_detail' place.slug %}"
-                }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
-        
-        if (places.length > 0) {
-            const bounds = L.latLngBounds();
-            
-            places.forEach(place => {
-                const customIcon = L.divIcon({
-                    html: `<div class="text-2xl">${place.icon}</div>`,
-                    className: 'custom-div-icon',
-                    iconSize: [30, 42],
-                    iconAnchor: [15, 42],
-                    popupAnchor: [0, -40]
-                });
+<script>
+let searchMap, markers = [];
 
-                const marker = L.marker([place.lat, place.lng], { icon: customIcon })
-                    .bindPopup(`
-                        <div class="text-center">
-                            <div class="text-2xl mb-2">${place.icon}</div>
-                            <h3 class="font-semibold">${place.name}</h3>
-                            <a href="${place.url}" class="text-green-600 hover:text-green-800 text-sm">View Details →</a>
-                        </div>
-                    `)
-                    .addTo(searchMap);
+function getCategoryIcon(cats) {
+  const c = (cats || '').toLowerCase();
+  if (c.includes('beach') || c.includes('coast'))    return '🏖️';
+  if (c.includes('temple') || c.includes('buddhi'))  return '🛕';
+  if (c.includes('mountain') || c.includes('hill'))  return '⛰️';
+  if (c.includes('waterfall'))                        return '💧';
+  if (c.includes('forest') || c.includes('jungle'))  return '🌿';
+  if (c.includes('museum') || c.includes('heritage'))return '🏛️';
+  if (c.includes('wildlife') || c.includes('safari'))return '🦁';
+  if (c.includes('cave'))                             return '🕳️';
+  if (c.includes('lake') || c.includes('river'))     return '🏞️';
+  if (c.includes('trail') || c.includes('hike'))     return '🥾';
+  return '📍';
+}
 
-                markers.push(marker);
-                bounds.extend([place.lat, place.lng]);
-            });
+function initSearchMap() {
+  searchMap = L.map('search-map', { zoomControl: true }).setView([7.8731, 80.7718], 8);
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap © CARTO',
+    subdomains: 'abcd', maxZoom: 19
+  }).addTo(searchMap);
 
-            
-            searchMap.fitBounds(bounds, { padding: [20, 20] });
-        }
-    }
-    
-    // Focus on specific place on map
-    function focusOnMap(lat, lng) {
-        searchMap.setView([lat, lng], 15);
-        markers.forEach(marker => {
-            const markerLatLng = marker.getLatLng();
-            if (Math.abs(markerLatLng.lat - lat) < 0.0001 && Math.abs(markerLatLng.lng - lng) < 0.0001) {
-                marker.openPopup();
-            }
-        });
-    }
-    
-    // Toggle view between list and map
-    function toggleView(view) {
-        const listView = document.getElementById('list-view');
-        const mapView = document.getElementById('map-view');
-        const resultsList = document.getElementById('results-list');
-        const mapColumn = document.getElementById('map-column');
+  const places = [
+    {% for place in places %}
+    { lat:{{ place.latitude }}, lng:{{ place.longitude }}, name:"{{ place.name|escapejs }}", cats:"{% for c in place.category.all %}{{ c.name }} {% endfor %}", url:"{% url 'places:place_detail' place.slug %}" }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+  if (!places.length) return;
 
-        if (view === 'map') {
-            listView.classList.remove('bg-green-100', 'text-green-600');
-            listView.classList.add('text-gray-400', 'hover:bg-gray-100');
-            mapView.classList.add('bg-green-100', 'text-green-600');
-            mapView.classList.remove('text-gray-400', 'hover:bg-gray-100');
+  const bounds = L.latLngBounds();
+  places.forEach(p => {
+    const icon = getCategoryIcon(p.cats);
+    const pinHtml = `<div class="map-pin-wrap" title="${p.name}"><div class="map-pin-bubble">${p.name}</div><div class="map-pin-body"><span>${icon}</span></div><div class="map-pin-tail"></div></div>`;
+    const leafletIcon = L.divIcon({ html: pinHtml, className: '', iconSize:[100,68], iconAnchor:[50,68], popupAnchor:[0,-72] });
+    const popup = `<div class="map-popup"><div style="font-size:1.4rem;margin-bottom:6px">${icon}</div><div class="map-popup-name">${p.name}</div><div class="map-popup-cat">${p.cats || 'Place'}</div><a class="map-popup-link" href="${p.url}"><i class="fas fa-arrow-right" style="font-size:.6rem"></i> View Details</a></div>`;
+    const marker = L.marker([p.lat, p.lng], { icon: leafletIcon }).bindPopup(popup, { maxWidth: 220 }).addTo(searchMap);
+    markers.push({ marker, lat: p.lat, lng: p.lng });
+    bounds.extend([p.lat, p.lng]);
+  });
+  searchMap.fitBounds(bounds, { padding: [30, 30] });
+}
 
-            // 👇 Hide the results list
-            resultsList.classList.add('hidden');
-            // 👇 Make the map full width
-            mapColumn.classList.remove('lg:col-span-1');
-            mapColumn.classList.add('lg:col-span-3');
-        } else {
-            mapView.classList.remove('bg-green-100', 'text-green-600');
-            mapView.classList.add('text-gray-400', 'hover:bg-gray-100');
-            listView.classList.add('bg-green-100', 'text-green-600');
-            listView.classList.remove('text-gray-400', 'hover:bg-gray-100');
+function focusOnMap(lat, lng) {
+  if (window.innerWidth < 1024) toggleView('map');
+  searchMap.setView([lat, lng], 15);
+  markers.forEach(m => {
+    if (Math.abs(m.lat - lat) < 0.0001 && Math.abs(m.lng - lng) < 0.0001) m.marker.openPopup();
+  });
+}
 
-            // 👇 Show the results list
-            resultsList.classList.remove('hidden');
-            // 👇 Restore map width to original
-            mapColumn.classList.remove('lg:col-span-3');
-            mapColumn.classList.add('lg:col-span-1');
-        }
+function toggleView(view) {
+  const body = document.getElementById('sr-body');
+  const btnList = document.getElementById('btn-list');
+  const btnMap  = document.getElementById('btn-map');
+  if (view === 'map') {
+    body.classList.add('map-fullscreen');
+    btnList.classList.remove('active'); btnMap.classList.add('active');
+  } else {
+    body.classList.remove('map-fullscreen');
+    btnMap.classList.remove('active'); btnList.classList.add('active');
+  }
+  setTimeout(() => searchMap.invalidateSize(), 120);
+}
 
-        // Refresh map size
-        setTimeout(() => {
-            searchMap.invalidateSize();
-        }, 100);
-    }
+function applyFilters() {
+  const params = new URLSearchParams();
+  const q = "{{ query|escapejs }}";
+  if (q) params.append('q', q);
+  document.querySelectorAll('select[name]').forEach(s => { if (s.value) params.append(s.name, s.value); });
+  window.location.search = params.toString();
+}
 
-    
-    // Apply filters
-    function applyFilters() {
-        const form = document.createElement('form');
-        form.method = 'get';
-        
-        const params = new URLSearchParams();
-        const currentQuery = "{{ query|escapejs }}";
-        if (currentQuery) params.append('q', currentQuery);
-        
-        const selects = document.querySelectorAll('select[name]');
-        selects.forEach(select => {
-            if (select.value) {
-                params.append(select.name, select.value);
-            }
-        });
-        
-        window.location.search = params.toString();
-    }
-    
-    // Toggle favorite
-    function toggleFavorite(placeId) {
-        // Implementation for favoriting places
-        console.log('Toggle favorite for place:', placeId);
-    }
-    
-    // Initialize map when page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        initSearchMap();
-    });
-    </script>
+function toggleFavorite(slug) { console.log('Toggle favourite:', slug); }
+
+document.addEventListener('DOMContentLoaded', initSearchMap);
+</script>
 {% endblock %}

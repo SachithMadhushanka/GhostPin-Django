@@ -1,236 +1,540 @@
 {% extends 'base.html' %}
-{% block title %}Leaderboard - Expearls{% endblock %}
+{% block title %}Leaderboard — Expearls{% endblock %}
+
 {% block content %}
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
-        <div class="text-center mb-12">
-            <h1 class="text-4xl font-bold text-gray-900 mb-4">
-                <i class="fas fa-trophy text-yellow-500 mr-3"></i>
-                Community Leaderboard
-            </h1>
-            <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                Discover the most active explorers in our community. Earn points by adding places, checking in, and contributing to the platform.
-            </p>
-        </div>
-        <!-- Leaderboard Stats -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <div class="bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg p-6 text-white text-center">
-                <i class="fas fa-crown text-3xl mb-3"></i>
-                <h3 class="text-lg font-semibold mb-1">Top Explorer</h3>
-                {% if top_users %}
-                    <p class="text-2xl font-bold">{{ top_users.0.user.username }}</p>
-                    <p class="text-sm opacity-90">{{ top_users.0.points }} points</p>
-                {% else %}
-                    <p class="text-lg">No data yet</p>
-                {% endif %}
-            </div>
-            <div class="bg-gradient-to-r from-green-400 to-green-600 rounded-lg p-6 text-white text-center">
-                <i class="fas fa-users text-3xl mb-3"></i>
-                <h3 class="text-lg font-semibold mb-1">Active Explorers</h3>
-                <p class="text-2xl font-bold">{{ total_users }}</p>
-                <p class="text-sm opacity-90">Community members</p>
-            </div>
-            <div class="bg-gradient-to-r from-blue-400 to-blue-600 rounded-lg p-6 text-white text-center">
-                <i class="fas fa-chart-line text-3xl mb-3"></i>
-                <h3 class="text-lg font-semibold mb-1">Total Points</h3>
-                <p class="text-2xl font-bold">{{ total_points }}</p>
-                <p class="text-sm opacity-90">Points earned</p>
-            </div>
-        </div>
-        <!-- Leaderboard Table -->
-        <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-            <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                <h2 class="text-xl font-bold text-gray-900">
-                    <i class="fas fa-list-ol text-green-600 mr-2"></i>
-                    Top 50 Explorers
-                </h2>
-            </div>
-            {% if top_users %}
-                <div class="divide-y divide-gray-200">
-                    {% for profile in top_users %}
-                        <div class="px-6 py-4 hover:bg-gray-50 transition-colors {% if forloop.counter <= 3 %}bg-gradient-to-r {% if forloop.counter == 1 %}from-yellow-50 to-yellow-100 border-l-4 border-yellow-400 {% elif forloop.counter == 2 %}from-gray-50 to-gray-100 border-l-4 border-gray-400 {% elif forloop.counter == 3 %}from-orange-50 to-orange-100 border-l-4 border-orange-400 {% endif %} {% endif %}">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-4">
-                                    <!-- Rank -->
-                                    <div class="flex-shrink-0 w-12 text-center">
-                                        {% if forloop.counter <= 3 %}
-                                            <div class="text-2xl">
-                                                {% if forloop.counter == 1 %}
-                                                    🥇
-                                                {% elif forloop.counter == 2 %}
-                                                    🥈
-                                                {% elif forloop.counter == 3 %}
-                                                    🥉
-                                                {% endif %}
-                                            </div>
-                                        {% else %}
-                                            <span class="text-lg font-bold text-gray-600">#{{ forloop.counter }}</span>
-                                        {% endif %}
-                                    </div>
-                                    <!-- User Info -->
-                                    <div class="flex items-center space-x-3">
-                                        {% if profile.avatar %}
-                                            <img src="{{ profile.avatar.url }}"
-                                                 alt="{{ profile.user.username }}"
-                                                 class="w-12 h-12 rounded-full object-cover border-2 border-gray-200">
-                                        {% else %}
-                                            <div class="w-12 h-12 rounded-full bg-green-500 flex items-center justify-center text-white font-bold text-lg">
-                                                {{ profile.user.username|first|upper }}
-                                            </div>
-                                        {% endif %}
-                                        <div>
-                                            <h3 class="font-semibold text-gray-900">
-                                                <a href="{% url 'places:profile' profile.user.username %}"
-                                                   class="hover:text-green-600 transition-colors">
-                                                    {{ profile.user.username }}
-                                                </a>
-                                            </h3>
-                                            <div class="flex items-center space-x-3 text-sm text-gray-500">
-                                                <span>Level {{ profile.level }}</span>
-                                                {% if profile.is_trusted %}
-                                                    <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs">
-                                                        <i class="fas fa-shield-alt mr-1"></i> Trusted
-                                                    </span>
-                                                {% endif %}
-                                                {% if profile.is_local_expert %}
-                                                    <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded-full text-xs">
-                                                        <i class="fas fa-star mr-1"></i> Expert
-                                                    </span>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <!-- Points and Stats -->
-                                <div class="text-right">
-                                    <div class="text-2xl font-bold text-green-600">{{ profile.points }}</div>
-                                    <div class="text-sm text-gray-500">points</div>
-                                    <!-- Additional Stats -->
-                                    <div class="flex items-center space-x-4 mt-2 text-xs text-gray-400">
-                                        <span title="Places added">
-                                            <i class="fas fa-map-marker-alt mr-1"></i>
-                                            {{ profile.place_count }}
-                                        </span>
-                                        <span title="Check-ins">
-                                            <i class="fas fa-map-pin mr-1"></i>
-                                            {{ profile.user.checkin_set.count }}
-                                        </span>
-                                        <span title="Comments">
-                                            <i class="fas fa-comment mr-1"></i>
-                                            {{ profile.user.comment_set.count }}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="px-6 py-12 text-center">
-                    <i class="fas fa-trophy text-6xl text-gray-300 mb-4"></i>
-                    <h3 class="text-xl font-medium text-gray-900 mb-2">No rankings yet</h3>
-                    <p class="text-gray-500 mb-6">Be the first to earn points and claim the top spot!</p>
-                    {% if user.is_authenticated %}
-                        <a href="{% url 'places:add_place' %}"
-                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            <i class="fas fa-plus mr-2"></i> Add Your First Place
-                        </a>
-                    {% else %}
-                        <a href="{% url 'login' %}"
-                           class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                            <i class="fas fa-sign-in-alt mr-2"></i> Join the Competition
-                        </a>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
-        <!-- How to Earn Points -->
-        <div class="mt-12 bg-white rounded-lg shadow-lg p-8">
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                <i class="fas fa-question-circle text-blue-600 mr-2"></i>
-                How to Earn Points
-            </h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="text-center p-4 bg-green-50 rounded-lg">
-                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-plus text-green-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Add Places</h3>
-                    <p class="text-green-600 font-bold text-xl mb-1">+20 pts</p>
-                    <p class="text-gray-600 text-sm">Submit new places</p>
-                </div>
-                <div class="text-center p-4 bg-blue-50 rounded-lg">
-                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-map-pin text-blue-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Check In</h3>
-                    <p class="text-blue-600 font-bold text-xl mb-1">+10 pts</p>
-                    <p class="text-gray-600 text-sm">Visit and check in at places</p>
-                </div>
-                <div class="text-center p-4 bg-purple-50 rounded-lg">
-                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-comment text-purple-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Comment</h3>
-                    <p class="text-purple-600 font-bold text-xl mb-1">+5 pts</p>
-                    <p class="text-gray-600 text-sm">Share your experiences</p>
-                </div>
-                <div class="text-center p-4 bg-orange-50 rounded-lg">
-                    <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-check-circle text-orange-600 text-2xl"></i>
-                    </div>
-                    <h3 class="font-semibold text-lg mb-2">Get Approved</h3>
-                    <p class="text-orange-600 font-bold text-xl mb-1">+50 pts</p>
-                    <p class="text-gray-600 text-sm">Bonus when places get approved</p>
-                </div>
-            </div>
-        </div>
-        <!-- Your Ranking -->
-        {% if user.is_authenticated %}
-            <div class="mt-8 bg-gradient-to-r from-green-500 to-blue-600 rounded-lg p-6 text-white">
-                <div class="flex items-center justify-between">
-                    <div>
-                        <h3 class="text-xl font-bold mb-2">Your Current Ranking</h3>
-                        {% if user.userprofile %}
-                            <p class="text-lg">
-                                <span class="font-semibold">{{ user.userprofile.points }} points</span> •
-                                <span>Level {{ user.userprofile.level }}</span>
-                            </p>
-                        {% else %}
-                            <p class="text-lg">Start exploring to earn your first points!</p>
-                        {% endif %}
-                    </div>
-                    <div class="text-right">
-                        <div class="text-3xl font-bold">
-                            {% if user_rank %}
-                                #{{ user_rank }}
-                            {% else %}
-                                #?
-                            {% endif %}
-                        </div>
-                        <div class="text-sm opacity-90">Your rank</div>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+  .lb-page { font-family: 'DM Sans', sans-serif; }
+  .display-font { font-family: 'Playfair Display', serif; }
+
+  /* ── Hero ── */
+  .hero-lb {
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 40%, #0f4a35 100%);
+    position: relative; overflow: hidden;
+  }
+  .hero-lb::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 20% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+                      radial-gradient(circle at 80% 20%, rgba(134,239,172,0.08) 0%, transparent 50%);
+  }
+  .hero-lb::after {
+    content: '';
+    position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 64px; background: #f9fafb;
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .hero-dot {
+    width: 6px; height: 6px; background: #86efac; border-radius: 50%;
+    display: inline-block; margin-right: 8px;
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  @keyframes pulse-dot {
+    0%,100% { opacity:1; transform:scale(1); }
+    50%      { opacity:.5; transform:scale(1.4); }
+  }
+
+  /* ── Stats bar ── */
+  .stats-bar {
+    background: #fff; border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,.10);
+  }
+  .stat-item + .stat-item { border-left: 1px solid #e5e7eb; }
+
+  /* ── Podium ── */
+  .podium-section {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    padding: 28px 24px 0;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  /* The stage: three columns aligned to the bottom */
+  .podium-stage {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 8px;
+    /* each column is a flex column: info above, block below */
+  }
+
+  /* Each column: info stacked above the coloured block */
+  .podium-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 190px;
+    /* no negative positioning — everything flows naturally */
+  }
+
+  /* Info area above the block */
+  .podium-info {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 8px; padding-bottom: 12px; width: 100%;
+  }
+
+  .podium-avatar {
+    border-radius: 50%; object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,.14);
+    display: block;
+  }
+  .podium-avatar-placeholder {
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; color: #fff; flex-shrink: 0;
+    border: 3px solid #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,.14);
+  }
+  .podium-name {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700; color: #111827;
+    text-align: center; text-decoration: none;
+    line-height: 1.25;
+    word-break: break-word;
+  }
+  .podium-name:hover { color: #16a34a; }
+  .podium-pts {
+    font-size: .78rem; font-weight: 600;
+    padding: 4px 14px; border-radius: 50px; text-align: center;
+    white-space: nowrap;
+  }
+
+  /* The coloured podium block at the bottom of each column */
+  .podium-block {
+    width: 100%;
+    border-radius: 12px 12px 0 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+  }
+  .podium-1st .podium-block { height: 110px; background: linear-gradient(160deg,#fef9c3,#fde68a); border: 2px solid #fcd34d; border-bottom: none; }
+  .podium-2nd .podium-block { height: 76px;  background: linear-gradient(160deg,#f3f4f6,#e5e7eb); border: 2px solid #d1d5db; border-bottom: none; }
+  .podium-3rd .podium-block { height: 52px;  background: linear-gradient(160deg,#fef3c7,#fde68a); border: 2px solid #fbbf24; border-bottom: none; opacity:.85; }
+
+  .pts-gold   { background: #fef9c3; color: #92400e; }
+  .pts-silver { background: #f3f4f6; color: #374151; }
+  .pts-bronze { background: #fef3c7; color: #92400e; }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: .68rem; font-weight: 600;
+    letter-spacing: .1em; text-transform: uppercase; color: #16a34a;
+    margin-bottom: 6px;
+  }
+
+  /* ── Table card ── */
+  .table-card {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid #f3f4f6;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  /* ── Leaderboard row ── */
+  .lb-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 24px; border-bottom: 1px solid #f9fafb;
+    transition: background .15s;
+    opacity: 0; transform: translateX(-16px);
+    transition: opacity .45s ease, transform .45s ease, background .15s;
+  }
+  .lb-row.visible { opacity: 1; transform: translateX(0); }
+  .lb-row:last-child { border-bottom: none; }
+  .lb-row:hover { background: #f9fafb; }
+  .lb-row.rank-1 { background: linear-gradient(90deg,#fefce8,#fff); border-left: 4px solid #fcd34d; }
+  .lb-row.rank-2 { background: linear-gradient(90deg,#f9fafb,#fff); border-left: 4px solid #d1d5db; }
+  .lb-row.rank-3 { background: linear-gradient(90deg,#fffbeb,#fff); border-left: 4px solid #fbbf24; }
+  .lb-row.rank-me { background: linear-gradient(90deg,#f0fdf4,#fff); border-left: 4px solid #34d399; }
+
+  .rank-badge {
+    width: 36px; text-align: center; flex-shrink: 0;
+    font-size: 1.2rem; font-weight: 700; color: #6b7280;
+  }
+  .user-avatar {
+    width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
+    border: 2px solid #e5e7eb; flex-shrink: 0;
+  }
+  .user-avatar-placeholder {
+    width: 44px; height: 44px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .95rem; color: #fff;
+    border: 2px solid #a7f3d0; flex-shrink: 0;
+    background: linear-gradient(135deg,#059669,#10b981);
+  }
+  .user-info { flex: 1; min-width: 0; padding: 0 12px; }
+  .user-name {
+    font-weight: 600; color: #111827; font-size: .9rem;
+    text-decoration: none; display: block; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis;
+    transition: color .15s;
+  }
+  .user-name:hover { color: #16a34a; }
+  .user-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+  .user-badge {
+    font-size: .65rem; font-weight: 600; padding: 2px 8px; border-radius: 50px;
+  }
+  .badge-trusted { background: #dbeafe; color: #1d4ed8; }
+  .badge-expert  { background: #ede9fe; color: #7c3aed; }
+  .badge-level   { font-size: .7rem; color: #9ca3af; }
+
+  .user-stats { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  .stat-mini { display: flex; flex-direction: column; align-items: center; }
+  .stat-mini-val { font-size: .78rem; font-weight: 600; color: #374151; }
+  .stat-mini-lbl { font-size: .62rem; color: #9ca3af; }
+
+  .points-display {
+    display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0;
+    padding-left: 16px; border-left: 1px solid #f3f4f6;
+  }
+  .points-num { font-family: 'Playfair Display', serif; font-size: 1.3rem; font-weight: 700; color: #16a34a; }
+  .points-lbl { font-size: .65rem; color: #9ca3af; }
+
+  /* ── How to earn ── */
+  .earn-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  @media (min-width: 640px) { .earn-grid { grid-template-columns: repeat(4, 1fr); } }
+  .earn-card {
+    background: #fff; border-radius: 16px; padding: 22px 16px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    text-align: center;
+    transition: transform .25s, box-shadow .25s;
+  }
+  .earn-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,.08); }
+  .earn-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 12px; font-size: 22px;
+  }
+  .earn-pts {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem; font-weight: 700; margin: 6px 0 4px;
+  }
+
+  /* ── My rank card ── */
+  .my-rank-card {
+    border-radius: 20px;
+    background: linear-gradient(135deg, #0a3d2e 0%, #1a5c42 60%, #0f4a35 100%);
+    padding: 28px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px;
+  }
+
+  /* ── Empty ── */
+  .empty-box {
+    background: #fff; border-radius: 20px;
+    border: 1px solid #f3f4f6;
+    box-shadow: 0 2px 12px rgba(0,0,0,.05);
+    text-align: center; padding: 72px 32px;
+  }
+  .empty-icon-wrap {
+    width: 88px; height: 88px; border-radius: 50%;
+    background: #f0fdf4; border: 2px solid #d1fae5;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px; font-size: 36px;
+  }
+
+  /* ── Fade entrance ── */
+  .fade-up {
+    opacity: 0; transform: translateY(20px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+</style>
+
+<div class="lb-page">
+
+  <!-- ══ HERO ══ -->
+  <section class="hero-lb pt-14 pb-24 px-4 text-center">
+    <div class="max-w-3xl mx-auto relative z-10">
+      <span class="inline-flex items-center px-4 py-1.5 rounded-full bg-white bg-opacity-10 text-green-200 text-xs font-medium mb-6 tracking-wide uppercase">
+        <span class="hero-dot"></span> Community Rankings
+      </span>
+      <h1 class="display-font text-5xl md:text-6xl font-black text-white leading-tight mb-4">
+        Community <em class="text-green-300 not-italic">Leaderboard</em>
+      </h1>
+      <p class="text-green-100 text-lg font-light max-w-xl mx-auto">
+        Discover Sri Lanka's most active explorers. Earn points by adding places, checking in, and contributing to the community.
+      </p>
     </div>
+  </section>
+
+  <div class="max-w-4xl mx-auto px-4 -mt-8 pb-20 relative z-10">
+
+    <!-- ══ STATS BAR ══ -->
+    <div class="stats-bar grid grid-cols-3 mb-8 fade-up">
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-gray-900">
+          {% if top_users %}{{ top_users.0.user.username|truncatechars:12 }}{% else %}—{% endif %}
+        </div>
+        <div class="text-sm text-gray-500 mt-1">Top Explorer</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-green-600">{{ total_users }}</div>
+        <div class="text-sm text-gray-500 mt-1">Active Explorers</div>
+      </div>
+      <div class="stat-item text-center py-8 px-4">
+        <div class="display-font text-3xl font-bold text-gray-900">{{ total_points|default:"0" }}</div>
+        <div class="text-sm text-gray-500 mt-1">Total Points</div>
+      </div>
+    </div>
+
+    {% if top_users %}
+
+      <!-- ══ PODIUM ══ -->
+      <div class="podium-section fade-up" style="transition-delay:.08s">
+        <p class="section-label text-center" style="margin-bottom:24px">Top 3 Explorers</p>
+
+        <!--
+          Layout: 3 columns, each is a flex-col (info on top, block on bottom).
+          align-items:flex-end on the row makes all blocks touch the bottom edge,
+          so taller blocks (1st place) push the info higher — a real podium effect
+          with NO negative positioning or overflow.
+        -->
+        <div class="podium-stage">
+
+          <!-- ── 2nd place ── -->
+          {% if top_users|length >= 2 %}
+          {% with p=top_users.1 %}
+          <div class="podium-col podium-2nd">
+            <div class="podium-info">
+              {% if p.avatar %}
+                <img src="{{ p.avatar.url }}" alt="{{ p.user.username }}" class="podium-avatar" style="width:64px;height:64px;">
+              {% else %}
+                <div class="podium-avatar-placeholder" style="width:64px;height:64px;background:linear-gradient(135deg,#6b7280,#9ca3af);font-size:1.15rem;">{{ p.user.username|first|upper }}</div>
+              {% endif %}
+              <a href="{% url 'places:profile' p.user.username %}" class="podium-name" style="font-size:.92rem;max-width:140px">{{ p.user.username }}</a>
+              <span class="podium-pts pts-silver">{{ p.points }} pts</span>
+            </div>
+            <div class="podium-block">🥈</div>
+          </div>
+          {% endwith %}
+          {% endif %}
+
+          <!-- ── 1st place (tallest block → info floats highest naturally) ── -->
+          {% with p=top_users.0 %}
+          <div class="podium-col podium-1st">
+            <div class="podium-info">
+              {% if p.avatar %}
+                <img src="{{ p.avatar.url }}" alt="{{ p.user.username }}" class="podium-avatar" style="width:80px;height:80px;">
+              {% else %}
+                <div class="podium-avatar-placeholder" style="width:80px;height:80px;background:linear-gradient(135deg,#b45309,#d97706);font-size:1.4rem;">{{ p.user.username|first|upper }}</div>
+              {% endif %}
+              <a href="{% url 'places:profile' p.user.username %}" class="podium-name" style="font-size:1.05rem;max-width:160px">{{ p.user.username }}</a>
+              <span class="podium-pts pts-gold">{{ p.points }} pts</span>
+            </div>
+            <div class="podium-block">🥇</div>
+          </div>
+          {% endwith %}
+
+          <!-- ── 3rd place ── -->
+          {% if top_users|length >= 3 %}
+          {% with p=top_users.2 %}
+          <div class="podium-col podium-3rd">
+            <div class="podium-info">
+              {% if p.avatar %}
+                <img src="{{ p.avatar.url }}" alt="{{ p.user.username }}" class="podium-avatar" style="width:54px;height:54px;">
+              {% else %}
+                <div class="podium-avatar-placeholder" style="width:54px;height:54px;background:linear-gradient(135deg,#92400e,#b45309);font-size:.95rem;">{{ p.user.username|first|upper }}</div>
+              {% endif %}
+              <a href="{% url 'places:profile' p.user.username %}" class="podium-name" style="font-size:.85rem;max-width:130px">{{ p.user.username }}</a>
+              <span class="podium-pts pts-bronze">{{ p.points }} pts</span>
+            </div>
+            <div class="podium-block">🥉</div>
+          </div>
+          {% endwith %}
+          {% endif %}
+
+        </div>
+      </div>
+
+      <!-- ══ FULL TABLE ══ -->
+      <div class="table-card mb-8 fade-up" style="transition-delay:.14s">
+        <div class="table-header">
+          <div>
+            <p class="section-label">Rankings</p>
+            <h2 class="display-font text-2xl font-bold text-gray-900">Top 50 Explorers</h2>
+          </div>
+          <span class="text-xs text-gray-400 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-full">{{ top_users|length }} explorers</span>
+        </div>
+
+        <div id="lb-list">
+          {% for profile in top_users %}
+          <div class="lb-row {% if forloop.counter == 1 %}rank-1{% elif forloop.counter == 2 %}rank-2{% elif forloop.counter == 3 %}rank-3{% elif profile.user == user %}rank-me{% endif %}"
+               style="transition-delay:{{ forloop.counter0 }}0ms">
+            <!-- Rank -->
+            <div class="rank-badge">
+              {% if forloop.counter == 1 %}🥇
+              {% elif forloop.counter == 2 %}🥈
+              {% elif forloop.counter == 3 %}🥉
+              {% else %}<span style="font-size:.85rem">#{{ forloop.counter }}</span>
+              {% endif %}
+            </div>
+
+            <!-- Avatar -->
+            {% if profile.avatar %}
+              <img src="{{ profile.avatar.url }}" alt="{{ profile.user.username }}" class="user-avatar">
+            {% else %}
+              <div class="user-avatar-placeholder">{{ profile.user.username|first|upper }}</div>
+            {% endif %}
+
+            <!-- Info -->
+            <div class="user-info">
+              <a href="{% url 'places:profile' profile.user.username %}" class="user-name">{{ profile.user.username }}</a>
+              <div class="user-meta">
+                <span class="badge-level">Level {{ profile.level }}</span>
+                {% if profile.is_trusted %}
+                  <span class="user-badge badge-trusted"><i class="fas fa-shield-alt" style="font-size:.55rem;margin-right:3px"></i>Trusted</span>
+                {% endif %}
+                {% if profile.is_local_expert %}
+                  <span class="user-badge badge-expert"><i class="fas fa-star" style="font-size:.55rem;margin-right:3px"></i>Expert</span>
+                {% endif %}
+                {% if profile.user == user %}
+                  <span class="user-badge" style="background:#d1fae5;color:#065f46;">You</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Mini stats -->
+            <div class="user-stats hidden sm:flex">
+              <div class="stat-mini" title="Places added">
+                <span class="stat-mini-val">{{ profile.place_count }}</span>
+                <span class="stat-mini-lbl">places</span>
+              </div>
+              <div class="stat-mini" title="Check-ins">
+                <span class="stat-mini-val">{{ profile.user.checkin_set.count }}</span>
+                <span class="stat-mini-lbl">check-ins</span>
+              </div>
+              <div class="stat-mini" title="Comments">
+                <span class="stat-mini-val">{{ profile.user.comment_set.count }}</span>
+                <span class="stat-mini-lbl">comments</span>
+              </div>
+            </div>
+
+            <!-- Points -->
+            <div class="points-display">
+              <span class="points-num">{{ profile.points }}</span>
+              <span class="points-lbl">points</span>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    {% else %}
+      <!-- Empty -->
+      <div class="empty-box fade-up">
+        <div class="empty-icon-wrap">🏆</div>
+        <h3 class="display-font text-3xl font-bold text-gray-900 mb-3">No Rankings Yet</h3>
+        <p class="text-gray-500 mb-8 max-w-sm mx-auto">Be the first to earn points and claim the top spot on the leaderboard!</p>
+        {% if user.is_authenticated %}
+          <a href="{% url 'places:add_place' %}" class="inline-flex items-center gap-2 px-7 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full text-sm transition-all shadow-lg shadow-green-900/20">
+            <i class="fas fa-plus text-sm"></i> Add Your First Place
+          </a>
+        {% else %}
+          <a href="{% url 'login' %}" class="inline-flex items-center gap-2 px-7 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-full text-sm transition-all shadow-lg shadow-green-900/20">
+            <i class="fas fa-sign-in-alt text-sm"></i> Join the Competition
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <!-- ══ HOW TO EARN ══ -->
+    <div class="mb-8 fade-up" style="transition-delay:.2s">
+      <div class="mb-6 text-center">
+        <p class="section-label">Points System</p>
+        <h2 class="display-font text-3xl font-bold text-gray-900">How to Earn Points</h2>
+      </div>
+      <div class="earn-grid">
+        <div class="earn-card">
+          <div class="earn-icon" style="background:#dcfce7"><i class="fas fa-plus text-green-600" style="font-size:20px"></i></div>
+          <h3 class="font-semibold text-gray-900 text-sm">Add Places</h3>
+          <p class="earn-pts text-green-600">+20</p>
+          <p class="text-xs text-gray-400">Submit new places</p>
+        </div>
+        <div class="earn-card">
+          <div class="earn-icon" style="background:#dbeafe"><i class="fas fa-map-pin text-blue-600" style="font-size:20px"></i></div>
+          <h3 class="font-semibold text-gray-900 text-sm">Check In</h3>
+          <p class="earn-pts text-blue-600">+10</p>
+          <p class="text-xs text-gray-400">Visit and check in</p>
+        </div>
+        <div class="earn-card">
+          <div class="earn-icon" style="background:#ede9fe"><i class="fas fa-comment text-purple-600" style="font-size:20px"></i></div>
+          <h3 class="font-semibold text-gray-900 text-sm">Comment</h3>
+          <p class="earn-pts text-purple-600">+5</p>
+          <p class="text-xs text-gray-400">Share experiences</p>
+        </div>
+        <div class="earn-card">
+          <div class="earn-icon" style="background:#fef3c7"><i class="fas fa-check-circle text-yellow-600" style="font-size:20px"></i></div>
+          <h3 class="font-semibold text-gray-900 text-sm">Get Approved</h3>
+          <p class="earn-pts text-yellow-600">+50</p>
+          <p class="text-xs text-gray-400">Approval bonus</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ MY RANK ══ -->
+    {% if user.is_authenticated %}
+    <div class="my-rank-card fade-up" style="transition-delay:.26s">
+      <div>
+        <p class="text-green-300 text-xs font-semibold uppercase tracking-widest mb-2">Your Standing</p>
+        <h3 class="display-font text-2xl font-bold text-white mb-1">Your Current Ranking</h3>
+        {% if user.userprofile %}
+          <p class="text-green-200 text-sm">
+            <span class="text-white font-semibold">{{ user.userprofile.points }} points</span>
+            &nbsp;·&nbsp; Level {{ user.userprofile.level }}
+          </p>
+        {% else %}
+          <p class="text-green-200 text-sm">Start exploring to earn your first points!</p>
+        {% endif %}
+      </div>
+      <div class="text-right">
+        <div class="display-font text-5xl font-black text-white">
+          {% if user_rank %}#{{ user_rank }}{% else %}#?{% endif %}
+        </div>
+        <div class="text-green-300 text-xs mt-1">Your rank</div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
 {% endblock %}
+
 {% block extra_js %}
-    <script>
-    // Add some interactive animations
-    document.addEventListener('DOMContentLoaded', function() {
-        // Animate leaderboard entries
-        const entries = document.querySelectorAll('.divide-y > div');
-        entries.forEach((entry, index) => {
-            entry.style.opacity = '0';
-            entry.style.transform = 'translateX(-20px)';
-            entry.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-            
-            setTimeout(() => {
-                entry.style.opacity = '1';
-                entry.style.transform = 'translateX(0)';
-            }, index * 100);
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Fade-up observer
+  const fadeObs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); fadeObs.unobserve(e.target); } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.fade-up').forEach(el => fadeObs.observe(el));
+
+  // Stagger leaderboard rows
+  const rowObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const rows = document.querySelectorAll('.lb-row');
+        rows.forEach((row, i) => {
+          setTimeout(() => row.classList.add('visible'), i * 50);
         });
+        rowObs.disconnect();
+      }
     });
-    </script>
+  }, { threshold: 0.05 });
+  const list = document.getElementById('lb-list');
+  if (list) rowObs.observe(list);
+});
+</script>
 {% endblock %}

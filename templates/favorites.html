@@ -1,686 +1,332 @@
 {% extends 'base.html' %}
-{% block title %}My Favorites - Expearls{% endblock %}
+{% block title %}My Favourites — Expearls{% endblock %}
+{% block main_class %}pb-24 pt-0{% endblock %}
 {% block content %}
-    {# CSRF token available for JS fetch calls #}
-    {% csrf_token %}
-    <div class="max-w-6xl mx-auto">
-        <!-- Header -->
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                    <i class="fas fa-heart text-red-500 mr-2"></i>
-                    My Favorite Places
-                </h1>
-                <p class="text-gray-600">
-                    {% if favorites %}
-                        You have {{ favorites.count }} favorite places saved
-                    {% else %}
-                        Start building your collection of favorite places
-                    {% endif %}
-                </p>
-            </div>
-            <div class="flex items-center space-x-3">
-                <!-- View Toggle -->
-                <div class="flex bg-gray-100 rounded-lg p-1">
-                    <button id="grid-view"
-                            class="px-3 py-2 rounded-md bg-white shadow-sm text-gray-700"
-                            onclick="toggleView('grid')">
-                        <i class="fas fa-th"></i>
-                    </button>
-                    <button id="list-view"
-                            class="px-3 py-2 rounded-md text-gray-500"
-                            onclick="toggleView('list')">
-                        <i class="fas fa-list"></i>
-                    </button>
-                    <button id="map-view"
-                            class="px-3 py-2 rounded-md text-gray-500"
-                            onclick="toggleView('map')">
-                        <i class="fas fa-map"></i>
-                    </button>
-                </div>
-                <!-- Sort Options -->
-                <select id="sort-favorites"
-                        class="border border-gray-300 rounded-md px-3 py-2 text-sm"
-                        onchange="sortFavorites()">
-                    <option value="recent">Recently Added</option>
-                    <option value="name">Name A-Z</option>
-                    <option value="category">Category</option>
-                    <option value="rating">Highest Rated</option>
-                </select>
-            </div>
-        </div>
-        <!-- Organization Tools -->
-        {% if favorites %}
-            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 mb-2">
-                            <i class="fas fa-folder-open text-blue-600 mr-2"></i>
-                            Organize Your Favorites
-                        </h3>
-                        <p class="text-gray-600 text-sm">Create Trails, plan routes, or export your favorites</p>
-                    </div>
-                    <div class="flex flex-wrap gap-3">
-                        <button class="btn-secondary" onclick="createTrail()">
-                            <i class="fas fa-hiking mr-2"></i> Create Trail
-                        </button>
-                        <button class="btn-secondary" onclick="planRoute()">
-                            <i class="fas fa-route mr-2"></i> Plan Route
-                        </button>
-                        <button class="btn-secondary" onclick="exportFavorites()">
-                            <i class="fas fa-download mr-2"></i> Export
-                        </button>
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-        <!-- Favorites Content -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            <!-- Favorites Display -->
-            <div class="lg:col-span-3">
-                {% if favorites %}
-                    <!-- Grid View -->
-                    <div id="favorites-grid"
-                         class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                        {% for favorite in favorites %}
-                            {% with first_cat=favorite.place.category.first %}
-                                <div class="favorite-item bg-white rounded-lg shadow-lg overflow-hidden card-hover"
-                                     data-place-id="{{ favorite.place.slug }}"
-                                     data-category="{{ first_cat.name|default:'' }}"
-                                     data-name="{{ favorite.place.name }}"
-                                     data-rating="{{ favorite.place.average_rating|default:0 }}"
-                                     data-added="{{ favorite.created_at|date:'c' }}">
-                                    <!-- Place Image -->
-                                    <div class="relative">
-                                        {% if favorite.place.image %}
-                                            <img src="{{ favorite.place.image.url }}"
-                                                 alt="{{ favorite.place.name }}"
-                                                 class="w-full h-48 object-cover">
-                                        {% else %}
-                                            <div class="w-full h-48 bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center text-4xl text-white">
-                                                🏛️
-                                            </div>
-                                        {% endif %}
-                                        <!-- Selection Checkbox -->
-                                        <div class="absolute top-3 left-3">
-                                            <input type="checkbox"
-                                                   class="place-checkbox w-5 h-5 text-green-600 bg-white border-2 border-gray-300 rounded focus:ring-green-500 focus:ring-2"
-                                                   data-slug="{{ favorite.place.slug }}">
-                                        </div>
-                                        <!-- FIX: slug quoted as a JS string -->
-                                        <button class="absolute top-3 right-3 w-10 h-10 bg-white bg-opacity-90 rounded-full flex items-center justify-center text-red-500 hover:bg-opacity-100 transition-all"
-                                                onclick="removeFavorite('{{ favorite.place.slug }}')">
-                                            <i class="fas fa-heart"></i>
-                                        </button>
-                                        <!-- Category Badge -->
-                                        <div class="absolute bottom-3 left-3">
-                                            <span class="bg-white bg-opacity-90 text-gray-800 text-xs font-semibold px-2 py-1 rounded-full">
-                                                {# ManyToMany — display all category names #}
-                                                {% for cat in favorite.place.category.all %}
-                                                    {{ cat.name }}
-                                                    {% if not forloop.last %},{% endif %}
-                                                {% empty %}
-                                                    Uncategorized
-                                                {% endfor %}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    <!-- Place Info -->
-                                    <div class="p-6">
-                                        <h3 class="text-lg font-bold text-gray-900 mb-2 hover:text-green-600 transition-colors">
-                                            <a href="{% url 'places:place_detail' favorite.place.slug %}">{{ favorite.place.name }}</a>
-                                        </h3>
-                                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">{{ favorite.place.description|truncatewords:20 }}</p>
-                                        <!-- Place Stats -->
-                                        <div class="flex items-center justify-between mb-4">
-                                            <div class="flex items-center space-x-3 text-sm text-gray-500">
-                                                {% if favorite.place.average_rating > 0 %}
-                                                    <span class="flex items-center">
-                                                        <i class="fas fa-star text-yellow-500 mr-1"></i>
-                                                        {{ favorite.place.average_rating|floatformat:1 }}
-                                                    </span>
-                                                {% endif %}
-                                                <span class="flex items-center">
-                                                    <i class="fas fa-eye mr-1"></i>
-                                                    {{ favorite.place.checkin_set.count }}
-                                                </span>
-                                            </div>
-                                            <span class="text-xs text-gray-400">Added {{ favorite.created_at|timesince }} ago</span>
-                                        </div>
-                                        <!-- Actions -->
-                                        <div class="flex space-x-2">
-                                            <a href="{% url 'places:place_detail' favorite.place.slug %}"
-                                               class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-2 px-3 rounded-lg text-sm font-medium transition-colors">
-                                                <i class="fas fa-eye mr-1"></i> View
-                                            </a>
-                                            <!-- FIX: quoted lat/lng as numbers are fine but method name was duplicated — now single focusOnMap -->
-                                            <button class="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg text-sm transition-colors"
-                                                    onclick="focusOnMap({{ favorite.place.latitude }}, {{ favorite.place.longitude }})">
-                                                <i class="fas fa-map-marker-alt"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endwith %}
-                        {% endfor %}
-                    </div>
-                    <!-- List View (Hidden by default) -->
-                    <div id="favorites-list" class="space-y-4 hidden">
-                        {% for favorite in favorites %}
-                            {% with first_cat=favorite.place.category.first %}
-                                <div class="favorite-item bg-white rounded-lg shadow-lg p-6 flex items-center space-x-4"
-                                     data-place-id="{{ favorite.place.slug }}"
-                                     data-category="{{ first_cat.name|default:'' }}"
-                                     data-name="{{ favorite.place.name }}"
-                                     data-rating="{{ favorite.place.average_rating|default:0 }}"
-                                     data-added="{{ favorite.created_at|date:'c' }}">
-                                    <!-- Place Image -->
-                                    <div class="flex-shrink-0">
-                                        {% if favorite.place.image %}
-                                            <img src="{{ favorite.place.image.url }}"
-                                                 alt="{{ favorite.place.name }}"
-                                                 class="w-20 h-20 rounded-lg object-cover">
-                                        {% else %}
-                                            <div class="w-20 h-20 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-2xl text-white">
-                                                🏛️
-                                            </div>
-                                        {% endif %}
-                                    </div>
-                                    <!-- Place Info -->
-                                    <div class="flex-1 min-w-0">
-                                        <h3 class="text-lg font-bold text-gray-900 mb-1">
-                                            <a href="{% url 'places:place_detail' favorite.place.slug %}"
-                                               class="hover:text-green-600 transition-colors">
-                                                {{ favorite.place.name }}
-                                            </a>
-                                        </h3>
-                                        <p class="text-gray-600 text-sm mb-2">{{ favorite.place.description|truncatewords:30 }}</p>
-                                        <div class="flex items-center space-x-4 text-sm text-gray-500">
-                                            {# FIX: category is ManyToMany, can't use dynamic Tailwind classes from DB values #}
-                                            <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">
-                                                {% for cat in favorite.place.category.all %}
-                                                    {{ cat.name }}
-                                                    {% if not forloop.last %},{% endif %}
-                                                {% empty %}
-                                                    Uncategorized
-                                                {% endfor %}
-                                            </span>
-                                            {% if favorite.place.average_rating > 0 %}
-                                                <span class="flex items-center">
-                                                    <i class="fas fa-star text-yellow-500 mr-1"></i>
-                                                    {{ favorite.place.average_rating|floatformat:1 }}
-                                                </span>
-                                            {% endif %}
-                                            <span>Added {{ favorite.created_at|timesince }} ago</span>
-                                        </div>
-                                    </div>
-                                    <!-- Actions -->
-                                    <div class="flex-shrink-0 flex items-center space-x-2">
-                                        <a href="{% url 'places:place_detail' favorite.place.slug %}"
-                                           class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-2 px-3 rounded-lg text-sm font-medium transition-colors">
-                                            <i class="fas fa-eye mr-1"></i> View
-                                        </a>
-                                        {# FIX: slug quoted as JS string #}
-                                        <button class="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                                                onclick="removeFavorite('{{ favorite.place.slug }}')">
-                                            <i class="fas fa-heart"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            {% endwith %}
-                        {% endfor %}
-                    </div>
-                {% else %}
-                    <!-- Empty State -->
-                    <div class="text-center py-16">
-                        <div class="max-w-md mx-auto">
-                            <i class="fas fa-heart text-8xl text-gray-300 mb-6"></i>
-                            <h3 class="text-2xl font-bold text-gray-900 mb-4">No Favorites Yet</h3>
-                            <p class="text-gray-600 mb-8">
-                                Start exploring and save places you'd like to visit or remember.
-                                Click the heart icon on any place to add it to your favorites.
-                            </p>
-                            <div class="space-x-4">
-                                <a href="{% url 'places:home' %}"
-                                   class="flex-1 bg-green-600 hover:bg-green-700 text-white text-center py-2 px-3 rounded-lg text-sm font-medium transition-colors">
-                                    <i class="fas fa-search mr-2"></i> Explore Places
-                                </a>
-                                <a href="{% url 'places:trails' %}" class="btn-secondary">
-                                    <i class="fas fa-hiking mr-2"></i> Browse Trails
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-            <!-- Sidebar -->
-            <div class="lg:col-span-1">
-                <!-- Map View -->
-                <div id="favorites-map-container"
-                     class="bg-white rounded-lg shadow-lg p-4 mb-6 hidden">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-map text-green-600 mr-2"></i>
-                        Map View
-                    </h3>
-                    <div id="favorites-map" class="w-full h-64 rounded-lg"></div>
-                </div>
-                <!-- Statistics -->
-                {% if favorites %}
-                    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                            <i class="fas fa-chart-pie text-purple-600 mr-2"></i>
-                            Your Stats
-                        </h3>
-                        <div class="space-y-4">
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Total Favorites</span>
-                                <span class="font-semibold text-gray-900">{{ favorites.count }}</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Most Recent</span>
-                                <span class="font-semibold text-gray-900">{{ favorites.first.created_at|date:"M d" }}</span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-gray-600">Categories</span>
-                                <span class="font-semibold text-gray-900">{{ category_count }}</span>
-                            </div>
-                        </div>
-                    </div>
-                {% endif %}
-                <!-- Quick Actions -->
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                        <i class="fas fa-bolt text-yellow-500 mr-2"></i>
-                        Quick Actions
-                    </h3>
-                    <!-- Selection Info -->
-                    <div id="selection-info" class="text-sm text-gray-600 mb-4"></div>
-                    <!-- Selection Controls -->
-                    <div class="space-y-3 mb-6">
-                        <button id="select-all-btn" class="w-full btn-secondary text-left">
-                            <i class="fas fa-check-square mr-2"></i> Select All
-                        </button>
-                        <button id="clear-selection-btn" class="w-full btn-secondary text-left">
-                            <i class="fas fa-square mr-2"></i> Clear Selection
-                        </button>
-                    </div>
-                    <!-- Organization Tools -->
-                    <div id="quick-actions" class="space-y-3 hidden">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Organization Tools</h4>
-                        <button id="create-trail-btn"
-                                class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg text-sm transition-colors">
-                            <i class="fas fa-hiking mr-2"></i> Create Trail
-                        </button>
-                        <button id="plan-route-btn"
-                                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm transition-colors">
-                            <i class="fas fa-route mr-2"></i> Plan Route
-                        </button>
-                        <button id="export-btn"
-                                class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg text-sm transition-colors">
-                            <i class="fas fa-download mr-2"></i> Export Favorites
-                        </button>
-                        <button id="bulk-remove-btn"
-                                class="w-full bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-lg text-sm transition-colors">
-                            <i class="fas fa-trash mr-2"></i> Remove Selected
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
+{% csrf_token %}
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+.fav-page { font-family:'DM Sans',sans-serif; }
+.display-font { font-family:'Playfair Display',serif; }
+
+/* Scoped hidden — never touches Tailwind global .hidden */
+#favorites-grid.hidden,#favorites-list.hidden,#fav-map-wrap.hidden{display:none!important}
+
+/* Hero */
+.fav-hero{background:linear-gradient(135deg,#5b0a23 0%,#8b1a3a 45%,#be185d 100%);position:relative;overflow:hidden;padding:4rem 2rem 5.5rem;}
+.fav-hero::before{content:'';position:absolute;inset:0;background-image:radial-gradient(circle at 15% 50%,rgba(255,255,255,.05) 0%,transparent 55%),radial-gradient(circle at 85% 20%,rgba(251,113,133,.1) 0%,transparent 50%);}
+.fav-hero::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:70px;background:#f9fafb;clip-path:ellipse(55% 100% at 50% 100%);}
+.hero-dot{width:6px;height:6px;background:#fda4af;border-radius:50%;display:inline-block;margin-right:8px;animation:pulse-dot 2s ease-in-out infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+
+/* Toolbar */
+.fav-toolbar{background:#fff;border-bottom:1px solid rgba(0,0,0,.07);padding:.75rem 2rem;position:sticky;top:64px;z-index:40;box-shadow:0 2px 12px rgba(0,0,0,.04);}
+.fav-toolbar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;}
+.view-group{display:flex;gap:.2rem;background:#f3f4f6;border-radius:10px;padding:3px;}
+.vt-btn{display:flex;align-items:center;gap:.3rem;padding:.35rem .75rem;border-radius:8px;border:none;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;color:#6b7280;transition:all .15s;}
+.vt-btn.active{background:#fff;color:#14532d;box-shadow:0 1px 4px rgba(0,0,0,.1);}
+.sort-select{appearance:none;background:#f3f4f6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2316a34a'/%3E%3C/svg%3E") no-repeat right .6rem center;border:1.5px solid rgba(22,163,74,.2);border-radius:50px;padding:.38rem 1.8rem .38rem .9rem;font-family:'DM Sans',sans-serif;font-size:.78rem;color:#374151;cursor:pointer;outline:none;transition:border-color .15s;}
+.sort-select:focus{border-color:#16a34a;}
+.selection-badge{font-size:.72rem;font-weight:600;background:#fff0f3;color:#be185d;border:1px solid #fecdd3;padding:.3rem .75rem;border-radius:50px;display:none;align-items:center;gap:.3rem;}
+.selection-badge.visible{display:inline-flex;}
+
+/* Body */
+.fav-body{max-width:1200px;margin:0 auto;padding:2.5rem 2rem;display:grid;grid-template-columns:1fr 290px;gap:1.8rem;align-items:start;}
+@media(max-width:1024px){.fav-body{grid-template-columns:1fr;padding:1.5rem 1rem;}}
+
+/* Organise bar */
+.organize-bar{background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,.07);padding:1rem 1.4rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;box-shadow:0 2px 12px rgba(0,0,0,.04);}
+.org-btn{display:inline-flex;align-items:center;gap:.35rem;padding:.38rem .85rem;border-radius:50px;border:1.5px solid rgba(0,0,0,.1);background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.75rem;font-weight:500;color:#6b7280;transition:all .2s;}
+.org-btn:hover{background:#f0fdf4;border-color:#16a34a;color:#15803d;transform:translateY(-1px);box-shadow:0 4px 10px rgba(22,163,74,.12);}
+
+/* Cards */
+#favorites-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(265px,1fr));gap:1.2rem;}
+.fav-card{background:#fff;border-radius:20px;overflow:hidden;border:1px solid rgba(0,0,0,.07);box-shadow:0 2px 8px rgba(0,0,0,.05);transition:transform .25s,box-shadow .25s;position:relative;}
+.fav-card:hover{transform:translateY(-5px);box-shadow:0 18px 45px rgba(0,0,0,.11);}
+.fav-card.selected{outline:2.5px solid #be185d;outline-offset:2px;}
+.fav-card-img{width:100%;height:185px;position:relative;overflow:hidden;}
+.fav-card-img img{width:100%;height:100%;object-fit:cover;transition:transform .45s;}
+.fav-card:hover .fav-card-img img{transform:scale(1.07);}
+.fav-card-img-placeholder{width:100%;height:100%;background:linear-gradient(135deg,#0a3d2e,#16a34a);display:flex;align-items:center;justify-content:center;font-size:3rem;}
+.fav-card-img-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55) 0%,transparent 55%);}
+.card-checkbox-wrap{position:absolute;top:.7rem;left:.7rem;z-index:2;}
+.card-checkbox{width:20px;height:20px;border-radius:6px;cursor:pointer;accent-color:#be185d;}
+.fav-heart-btn{position:absolute;top:.7rem;right:.7rem;z-index:2;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.9);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#be185d;font-size:.85rem;box-shadow:0 2px 8px rgba(0,0,0,.15);transition:transform .2s,background .15s;}
+.fav-heart-btn:hover{transform:scale(1.15);background:#fff;}
+.cat-pill{position:absolute;bottom:.7rem;left:.7rem;z-index:2;background:rgba(255,255,255,.92);color:#14532d;font-size:.62rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase;padding:.2rem .6rem;border-radius:50px;backdrop-filter:blur(4px);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fav-card-body{padding:1.1rem 1.2rem 1.2rem;}
+.fav-card-name{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:#111827;text-decoration:none;display:block;margin-bottom:.3rem;line-height:1.3;transition:color .15s;}
+.fav-card-name:hover{color:#16a34a;}
+.fav-card-desc{font-size:.8rem;line-height:1.65;color:#6b7280;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:.8rem;}
+.fav-card-meta{display:flex;align-items:center;justify-content:space-between;font-size:.72rem;color:#9ca3af;margin-bottom:.8rem;}
+.meta-left{display:flex;align-items:center;gap:.65rem;}
+.rating{display:flex;align-items:center;gap:.2rem;color:#d97706;font-weight:600;}
+.fav-card-actions{display:flex;gap:.5rem;}
+.btn-view-sm{flex:1;background:#15803d;color:#fff;font-size:.75rem;font-weight:600;padding:.45rem 0;border-radius:50px;text-decoration:none;text-align:center;transition:background .15s,transform .15s,box-shadow .15s;letter-spacing:.02em;}
+.btn-view-sm:hover{background:#166534;transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.25);}
+.btn-icon-sm{width:34px;height:34px;border-radius:50%;background:#f0fdf4;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#16a34a;transition:background .15s,color .15s,transform .15s;}
+.btn-icon-sm:hover{background:#15803d;color:#fff;transform:scale(1.1);}
+
+/* List */
+#favorites-list{display:flex;flex-direction:column;gap:.8rem;}
+.fav-list-item{background:#fff;border-radius:16px;border:1px solid rgba(0,0,0,.07);display:flex;align-items:center;gap:1rem;padding:.9rem 1.2rem;box-shadow:0 2px 8px rgba(0,0,0,.04);transition:transform .15s,box-shadow .15s;}
+.fav-list-item:hover{transform:translateX(4px);box-shadow:0 6px 20px rgba(0,0,0,.08);}
+.fav-list-item.selected{outline:2.5px solid #be185d;outline-offset:2px;}
+.list-img{width:70px;height:70px;border-radius:12px;object-fit:cover;flex-shrink:0;}
+.list-img-placeholder{width:70px;height:70px;border-radius:12px;flex-shrink:0;background:linear-gradient(135deg,#0a3d2e,#16a34a);display:flex;align-items:center;justify-content:center;font-size:1.6rem;}
+.list-info{flex:1;min-width:0;}
+.list-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#111827;text-decoration:none;display:block;margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-name:hover{color:#16a34a;}
+.list-desc{font-size:.78rem;color:#6b7280;margin-bottom:.35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.list-pills{display:flex;gap:.3rem;flex-wrap:wrap;}
+.lpill{font-size:.62rem;padding:.15rem .55rem;border-radius:50px;background:#f0fdf4;color:#15803d;font-weight:500;border:1px solid #bbf7d0;}
+.list-actions{display:flex;gap:.4rem;flex-shrink:0;}
+
+/* Map */
+#fav-map-wrap{border-radius:20px;overflow:hidden;border:1px solid rgba(0,0,0,.07);box-shadow:0 2px 8px rgba(0,0,0,.05);}
+#favorites-map{width:100%;height:520px;}
+.leaflet-popup-content-wrapper{border-radius:14px!important;box-shadow:0 8px 32px rgba(0,0,0,.15)!important;padding:0!important;overflow:hidden;}
+.leaflet-popup-content{margin:0!important;min-width:170px;}
+.map-popup{padding:1rem;font-family:'DM Sans',sans-serif;}
+.map-popup-name{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#111827;margin-bottom:.2rem;}
+.map-popup-link{display:inline-flex;align-items:center;gap:.3rem;background:#16a34a;color:#fff;font-size:.72rem;font-weight:600;padding:.3rem .75rem;border-radius:50px;text-decoration:none;margin-top:.5rem;}
+.fav-pin-wrap{display:flex;flex-direction:column;align-items:center;cursor:pointer;transition:transform .15s;}
+.fav-pin-wrap:hover{transform:scale(1.15) translateY(-2px);}
+.fav-pin-body{width:36px;height:36px;background:#be185d;border:3px solid #fff;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(190,24,93,.4);}
+.fav-pin-body span{transform:rotate(45deg);font-size:.9rem;}
+.fav-pin-tail{width:2px;height:6px;background:rgba(190,24,93,.3);}
+
+/* Sidebar */
+.sidebar{display:flex;flex-direction:column;gap:1.2rem;}
+.side-card{background:#fff;border-radius:20px;padding:1.5rem;border:1px solid rgba(0,0,0,.07);box-shadow:0 2px 12px rgba(0,0,0,.05);transition:box-shadow .25s;}
+.side-card:hover{box-shadow:0 8px 28px rgba(0,0,0,.08);}
+.side-card-title{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;color:#111827;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem;}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:.55rem 0;border-bottom:1px solid #f3f4f6;font-size:.84rem;}
+.stat-row:last-child{border-bottom:none;}
+.stat-label{color:#9ca3af;}
+.stat-val{font-weight:700;color:#111827;font-family:'Playfair Display',serif;}
+.action-btn{width:100%;display:flex;align-items:center;gap:.5rem;padding:.55rem 1rem;border-radius:10px;border:1.5px solid #e5e7eb;background:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:.8rem;font-weight:500;color:#6b7280;margin-bottom:.5rem;transition:all .2s;text-align:left;}
+.action-btn:hover{background:#f0fdf4;border-color:#16a34a;color:#15803d;transform:translateX(2px);}
+.action-btn.danger{color:#be185d;border-color:#fecdd3;}
+.action-btn.danger:hover{background:#fff0f3;border-color:#f9a8d4;transform:translateX(2px);}
+.action-btn.primary{background:#15803d;color:#fff;border-color:#15803d;}
+.action-btn.primary:hover{background:#166534;transform:translateY(-1px);box-shadow:0 4px 12px rgba(22,163,74,.25);}
+.action-btn:disabled{opacity:.35;cursor:not-allowed;transform:none!important;box-shadow:none!important;}
+
+/* Empty */
+.empty-state{text-align:center;padding:5rem 2rem;background:#fff;border-radius:24px;border:1px dashed #d1fae5;}
+.empty-heart{font-size:5rem;margin-bottom:1.2rem;opacity:.15;}
+.empty-title{font-family:'Playfair Display',serif;font-size:2rem;color:#111827;margin-bottom:.6rem;}
+.empty-sub{font-size:.9rem;color:#6b7280;max-width:340px;margin:0 auto 1.8rem;line-height:1.7;}
+
+/* Scroll animations */
+.fade-up{opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease;}
+.fade-up.visible{opacity:1;transform:translateY(0);}
+</style>
+
+<div class="fav-page">
+
+<!-- Hero -->
+<section class="fav-hero">
+  <div style="max-width:1200px;margin:0 auto;position:relative;z-index:1;">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1.5rem;">
+      <div>
+        <span style="display:inline-flex;align-items:center;padding:.35rem 1rem;border-radius:50px;background:rgba(255,255,255,.1);color:#fda4af;font-size:.72rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-bottom:1rem;">
+          <span class="hero-dot"></span> Your Personal Collection
+        </span>
+        <h1 class="display-font" style="font-size:clamp(2rem,4vw,2.8rem);color:#fff;font-weight:900;line-height:1.15;margin-bottom:.5rem;">
+          My <em style="color:#fda4af;font-style:normal;">Favourites</em>
+        </h1>
+        <p style="color:rgba(255,255,255,.65);font-size:.9rem;max-width:480px;">
+          {% if favorites %}
+            You have <strong style="color:#fff;">{{ favorites.count }} saved place{% if favorites.count != 1 %}s{% endif %}</strong> — your personal Sri Lanka collection
+          {% else %}
+            Start building your personal collection of places
+          {% endif %}
+        </p>
+      </div>
+      <a href="{% url 'places:home' %}" style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.25);color:#fff;font-size:.82rem;font-weight:500;padding:.6rem 1.2rem;border-radius:50px;text-decoration:none;backdrop-filter:blur(8px);transition:background .2s;">
+        <i class="fas fa-compass"></i> Explore More
+      </a>
     </div>
+  </div>
+</section>
+
+<!-- Toolbar -->
+<div class="fav-toolbar">
+  <div class="fav-toolbar-inner">
+    <div class="view-group">
+      <button class="vt-btn active" id="btn-grid" onclick="toggleView('grid')"><i class="fas fa-th-large"></i> Grid</button>
+      <button class="vt-btn" id="btn-list" onclick="toggleView('list')"><i class="fas fa-list"></i> List</button>
+      <button class="vt-btn" id="btn-map" onclick="toggleView('map')"><i class="fas fa-map"></i> Map</button>
+    </div>
+    <select class="sort-select" id="sort-favorites" onchange="sortFavorites()">
+      <option value="recent">Recently Added</option>
+      <option value="name">Name A–Z</option>
+      <option value="category">Category</option>
+      <option value="rating">Highest Rated</option>
+    </select>
+    <span class="selection-badge" id="selection-badge">
+      <i class="fas fa-check-circle" style="font-size:.65rem"></i>
+      <span id="sel-count-badge">0</span> selected
+    </span>
+  </div>
+</div>
+
+<!-- Body -->
+<div class="fav-body">
+  <div>
+    {% if favorites %}
+
+    <!-- Organise bar -->
+    <div class="organize-bar fade-up">
+      <div>
+        <div style="font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#16a34a;margin-bottom:.15rem;">Organise</div>
+        <div class="display-font" style="font-size:.95rem;color:#111827;">Select places to create trails, plan routes or export</div>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;">
+        <button class="org-btn" id="select-all-btn"><i class="fas fa-check-square"></i> Select All</button>
+        <button class="org-btn" id="clear-sel-btn"><i class="fas fa-square"></i> Clear</button>
+        <button class="org-btn" onclick="createTrail()"><i class="fas fa-hiking"></i> Trail</button>
+        <button class="org-btn" onclick="planRoute()"><i class="fas fa-route"></i> Route</button>
+        <!-- <button class="org-btn" onclick="exportFavorites()"><i class="fas fa-download"></i> Export</button> -->
+      </div>
+    </div>
+
+    <!-- Grid view -->
+    <div id="favorites-grid">
+      {% for favorite in favorites %}{% with place=favorite.place %}
+      <div class="fav-card favorite-item fade-up"
+           style="transition-delay:{{ forloop.counter0 }}0ms"
+           data-place-id="{{ place.slug }}" data-place-slug="{{ place.slug }}"
+           data-place-pk="{{ place.id }}"
+           data-category="{% for c in place.category.all %}{{ c.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
+           data-name="{{ place.name }}" data-rating="{{ place.average_rating|default:0 }}"
+           data-added="{{ favorite.created_at|date:'c' }}">
+        <div class="fav-card-img">
+          {% if place.image %}<img src="{{ place.image.url }}" alt="{{ place.name }}" loading="lazy">
+          {% else %}<div class="fav-card-img-placeholder">🏛️</div>{% endif %}
+          <div class="fav-card-img-overlay"></div>
+          <div class="card-checkbox-wrap"><input type="checkbox" class="card-checkbox place-checkbox" data-slug="{{ place.slug }}"></div>
+          <button class="fav-heart-btn" onclick="removeFavorite('{{ place.slug }}')"><i class="fas fa-heart"></i></button>
+          <div class="cat-pill">{% for cat in place.category.all %}{{ cat.name }}{% if not forloop.last %}, {% endif %}{% empty %}Uncategorized{% endfor %}</div>
+        </div>
+        <div class="fav-card-body">
+          <a href="{% url 'places:place_detail' place.slug %}" class="fav-card-name">{{ place.name }}</a>
+          <p class="fav-card-desc">{{ place.description|truncatewords:18 }}</p>
+          <div class="fav-card-meta">
+            <div class="meta-left">
+              {% if place.average_rating > 0 %}<span class="rating"><i class="fas fa-star" style="font-size:.65rem"></i> {{ place.average_rating|floatformat:1 }}</span>{% endif %}
+              <span><i class="fas fa-eye" style="font-size:.62rem;margin-right:2px"></i> {{ place.checkin_set.count }}</span>
+            </div>
+            <span>{{ favorite.created_at|timesince }} ago</span>
+          </div>
+          <div class="fav-card-actions">
+            <a href="{% url 'places:place_detail' place.slug %}" class="btn-view-sm">View Place <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:3px"></i></a>
+            <button class="btn-icon-sm" onclick="focusOnMap({{ place.latitude }},{{ place.longitude }},'{{ place.name|escapejs }}')"><i class="fas fa-map-pin"></i></button>
+          </div>
+        </div>
+      </div>
+      {% endwith %}{% endfor %}
+    </div>
+
+    <!-- List view -->
+    <div id="favorites-list" class="hidden">
+      {% for favorite in favorites %}{% with place=favorite.place %}
+      <div class="fav-list-item favorite-item fade-up"
+           data-place-id="{{ place.slug }}" data-place-slug="{{ place.slug }}"
+           data-place-pk="{{ place.id }}"
+           data-category="{% for c in place.category.all %}{{ c.name }}{% if not forloop.last %},{% endif %}{% endfor %}"
+           data-name="{{ place.name }}" data-rating="{{ place.average_rating|default:0 }}"
+           data-added="{{ favorite.created_at|date:'c' }}">
+        <input type="checkbox" class="card-checkbox place-checkbox" data-slug="{{ place.slug }}" style="flex-shrink:0;accent-color:#be185d;">
+        {% if place.image %}<img src="{{ place.image.url }}" alt="{{ place.name }}" class="list-img">
+        {% else %}<div class="list-img-placeholder">🏛️</div>{% endif %}
+        <div class="list-info">
+          <a href="{% url 'places:place_detail' place.slug %}" class="list-name">{{ place.name }}</a>
+          <p class="list-desc">{{ place.description|truncatewords:20 }}</p>
+          <div class="list-pills">
+            {% for cat in place.category.all %}<span class="lpill">{{ cat.name }}</span>{% endfor %}
+            {% if place.average_rating > 0 %}<span class="lpill" style="background:#fef3c7;color:#92400e;border-color:#fde68a">★ {{ place.average_rating|floatformat:1 }}</span>{% endif %}
+            <span class="lpill" style="background:#f9fafb;color:#9ca3af;border-color:#e5e7eb">{{ favorite.created_at|timesince }} ago</span>
+          </div>
+        </div>
+        <div class="list-actions">
+          <a href="{% url 'places:place_detail' place.slug %}" class="btn-view-sm" style="padding:.42rem 1rem;white-space:nowrap">View <i class="fas fa-arrow-right" style="font-size:.6rem;margin-left:2px"></i></a>
+          <button class="btn-icon-sm" onclick="removeFavorite('{{ place.slug }}')" style="background:#fff0f3;color:#be185d;"><i class="fas fa-heart"></i></button>
+          <button class="btn-icon-sm" onclick="focusOnMap({{ place.latitude }},{{ place.longitude }},'{{ place.name|escapejs }}')"><i class="fas fa-map-pin"></i></button>
+        </div>
+      </div>
+      {% endwith %}{% endfor %}
+    </div>
+
+    <!-- Map view -->
+    <div id="fav-map-wrap" class="hidden"><div id="favorites-map"></div></div>
+
+    {% else %}
+    <div class="empty-state fade-up">
+      <div class="empty-heart">♥</div>
+      <h3 class="empty-title">No favourites yet</h3>
+      <p class="empty-sub">Start exploring and tap the heart icon on any place to save it here for later.</p>
+      <a href="{% url 'places:home' %}" style="display:inline-flex;align-items:center;gap:.5rem;background:#15803d;color:#fff;padding:.7rem 1.8rem;border-radius:50px;text-decoration:none;font-size:.85rem;font-weight:600;box-shadow:0 4px 14px rgba(22,163,74,.3);">
+        <i class="fas fa-compass"></i> Explore Places
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+  {% if favorites %}
+  <div class="sidebar">
+    <div class="side-card fade-up">
+      <div class="side-card-title"><span style="width:36px;height:36px;background:#f0fdf4;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;">📊</span> Your Stats</div>
+      <div class="stat-row"><span class="stat-label">Total saved</span><span class="stat-val">{{ favorites.count }}</span></div>
+      <div class="stat-row"><span class="stat-label">Last added</span><span class="stat-val">{{ favorites.first.created_at|date:"M d" }}</span></div>
+      <div class="stat-row"><span class="stat-label">Categories</span><span class="stat-val">{{ category_count }}</span></div>
+    </div>
+    <div class="side-card fade-up" style="transition-delay:.1s">
+      <div class="side-card-title"><span style="width:36px;height:36px;background:#fef9c3;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;">⚡</span> Quick Actions</div>
+      <div id="sel-info" style="font-size:.75rem;color:#9ca3af;margin-bottom:.75rem;min-height:1rem;font-style:italic;"></div>
+      <button class="action-btn primary" id="create-trail-btn" onclick="createTrail()"><i class="fas fa-hiking"></i> Create Trail</button>
+      <button class="action-btn" id="plan-route-btn" onclick="planRoute()"><i class="fas fa-route"></i> Plan Route</button>
+      <!-- <button class="action-btn" id="export-btn" onclick="exportFavorites()"><i class="fas fa-download"></i> Export JSON</button> -->
+      <div style="height:1px;background:#f3f4f6;margin:.6rem 0"></div>
+      <button class="action-btn danger" id="bulk-remove-btn" onclick="bulkRemove()"><i class="fas fa-trash"></i> Remove Selected</button>
+    </div>
+    <div class="side-card fade-up" style="transition-delay:.2s;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:#bbf7d0;">
+      <div class="side-card-title" style="margin-bottom:.5rem;"><span style="font-size:1.1rem;">💡</span> Tip</div>
+      <p style="font-size:.78rem;color:#15803d;line-height:1.65;">Select 2+ places and click <strong>Plan Route</strong> to open them in the interactive map planner. Or hit <strong>Create Trail</strong> to bundle them into a shareable adventure.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+</div>
 {% endblock %}
+
 {% block extra_js %}
-    <script>
-    let favoritesMap;
-    let currentView = 'grid';
-
-    // FIX: single source of truth for CSRF token
-    function getCsrfToken() {
-        return document.querySelector('[name=csrfmiddlewaretoken]').value;
-    }
-    
-    // Toggle view between grid, list, and map
-    function toggleView(view) {
-        const gridViewBtn = document.getElementById('grid-view');
-        const listViewBtn = document.getElementById('list-view');
-        const mapViewBtn = document.getElementById('map-view');
-        const favoritesGrid = document.getElementById('favorites-grid');
-        const favoritesList = document.getElementById('favorites-list');
-        const mapContainer = document.getElementById('favorites-map-container');
-
-        if (!favoritesGrid || !favoritesList) return;
-        
-        // Reset button styles
-        [gridViewBtn, listViewBtn, mapViewBtn].forEach(btn => {
-            if (!btn) return;
-            btn.classList.remove('bg-white', 'shadow-sm', 'text-gray-700');
-            btn.classList.add('text-gray-500');
-        });
-        
-        // Hide all views
-        favoritesGrid.classList.add('hidden');
-        favoritesList.classList.add('hidden');
-        if (mapContainer) mapContainer.classList.add('hidden');
-        
-        // Show selected view
-        if (view === 'grid') {
-            gridViewBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
-            gridViewBtn.classList.remove('text-gray-500');
-            favoritesGrid.classList.remove('hidden');
-        } else if (view === 'list') {
-            listViewBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
-            listViewBtn.classList.remove('text-gray-500');
-            favoritesList.classList.remove('hidden');
-        } else if (view === 'map') {
-            mapViewBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-700');
-            mapViewBtn.classList.remove('text-gray-500');
-            if (mapContainer) mapContainer.classList.remove('hidden');
-            
-            if (!favoritesMap) {
-                initFavoritesMap();
-            }
-        }
-        
-        currentView = view;
-    }
-    
-    // Initialize favorites map
-    function initFavoritesMap() {
-        favoritesMap = L.map('favorites-map').setView([7.8731, 80.7718], 8); // Default: Sri Lanka
-        
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(favoritesMap);
-        
-        // Add markers for favorite places
-        const favorites = [
-            {% for favorite in favorites %}
-                {
-                    lat: {{ favorite.place.latitude }},
-                    lng: {{ favorite.place.longitude }},
-                    name: "{{ favorite.place.name|escapejs }}",
-                    url: "{% url 'places:place_detail' favorite.place.slug %}"
-                }{% if not forloop.last %},{% endif %}
-            {% endfor %}
-        ];
-        
-        if (favorites.length > 0) {
-            const bounds = L.latLngBounds();
-            
-            favorites.forEach(favorite => {
-                const marker = L.marker([favorite.lat, favorite.lng])
-                    .bindPopup(`
-                        <div class="text-center">
-                            <h3 class="font-semibold">${favorite.name}</h3>
-                            <a href="${favorite.url}" class="text-green-600 hover:text-green-800 text-sm">View Details →</a>
-                        </div>
-                    `)
-                    .addTo(favoritesMap);
-                
-                bounds.extend([favorite.lat, favorite.lng]);
-            });
-            
-            favoritesMap.fitBounds(bounds, { padding: [20, 20] });
-        }
-    }
-    
-    // FIX: single focusOnMap definition (duplicate removed)
-    function focusOnMap(lat, lng) {
-        if (currentView === 'map' && favoritesMap) {
-            favoritesMap.setView([lat, lng], 15);
-            favoritesMap.eachLayer(layer => {
-                if (layer instanceof L.Marker) {
-                    const markerLatLng = layer.getLatLng();
-                    if (Math.abs(markerLatLng.lat - lat) < 0.0001 && Math.abs(markerLatLng.lng - lng) < 0.0001) {
-                        layer.openPopup();
-                    }
-                }
-            });
-        } else {
-            toggleView('map');
-            setTimeout(() => focusOnMap(lat, lng), 500);
-        }
-    }
-    
-    // Sort favorites
-    function sortFavorites() {
-        const sortBy = document.getElementById('sort-favorites').value;
-
-        // Sort items in both grid and list views
-        ['favorites-grid', 'favorites-list'].forEach(containerId => {
-            const container = document.getElementById(containerId);
-            if (!container) return;
-
-            const items = Array.from(container.querySelectorAll('.favorite-item'));
-            items.sort((a, b) => {
-                switch (sortBy) {
-                    case 'name':
-                        return a.dataset.name.localeCompare(b.dataset.name);
-                    case 'category':
-                        return (a.dataset.category || '').localeCompare(b.dataset.category || '');
-                    case 'rating':
-                        return parseFloat(b.dataset.rating || 0) - parseFloat(a.dataset.rating || 0);
-                    case 'recent':
-                    default:
-                        return new Date(b.dataset.added) - new Date(a.dataset.added);
-                }
-            });
-            items.forEach(item => container.appendChild(item));
-        });
-    }
-    
-    // FIX: removeFavorite now receives slug as a string and uses correct URL pattern
-    function removeFavorite(placeSlug) {
-        if (!confirm('Remove this place from your favorites?')) return;
-
-        fetch(`/place/${placeSlug}/toggle-favorite/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': getCsrfToken(),
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Network response was not ok');
-            return response.text(); // toggle_favorite may return HTML (HTMX) or JSON
-        })
-        .then(() => {
-            // Remove all instances of this place card from both views
-            document.querySelectorAll(`[data-place-id="${placeSlug}"]`).forEach(el => el.remove());
-            location.reload();
-        })
-        .catch(error => {
-            console.error('Error removing favorite:', error);
-            alert('Failed to remove favorite. Please try again.');
-        });
-    }
-    
-    // Organization functions
-    function createTrail() {
-        const selected = getSelectedPlaces();
-        if (selected.length === 0) {
-            alert('Please select some places first to create a trail.');
-            return;
-        }
-        window.location.href = "{% url 'places:create_trail' %}" + `?places=${selected.join(',')}`;
-    }
-    
-    function planRoute() {
-        const selected = getSelectedPlaces();
-        if (selected.length < 2) {
-            alert('Please select at least 2 places to plan a route.');
-            return;
-        }
-        window.location.href = `/route-planner/?destination=${selected.join(',')}`;
-    }
-    
-    function exportFavorites() {
-        const items = Array.from(document.querySelectorAll('.favorite-item')).map(item => ({
-            name: item.dataset.name,
-            category: item.dataset.category,
-            rating: item.dataset.rating,
-            added: item.dataset.added
-        }));
-        
-        const dataStr = JSON.stringify(items, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(dataBlob);
-        link.download = 'my_favorites.json';
-        link.click();
-    }
-    
-    // Selection state
-    let selectedPlaces = [];
-    
-    function selectAll() {
-        selectedPlaces = [];
-        document.querySelectorAll('#favorites-grid .favorite-item').forEach(item => {
-            const placeId = item.dataset.placeId;
-            if (placeId && !selectedPlaces.includes(placeId)) {
-                selectedPlaces.push(placeId);
-                item.classList.add('ring-2', 'ring-green-500');
-                const checkbox = item.querySelector('.place-checkbox');
-                if (checkbox) checkbox.checked = true;
-            }
-        });
-        updateSelectionUI();
-    }
-    
-    function clearSelection() {
-        selectedPlaces = [];
-        document.querySelectorAll('.favorite-item').forEach(item => {
-            item.classList.remove('ring-2', 'ring-green-500');
-            const checkbox = item.querySelector('.place-checkbox');
-            if (checkbox) checkbox.checked = false;
-        });
-        updateSelectionUI();
-    }
-    
-    // FIX: togglePlaceSelection now takes a string slug
-    function togglePlaceSelection(placeId) {
-        const items = document.querySelectorAll(`[data-place-id="${placeId}"]`);
-        const index = selectedPlaces.indexOf(placeId);
-
-        if (index > -1) {
-            selectedPlaces.splice(index, 1);
-            items.forEach(item => {
-                item.classList.remove('ring-2', 'ring-green-500');
-                const checkbox = item.querySelector('.place-checkbox');
-                if (checkbox) checkbox.checked = false;
-            });
-        } else {
-            selectedPlaces.push(placeId);
-            items.forEach(item => {
-                item.classList.add('ring-2', 'ring-green-500');
-                const checkbox = item.querySelector('.place-checkbox');
-                if (checkbox) checkbox.checked = true;
-            });
-        }
-        updateSelectionUI();
-    }
-    
-    function getSelectedPlaces() {
-        return selectedPlaces;
-    }
-    
-    function updateSelectionUI() {
-        const count = selectedPlaces.length;
-        const selectionInfo = document.getElementById('selection-info');
-        const quickActions = document.getElementById('quick-actions');
-        
-        if (selectionInfo) {
-            selectionInfo.textContent = count > 0 ? `${count} place${count !== 1 ? 's' : ''} selected` : '';
-        }
-        
-        if (quickActions) {
-            quickActions.classList.toggle('hidden', count === 0);
-        }
-        
-        const createTrailBtn = document.getElementById('create-trail-btn');
-        const planRouteBtn = document.getElementById('plan-route-btn');
-        const bulkRemoveBtn = document.getElementById('bulk-remove-btn');
-        
-        if (createTrailBtn) {
-            createTrailBtn.disabled = count === 0;
-            createTrailBtn.classList.toggle('opacity-50', count === 0);
-        }
-        if (planRouteBtn) {
-            planRouteBtn.disabled = count < 2;
-            planRouteBtn.classList.toggle('opacity-50', count < 2);
-        }
-        if (bulkRemoveBtn) {
-            bulkRemoveBtn.disabled = count === 0;
-            bulkRemoveBtn.classList.toggle('opacity-50', count === 0);
-        }
-    }
-    
-    function bulkRemove() {
-        if (selectedPlaces.length === 0) {
-            alert('Please select places to remove.');
-            return;
-        }
-        
-        if (!confirm(`Remove ${selectedPlaces.length} place${selectedPlaces.length !== 1 ? 's' : ''} from your favorites?`)) return;
-
-        const csrfToken = getCsrfToken();
-        Promise.all(selectedPlaces.map(slug =>
-            fetch(`/place/${slug}/toggle-favorite/`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': csrfToken,
-                    'Content-Type': 'application/json'
-                }
-            })
-        ))
-        .then(() => location.reload())
-        .catch(error => {
-            console.error('Error removing favorites:', error);
-            alert('Failed to remove some favorites. Please try again.');
-        });
-    }
-    
-    // Initialize page
-    document.addEventListener('DOMContentLoaded', function() {
-        toggleView('grid');
-
-        // FIX: checkbox change handler uses data-slug attribute (string)
-        document.querySelectorAll('.place-checkbox').forEach(checkbox => {
-            checkbox.addEventListener('change', function(e) {
-                e.stopPropagation();
-                const slug = this.dataset.slug;
-                if (slug) togglePlaceSelection(slug);
-            });
-        });
-        
-        // Ctrl+click on card to select
-        document.querySelectorAll('.favorite-item').forEach(item => {
-            item.addEventListener('click', function(e) {
-                if (e.ctrlKey || e.metaKey) {
-                    e.preventDefault();
-                    const placeId = this.dataset.placeId;
-                    if (placeId) togglePlaceSelection(placeId);
-                }
-            });
-        });
-        
-        updateSelectionUI();
-        
-        // Button event listeners
-        const selectAllBtn = document.getElementById('select-all-btn');
-        const clearSelectionBtn = document.getElementById('clear-selection-btn');
-        const createTrailBtn = document.getElementById('create-trail-btn');
-        const planRouteBtn = document.getElementById('plan-route-btn');
-        const exportBtn = document.getElementById('export-btn');
-        const bulkRemoveBtn = document.getElementById('bulk-remove-btn');
-        
-        if (selectAllBtn) selectAllBtn.addEventListener('click', selectAll);
-        if (clearSelectionBtn) clearSelectionBtn.addEventListener('click', clearSelection);
-        if (createTrailBtn) createTrailBtn.addEventListener('click', createTrail);
-        if (planRouteBtn) planRouteBtn.addEventListener('click', planRoute);
-        if (exportBtn) exportBtn.addEventListener('click', exportFavorites);
-        if (bulkRemoveBtn) bulkRemoveBtn.addEventListener('click', bulkRemove);
-    });
-    </script>
+<script>
+let favMap=null,favMarkers=[],selectedPlaces=[],currentView='grid';
+function getCsrf(){return document.querySelector('[name=csrfmiddlewaretoken]').value;}
+function getCatIcon(cats){const c=(cats||'').toLowerCase();if(c.includes('beach')||c.includes('coast'))return'🏖️';if(c.includes('temple')||c.includes('buddhi'))return'🛕';if(c.includes('mountain')||c.includes('hill'))return'⛰️';if(c.includes('waterfall'))return'💧';if(c.includes('forest')||c.includes('jungle'))return'🌿';if(c.includes('museum')||c.includes('heritage'))return'🏛️';if(c.includes('wildlife')||c.includes('safari'))return'🦁';if(c.includes('cave'))return'🕳️';if(c.includes('lake')||c.includes('river'))return'🏞️';return'❤️';}
+function toggleView(view){const grid=document.getElementById('favorites-grid'),list=document.getElementById('favorites-list'),mapWrap=document.getElementById('fav-map-wrap'),btnGrid=document.getElementById('btn-grid'),btnList=document.getElementById('btn-list'),btnMap=document.getElementById('btn-map');[btnGrid,btnList,btnMap].forEach(b=>{if(b)b.classList.remove('active');});if(grid)grid.classList.add('hidden');if(list)list.classList.add('hidden');if(mapWrap)mapWrap.classList.add('hidden');if(view==='grid'){if(grid)grid.classList.remove('hidden');if(btnGrid)btnGrid.classList.add('active');}else if(view==='list'){if(list)list.classList.remove('hidden');if(btnList)btnList.classList.add('active');}else{if(mapWrap)mapWrap.classList.remove('hidden');if(btnMap)btnMap.classList.add('active');if(!favMap)initFavMap();else setTimeout(()=>favMap.invalidateSize(),100);}currentView=view;}
+function initFavMap(){favMap=L.map('favorites-map').setView([7.8731,80.7718],8);L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{attribution:'© OpenStreetMap © CARTO',subdomains:'abcd',maxZoom:19}).addTo(favMap);const favs=[{% for favorite in favorites %}{lat:{{favorite.place.latitude}},lng:{{favorite.place.longitude}},name:"{{favorite.place.name|escapejs}}",cats:"{% for c in favorite.place.category.all %}{{c.name}} {% endfor %}",url:"{% url 'places:place_detail' favorite.place.slug %}"}{% if not forloop.last %},{% endif %}{% endfor %}];if(!favs.length)return;const bounds=L.latLngBounds();favs.forEach(f=>{const icon=getCatIcon(f.cats);const pinHtml=`<div class="fav-pin-wrap" title="${f.name}"><div class="fav-pin-body"><span>${icon}</span></div><div class="fav-pin-tail"></div></div>`;const leafIcon=L.divIcon({html:pinHtml,className:'',iconSize:[42,52],iconAnchor:[21,52],popupAnchor:[0,-56]});const popup=`<div class="map-popup"><div style="font-size:1.4rem;margin-bottom:.3rem">${icon}</div><div class="map-popup-name">${f.name}</div><div style="font-size:.7rem;color:#6b7280;margin-bottom:.1rem">${f.cats}</div><a class="map-popup-link" href="${f.url}">View Place <i class="fas fa-arrow-right" style="font-size:.55rem"></i></a></div>`;const m=L.marker([f.lat,f.lng],{icon:leafIcon}).bindPopup(popup,{maxWidth:200}).addTo(favMap);favMarkers.push({marker:m,lat:f.lat,lng:f.lng});bounds.extend([f.lat,f.lng]);});favMap.fitBounds(bounds,{padding:[30,30]});}
+function focusOnMap(lat,lng,name){toggleView('map');setTimeout(()=>{favMap.setView([lat,lng],15);favMarkers.forEach(m=>{if(Math.abs(m.lat-lat)<0.0001&&Math.abs(m.lng-lng)<0.0001)m.marker.openPopup();});},150);}
+function sortFavorites(){const by=document.getElementById('sort-favorites').value;['favorites-grid','favorites-list'].forEach(id=>{const c=document.getElementById(id);if(!c)return;const items=Array.from(c.querySelectorAll('.favorite-item'));items.sort((a,b)=>{if(by==='name')return a.dataset.name.localeCompare(b.dataset.name);if(by==='category')return(a.dataset.category||'').localeCompare(b.dataset.category||'');if(by==='rating')return parseFloat(b.dataset.rating||0)-parseFloat(a.dataset.rating||0);return new Date(b.dataset.added)-new Date(a.dataset.added);});items.forEach(i=>c.appendChild(i));});}
+function togglePlaceSelection(slug){const idx=selectedPlaces.indexOf(slug);const cards=document.querySelectorAll(`[data-place-slug="${slug}"]`);if(idx>-1){selectedPlaces.splice(idx,1);cards.forEach(c=>{c.classList.remove('selected');c.querySelectorAll('.place-checkbox').forEach(cb=>cb.checked=false);});}else{selectedPlaces.push(slug);cards.forEach(c=>{c.classList.add('selected');c.querySelectorAll('.place-checkbox').forEach(cb=>cb.checked=true);});}updateSelUI();}
+function selectAll(){selectedPlaces=[];document.querySelectorAll('#favorites-grid .favorite-item').forEach(c=>{const s=c.dataset.placeSlug;if(s&&!selectedPlaces.includes(s))selectedPlaces.push(s);c.classList.add('selected');c.querySelectorAll('.place-checkbox').forEach(cb=>cb.checked=true);});updateSelUI();}
+function clearSel(){selectedPlaces=[];document.querySelectorAll('.favorite-item').forEach(c=>{c.classList.remove('selected');c.querySelectorAll('.place-checkbox').forEach(cb=>cb.checked=false);});updateSelUI();}
+function updateSelUI(){const n=selectedPlaces.length;const badge=document.getElementById('selection-badge');const info=document.getElementById('sel-info');const cnt=document.getElementById('sel-count-badge');if(badge){badge.classList.toggle('visible',n>0);if(cnt)cnt.textContent=n;}if(info)info.textContent=n>0?`${n} place${n!==1?'s':''} selected`:'';const trailBtn=document.getElementById('create-trail-btn');const routeBtn=document.getElementById('plan-route-btn');const removeBtn=document.getElementById('bulk-remove-btn');if(trailBtn)trailBtn.disabled=n===0;if(routeBtn)routeBtn.disabled=n<2;if(removeBtn)removeBtn.disabled=n===0;}
+function removeFavorite(slug){if(!confirm('Remove this place from your favourites?'))return;fetch(`/place/${slug}/toggle-favorite/`,{method:'POST',headers:{'X-CSRFToken':getCsrf(),'Content-Type':'application/json'}}).then(r=>{if(r.ok)location.reload();else throw new Error();}).catch(()=>alert('Failed to remove. Please try again.'));}
+function bulkRemove(){if(!selectedPlaces.length)return;if(!confirm(`Remove ${selectedPlaces.length} place${selectedPlaces.length!==1?'s':''} from favourites?`))return;Promise.all(selectedPlaces.map(s=>fetch(`/place/${s}/toggle-favorite/`,{method:'POST',headers:{'X-CSRFToken':getCsrf()}}))).then(()=>location.reload()).catch(()=>alert('Some removals failed.'));}
+function createTrail(){if(!selectedPlaces.length){alert('Select some places first.');return;}window.location.href="{% url 'places:create_trail' %}"+'?places='+selectedPlaces.join(',');}
+function planRoute(){if(selectedPlaces.length<2){alert('Select at least 2 places.');return;}window.location.href='/route-planner/?destination='+selectedPlaces.join(',');}
+// function exportFavorites(){const items=Array.from(document.querySelectorAll('#favorites-grid .favorite-item')).map(el=>({slug:el.dataset.placeSlug,name:el.dataset.name,category:el.dataset.category,rating:el.dataset.rating,added:el.dataset.added}));if(!items.length){alert('No favourites to export.');return;}const blob=new Blob([JSON.stringify(items,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='expearls_favourites.json';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(a.href);}
+document.addEventListener('DOMContentLoaded',()=>{
+  toggleView('grid');updateSelUI();
+  const observer=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('visible');observer.unobserve(e.target);}});},{threshold:.08});
+  document.querySelectorAll('.fade-up').forEach(el=>observer.observe(el));
+  document.querySelectorAll('.place-checkbox').forEach(cb=>{cb.addEventListener('change',e=>{e.stopPropagation();if(cb.dataset.slug)togglePlaceSelection(cb.dataset.slug);});});
+  document.querySelectorAll('.favorite-item').forEach(item=>{item.addEventListener('click',e=>{if(e.ctrlKey||e.metaKey){e.preventDefault();togglePlaceSelection(item.dataset.placeSlug);}});});
+  const selAll=document.getElementById('select-all-btn');const clrSel=document.getElementById('clear-sel-btn');
+  if(selAll)selAll.addEventListener('click',selectAll);if(clrSel)clrSel.addEventListener('click',clearSel);
+});
+</script>
 {% endblock %}
