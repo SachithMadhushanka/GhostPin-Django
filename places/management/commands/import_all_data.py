@@ -26,6 +26,7 @@ from places.models import (
     Place, Category,
     Badge, Challenge,
     Trail, TrailPlace,
+    ExpertArea,
 )
 
 # ---------------------------
@@ -53,6 +54,7 @@ SHEET_BADGES       = 'Badges'
 SHEET_CHALLENGES   = 'Challenges'
 SHEET_TRAILS       = 'Trails'
 SHEET_TRAIL_PLACES = 'Trail_Places'
+SHEET_EXPERT_AREAS = 'Expert_Areas'
 
 VALID_DIFFICULTIES = {'easy', 'moderate', 'challenging'}
 VALID_STATUSES     = {'approved', 'pending', 'rejected'}
@@ -61,7 +63,7 @@ VALID_BADGE_CATS   = {'explorer', 'contributor', 'social', 'special'}
 
 # ============================================================
 class Command(BaseCommand):
-    help = "Import EVERYTHING (places, categories, badges, challenges, trails)"
+    help = "Import EVERYTHING (places, categories, badges, challenges, trails, expert areas)"
 
     def add_arguments(self, parser):
         parser.add_argument('--file',         default='data.xlsx')
@@ -90,6 +92,7 @@ class Command(BaseCommand):
 
         # ORDER MATTERS: categories before places, trails before trail_places
         self.import_categories(xls, dry_run)
+        self.import_expert_areas(xls, dry_run)
         self.import_places(xls, user, images_dir, update, dry_run)
         self.import_badges(xls, badge_images, dry_run)
         self.import_challenges(xls, dry_run)
@@ -151,6 +154,44 @@ class Command(BaseCommand):
 
         if not dry_run:
             self.stdout.write(f"  Categories: {created_count} created.")
+
+    # ============================================================
+    # EXPERT AREAS
+    # ============================================================
+
+    def import_expert_areas(self, xls, dry_run):
+        if SHEET_EXPERT_AREAS not in xls.sheet_names:
+            self.stdout.write(self.style.WARNING(
+                f"Sheet '{SHEET_EXPERT_AREAS}' not found — skipping expert areas."
+            ))
+            return
+
+        df = pd.read_excel(xls, SHEET_EXPERT_AREAS)
+        upserted_count = 0
+
+        for i, row in df.iterrows():
+            name = self.clean(row.get('name'))
+            if not name:
+                self.stderr.write(f"  [EXPERT_AREA] Row {i}: missing name — skipped.")
+                continue
+
+            if dry_run:
+                self.stdout.write(f"  [EXPERT_AREA] {name}")
+                continue
+
+            try:
+                ExpertArea.objects.update_or_create(
+                    name=name,
+                    defaults={
+                        'description': self.clean(row.get('description'), ''),
+                    }
+                )
+                upserted_count += 1
+            except Exception as e:
+                self.stderr.write(f"  [EXPERT_AREA] Row {i} '{name}': error — {e}")
+
+        if not dry_run:
+            self.stdout.write(f"  Expert Areas: {upserted_count} upserted.")
 
     # ============================================================
     # PLACES
@@ -217,7 +258,10 @@ class Command(BaseCommand):
                     )
                     continue
 
-                place, created = Place.objects.get_or_create(name=name)
+                place, created = Place.objects.get_or_create(
+                    name=name,
+                    defaults={'created_by': user}
+                )
 
                 if not created and not update:
                     skipped_count += 1
@@ -341,10 +385,6 @@ class Command(BaseCommand):
                 )
 
                 # ── Badge image ──────────────────────────────────────────
-                # The xlsx 'image' column holds the badge name (e.g. "First Step").
-                # Append .jpg to build the filename: "First Step.jpg"
-                # Skip if badge already has an image to avoid re-uploading on
-                # every --update run. Delete badge.image in admin to force refresh.
                 img_raw = self.clean(row.get('image'))
                 if img_raw and not badge.image:
                     img_filename = img_raw if '.' in img_raw else f"{img_raw}.jpg"
@@ -403,7 +443,6 @@ class Command(BaseCommand):
                     )
                     continue
 
-                # Make timezone-aware when USE_TZ=True is active
                 if timezone.is_naive(start_date):
                     start_date = timezone.make_aware(start_date)
                 if timezone.is_naive(end_date):
@@ -466,7 +505,7 @@ class Command(BaseCommand):
         for i, row in df.iterrows():
             name = self.clean(row.get('name'))
             if not name:
-                continue  # blank rows — skip silently
+                continue
 
             try:
                 created_by_username = self.clean(row.get('created_by'))
