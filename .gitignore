@@ -16,3 +16,4 @@ staticfiles/
 *.pyd
 db.sqlite3
 media/
+pasword.txt

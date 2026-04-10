@@ -171,8 +171,8 @@ class Place(models.Model):
     slug               = models.SlugField(max_length=250, unique=True, blank=True)
     description        = models.TextField()
     legends_stories    = models.TextField(blank=True)
-    latitude           = models.FloatField()
-    longitude          = models.FloatField()
+    latitude           = models.FloatField(null=True, blank=True, default=0)
+    longitude          = models.FloatField(null=True, blank=True, default=0)
     image              = models.ImageField(
         upload_to=place_image_upload_to, max_length=300, null=True, blank=True
     )
