@@ -1,7 +1,7 @@
 {
-  "name": "RoamLk - Explore Historical Places",
-  "short_name": "RoamLk",
-  "description": "Discover and explore historical places around the world",
+  "name": "Expearls - Explore Historical Places",
+  "short_name": "Expearls",
+  "description": "Discover and explore places around the world",
   "start_url": "/",
   "display": "standalone",
   "theme_color": "#4CAF50",
