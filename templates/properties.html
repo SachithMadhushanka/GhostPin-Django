@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hotels & Restaurants — Expearls{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+
+  <!-- Hero -->
+  <div class="bg-gradient-to-br from-amber-800 to-orange-700 text-white py-16 px-4">
+    <div class="max-w-5xl mx-auto text-center">
+      <p class="text-amber-300 text-sm font-semibold uppercase tracking-widest mb-2">Stay & Dine</p>
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">Where to <em class="italic font-light">Stay & Eat</em></h1>
+      <p class="text-amber-100 text-lg max-w-xl mx-auto">Handpicked hotels, guesthouses, and restaurants across Sri Lanka — curated by local explorers.</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="max-w-5xl mx-auto px-4 -mt-6">
+    <form method="get" class="bg-white rounded-2xl shadow-md p-4 flex flex-col sm:flex-row gap-3">
+      <input type="text" name="q" value="{{ search }}" placeholder="Search by name or location..."
+        class="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+      <select name="type" class="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <option value="">All Types</option>
+        {% for val, label in type_choices %}
+          <option value="{{ val }}" {% if selected_type == val %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select name="price" class="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500">
+        <option value="">Any Price</option>
+        {% for val, label in price_choices %}
+          <option value="{{ val }}" {% if selected_price == val %}selected{% endif %}>{{ val }} — {{ label }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="bg-amber-700 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:bg-amber-800 transition">Search</button>
+    </form>
+  </div>
+
+  <!-- Type pills -->
+  <div class="max-w-5xl mx-auto px-4 mt-4 flex flex-wrap gap-2">
+    <a href="?" class="text-xs px-4 py-1.5 rounded-full border font-medium transition {% if not selected_type %}bg-amber-700 text-white border-amber-700{% else %}bg-white text-gray-600 border-gray-200 hover:border-amber-400{% endif %}">All</a>
+    {% for val, label in type_choices %}
+      <a href="?type={{ val }}" class="text-xs px-4 py-1.5 rounded-full border font-medium transition
+        {% if selected_type == val %}bg-amber-700 text-white border-amber-700{% else %}bg-white text-gray-600 border-gray-200 hover:border-amber-400{% endif %}">
+        {{ label }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <!-- Properties Grid -->
+  <div class="max-w-5xl mx-auto px-4 py-10">
+    {% if properties %}
+      <p class="text-sm text-gray-500 mb-6">{{ properties.paginator.count }} propert{{ properties.paginator.count|pluralize:"y,ies" }}</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for prop in properties %}
+        <a href="{% url 'places:property_detail' prop.slug %}" class="block group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition">
+          <!-- Image -->
+          {% if prop.cover_image %}
+            <img src="{{ prop.cover_image.url }}" alt="{{ prop.name }}" class="w-full h-44 object-cover group-hover:scale-105 transition duration-300">
+          {% else %}
+            <div class="w-full h-44 bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-5xl">
+              {% if prop.property_type == 'restaurant' %}🍽️
+              {% elif prop.property_type == 'cafe' %}☕
+              {% elif prop.property_type == 'resort' %}🌴
+              {% elif prop.property_type == 'guesthouse' %}🏡
+              {% else %}🏨{% endif %}
+            </div>
+          {% endif %}
+
+          <div class="p-5">
+            <div class="flex items-start justify-between mb-1 gap-2">
+              <h3 class="font-bold text-gray-900 text-base leading-tight">{{ prop.name }}</h3>
+              <span class="shrink-0 text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">{{ prop.get_property_type_display }}</span>
+            </div>
+            <p class="text-xs text-gray-500 mb-2">📍 {{ prop.address }}</p>
+
+            {% if prop.average_rating %}
+              <div class="flex items-center gap-1 mb-2">
+                <span class="text-yellow-400 text-sm">★</span>
+                <span class="text-sm font-semibold text-gray-700">{{ prop.average_rating }}</span>
+                <span class="text-xs text-gray-400">({{ prop.reviews.count }})</span>
+              </div>
+            {% endif %}
+
+            <div class="flex items-center justify-between mt-3">
+              <span class="text-lg font-bold text-amber-700">{{ prop.price_range }}</span>
+              <span class="text-xs text-amber-700 font-semibold">View Details →</span>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+
+      <!-- Pagination -->
+      {% if properties.has_other_pages %}
+        <div class="flex justify-center gap-2 mt-10">
+          {% if properties.has_previous %}
+            <a href="?page={{ properties.previous_page_number }}&type={{ selected_type }}&price={{ selected_price }}&q={{ search }}"
+              class="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-100 transition">← Previous</a>
+          {% endif %}
+          <span class="px-4 py-2 text-sm bg-amber-700 text-white rounded-xl font-semibold">
+            {{ properties.number }} / {{ properties.paginator.num_pages }}
+          </span>
+          {% if properties.has_next %}
+            <a href="?page={{ properties.next_page_number }}&type={{ selected_type }}&price={{ selected_price }}&q={{ search }}"
+              class="px-4 py-2 text-sm border border-gray-200 rounded-xl hover:bg-gray-100 transition">Next →</a>
+          {% endif %}
+        </div>
+      {% endif %}
+
+    {% else %}
+      <div class="text-center py-20">
+        <div class="text-6xl mb-4">🏨</div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">No properties found</h3>
+        <p class="text-gray-500">Try adjusting your search filters.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

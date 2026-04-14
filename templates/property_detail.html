@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ property.name }} — Expearls{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+
+  <!-- Cover Image -->
+  {% if property.cover_image %}
+    <div class="w-full h-72 md:h-96 overflow-hidden">
+      <img src="{{ property.cover_image.url }}" alt="{{ property.name }}" class="w-full h-full object-cover">
+    </div>
+  {% else %}
+    <div class="w-full h-48 bg-gradient-to-br from-amber-100 to-orange-100 flex items-center justify-center text-7xl">
+      {% if property.property_type == 'restaurant' %}🍽️{% elif property.property_type == 'cafe' %}☕{% elif property.property_type == 'resort' %}🌴{% elif property.property_type == 'guesthouse' %}🏡{% else %}🏨{% endif %}
+    </div>
+  {% endif %}
+
+  <div class="max-w-5xl mx-auto px-4 py-8">
+    <a href="{% url 'places:property_list' %}" class="inline-flex items-center gap-1 text-sm text-amber-700 hover:underline mb-6">
+      ← Back to Properties
+    </a>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+      <!-- Main Content -->
+      <div class="md:col-span-2 space-y-6">
+
+        <!-- Header -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <div class="flex items-start justify-between gap-4 mb-3">
+            <div>
+              <span class="text-xs bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-medium">{{ property.get_property_type_display }}</span>
+              <h1 class="text-2xl font-bold text-gray-900 mt-2">{{ property.name }}</h1>
+              <p class="text-sm text-gray-500 mt-1">📍 {{ property.address }}</p>
+            </div>
+            <span class="text-2xl font-bold text-amber-700 shrink-0">{{ property.price_range }}</span>
+          </div>
+
+          {% if property.average_rating %}
+            <div class="flex items-center gap-2 mb-3">
+              <div class="flex">
+                {% for i in "12345" %}
+                  <span class="{% if forloop.counter <= property.average_rating %}text-yellow-400{% else %}text-gray-200{% endif %} text-lg">★</span>
+                {% endfor %}
+              </div>
+              <span class="text-sm font-semibold text-gray-700">{{ property.average_rating }} / 5</span>
+              <span class="text-xs text-gray-400">({{ reviews.count }} review{{ reviews.count|pluralize }})</span>
+            </div>
+          {% endif %}
+
+          {% if property.description %}
+            <p class="text-gray-600 leading-relaxed">{{ property.description }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Gallery -->
+        {% if images %}
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h2 class="text-lg font-bold text-gray-900 mb-4">Gallery</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {% for img in images %}
+                <img src="{{ img.image.url }}" alt="Photo" class="rounded-xl h-32 w-full object-cover hover:opacity-90 transition cursor-pointer">
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- Reviews -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+          <h2 class="text-lg font-bold text-gray-900 mb-4">Reviews</h2>
+
+          {% if user.is_authenticated %}
+            <div class="bg-gray-50 rounded-xl p-4 mb-6 border border-gray-100">
+              <p class="text-sm font-semibold text-gray-700 mb-3">
+                {% if user_review %}Edit your review{% else %}Leave a review{% endif %}
+              </p>
+              <form method="post">
+                {% csrf_token %}
+                <div class="flex gap-2 mb-3">
+                  {% for i in "12345" %}
+                    <label class="cursor-pointer">
+                      <input type="radio" name="rating" value="{{ forloop.counter }}" class="hidden"
+                        {% if user_review and user_review.rating == forloop.counter %}checked{% endif %}>
+                      <span class="text-2xl {% if user_review and user_review.rating >= forloop.counter %}text-yellow-400{% else %}text-gray-300{% endif %} hover:text-yellow-400 transition">★</span>
+                    </label>
+                  {% endfor %}
+                </div>
+                <textarea name="comment" rows="3" placeholder="Share your experience..."
+                  class="w-full border border-gray-200 rounded-xl p-3 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 mb-3 resize-none">{% if user_review %}{{ user_review.comment }}{% endif %}</textarea>
+                <button type="submit" class="bg-amber-700 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:bg-amber-800 transition">
+                  {% if user_review %}Update{% else %}Submit Review{% endif %}
+                </button>
+              </form>
+            </div>
+          {% endif %}
+
+          {% if reviews %}
+            <div class="space-y-4">
+              {% for review in reviews %}
+                <div class="border-b border-gray-100 pb-4 last:border-0">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="font-semibold text-sm text-gray-800">{{ review.user.get_full_name|default:review.user.username }}</span>
+                    <span class="text-xs text-gray-400">{{ review.created_at|date:"M d, Y" }}</span>
+                  </div>
+                  <div class="flex mb-1">
+                    {% for i in "12345" %}
+                      <span class="{% if forloop.counter <= review.rating %}text-yellow-400{% else %}text-gray-200{% endif %} text-sm">★</span>
+                    {% endfor %}
+                  </div>
+                  {% if review.comment %}<p class="text-sm text-gray-600">{{ review.comment }}</p>{% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p class="text-sm text-gray-400 text-center py-6">No reviews yet. Be the first!</p>
+          {% endif %}
+        </div>
+
+      </div>
+
+      <!-- Sidebar -->
+      <div class="md:col-span-1 space-y-4">
+        <!-- Contact Info -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-3 text-sm">
+          <h3 class="font-bold text-gray-900">Contact & Info</h3>
+          {% if property.phone %}
+            <div class="flex items-center gap-2 text-gray-700">
+              <span class="text-amber-600">📞</span>
+              <a href="tel:{{ property.phone }}" class="text-amber-700 hover:underline">{{ property.phone }}</a>
+            </div>
+          {% endif %}
+          {% if property.website %}
+            <div class="flex items-center gap-2 text-gray-700">
+              <span class="text-amber-600">🌐</span>
+              <a href="{{ property.website }}" target="_blank" rel="noopener" class="text-amber-700 hover:underline truncate">Visit Website</a>
+            </div>
+          {% endif %}
+          {% if property.latitude and property.longitude %}
+            <div class="flex items-center gap-2 text-gray-700">
+              <span class="text-amber-600">🗺️</span>
+              <a href="https://maps.google.com/?q={{ property.latitude }},{{ property.longitude }}" target="_blank" class="text-amber-700 hover:underline">Open in Maps</a>
+            </div>
+          {% endif %}
+          <div class="pt-2 border-t border-gray-100">
+            <p class="text-xs text-gray-400">Price range</p>
+            <p class="text-xl font-bold text-amber-700">{{ property.price_range }}
+              <span class="text-xs font-normal text-gray-500">— {{ property.get_price_range_display }}</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Map placeholder -->
+        {% if property.latitude and property.longitude %}
+          <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <iframe
+              width="100%" height="180" style="border:0" loading="lazy" allowfullscreen
+              src="https://maps.google.com/maps?q={{ property.latitude }},{{ property.longitude }}&z=15&output=embed">
+            </iframe>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

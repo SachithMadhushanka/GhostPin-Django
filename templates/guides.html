@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Local Guides — Expearls{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-gray-50">
+
+  <!-- Hero -->
+  <div class="bg-gradient-to-br from-green-800 to-teal-700 text-white py-16 px-4">
+    <div class="max-w-5xl mx-auto text-center">
+      <p class="text-green-300 text-sm font-semibold uppercase tracking-widest mb-2">Expert Local Guides</p>
+      <h1 class="text-4xl md:text-5xl font-bold mb-4">Explore with the <em class="italic font-light">Locals</em></h1>
+      <p class="text-green-100 text-lg max-w-xl mx-auto">Certified Sri Lankan guides who know every hidden waterfall, ancient ruin, and jungle path.</p>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="max-w-5xl mx-auto px-4 -mt-6">
+    <form method="get" class="bg-white rounded-2xl shadow-md p-4 flex flex-col sm:flex-row gap-3">
+      <input
+        type="text" name="q" value="{{ search }}"
+        placeholder="Search guides by name, language..."
+        class="flex-1 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+      >
+      <select name="specialty" class="border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500">
+        <option value="">All Specialties</option>
+        {% for area in specialties %}
+          <option value="{{ area.name }}" {% if specialty == area.name %}selected{% endif %}>{{ area.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="bg-green-700 text-white px-6 py-2 rounded-xl text-sm font-semibold hover:bg-green-800 transition">Search</button>
+    </form>
+  </div>
+
+  <!-- Guide Cards -->
+  <div class="max-w-5xl mx-auto px-4 py-10">
+    {% if guides %}
+      <p class="text-sm text-gray-500 mb-6">{{ guides|length }} guide{{ guides|length|pluralize }} available</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for guide in guides %}
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition group">
+          <!-- Avatar -->
+          <div class="bg-gradient-to-br from-green-100 to-teal-100 h-32 flex items-center justify-center">
+            {% if guide.user.userprofile and guide.user.userprofile.avatar %}
+              <img src="{{ guide.user.userprofile.avatar.url }}" alt="{{ guide.user.username }}" class="w-20 h-20 rounded-full object-cover border-4 border-white shadow">
+            {% else %}
+              <div class="w-20 h-20 rounded-full bg-green-700 flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow">
+                {{ guide.user.username|slice:":1"|upper }}
+              </div>
+            {% endif %}
+          </div>
+          <div class="p-5">
+            <div class="flex items-center justify-between mb-1">
+              <h3 class="font-bold text-gray-900 text-base">{{ guide.user.get_full_name|default:guide.user.username }}</h3>
+              {% if guide.is_certified %}
+                <span class="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-medium">✓ Certified</span>
+              {% endif %}
+            </div>
+            <p class="text-xs text-gray-500 mb-2">{{ guide.experience_years }} yr{{ guide.experience_years|pluralize }} experience</p>
+            {% if guide.average_rating %}
+              <div class="flex items-center gap-1 mb-2">
+                <span class="text-yellow-400 text-sm">★</span>
+                <span class="text-sm font-semibold text-gray-700">{{ guide.average_rating }}</span>
+                <span class="text-xs text-gray-400">({{ guide.reviews.count }} review{{ guide.reviews.count|pluralize }})</span>
+              </div>
+            {% endif %}
+            {% if guide.languages %}
+              <p class="text-xs text-gray-500 mb-3"><span class="font-medium">Languages:</span> {{ guide.languages }}</p>
+            {% endif %}
+            {% if guide.bio %}
+              <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ guide.bio }}</p>
+            {% endif %}
+            {% if guide.hourly_rate_lkr %}
+              <p class="text-sm font-bold text-green-700 mb-4">LKR {{ guide.hourly_rate_lkr|floatformat:0 }} / hr</p>
+            {% endif %}
+            <a href="{% url 'places:guide_detail' guide.pk %}" class="block text-center bg-green-700 text-white rounded-xl py-2 text-sm font-semibold hover:bg-green-800 transition">
+              View Profile
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="text-center py-20">
+        <div class="text-6xl mb-4">🧭</div>
+        <h3 class="text-xl font-bold text-gray-800 mb-2">No guides found</h3>
+        <p class="text-gray-500">Try adjusting your search or check back later.</p>
+      </div>
+    {% endif %}
+
+    <!-- Become a Guide CTA -->
+    {% if user.is_authenticated %}
+      {% if not user.guide_profile %}
+        <div class="mt-12 bg-gradient-to-r from-teal-700 to-green-700 rounded-2xl p-8 text-white text-center">
+          <h3 class="text-2xl font-bold mb-2">Know Sri Lanka Inside Out?</h3>
+          <p class="text-green-100 mb-5">Share your expertise and earn by becoming a certified Expearls guide.</p>
+          <a href="{% url 'places:become_guide' %}" class="inline-block bg-white text-green-800 font-bold px-8 py-3 rounded-xl hover:bg-green-50 transition">
+            Become a Guide
+          </a>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

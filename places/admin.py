@@ -19,7 +19,21 @@ from .models import (
     TourPackage,
     TourOffering,
     TourItineraryDay,
+    TourBooking, TourReview,
+    GuideProfile, GuideReview,
+    Vehicle, TransportBooking,
+    Property, PropertyImage, PropertyReview,
 )
+
+admin.site.register(TourBooking)
+admin.site.register(TourReview)
+admin.site.register(GuideProfile)
+admin.site.register(GuideReview)
+admin.site.register(Vehicle)
+admin.site.register(TransportBooking)
+admin.site.register(Property)
+admin.site.register(PropertyImage)
+admin.site.register(PropertyReview)
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):

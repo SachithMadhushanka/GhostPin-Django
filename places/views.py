@@ -49,6 +49,10 @@ from .models import (
     TourPackage,
     TourOffering,
     TourItineraryDay,
+        TourBooking, TourReview,
+    GuideProfile, GuideReview,
+    Vehicle, TransportBooking,
+    Property, PropertyImage, PropertyReview,
 )
 
 from .forms import (
@@ -2226,3 +2230,249 @@ def toggle_tour_active(request, slug):
     tour.is_active = not tour.is_active
     tour.save(update_fields=['is_active'])
     return JsonResponse({'success': True, 'is_active': tour.is_active})
+
+# ─────────────────────────────────────────────────────────
+# Tour Booking & Reviews
+# ─────────────────────────────────────────────────────────
+
+@login_required
+def book_tour(request, slug):
+    tour = get_object_or_404(TourPackage, slug=slug, is_active=True)
+
+    if request.method == 'POST':
+        full_name   = request.POST.get('full_name', '').strip()
+        phone       = request.POST.get('phone', '').strip()
+        num_people  = int(request.POST.get('num_people', 1))
+        booked_date = request.POST.get('booked_date', '')
+        message     = request.POST.get('message', '').strip()
+
+        if not all([full_name, phone, booked_date]):
+            messages.error(request, 'Please fill in all required fields.')
+        else:
+            TourBooking.objects.create(
+                tour=tour, user=request.user,
+                full_name=full_name, phone=phone,
+                num_people=num_people, booked_date=booked_date,
+                message=message,
+            )
+            messages.success(request, f'Booking request sent for "{tour.name}"! We will contact you shortly.')
+            return redirect('places:tour_detail', slug=tour.slug)
+
+    return render(request, 'book_tour.html', {'tour': tour})
+
+
+@login_required
+def my_bookings(request):
+    tour_bookings      = TourBooking.objects.filter(user=request.user).select_related('tour')
+    transport_bookings = TransportBooking.objects.filter(user=request.user).select_related('vehicle')
+    return render(request, 'my_bookings.html', {
+        'tour_bookings':      tour_bookings,
+        'transport_bookings': transport_bookings,
+    })
+
+
+@login_required
+@require_POST
+def add_tour_review(request, slug):
+    tour   = get_object_or_404(TourPackage, slug=slug, is_active=True)
+    rating = int(request.POST.get('rating', 0))
+    comment = request.POST.get('comment', '').strip()
+
+    if not 1 <= rating <= 5:
+        messages.error(request, 'Please select a rating between 1 and 5.')
+        return redirect('places:tour_detail', slug=slug)
+
+    TourReview.objects.update_or_create(
+        tour=tour, user=request.user,
+        defaults={'rating': rating, 'comment': comment},
+    )
+    messages.success(request, 'Review submitted!')
+    return redirect('places:tour_detail', slug=slug)
+
+
+# ─────────────────────────────────────────────────────────
+# Guides
+# ─────────────────────────────────────────────────────────
+
+def guide_list(request):
+    guides = GuideProfile.objects.filter(
+        is_available=True
+    ).select_related('user').prefetch_related('specialties')
+
+    search = request.GET.get('q', '')
+    if search:
+        guides = guides.filter(
+            Q(user__username__icontains=search) |
+            Q(bio__icontains=search) |
+            Q(languages__icontains=search)
+        )
+
+    specialty = request.GET.get('specialty', '')
+    if specialty:
+        guides = guides.filter(specialties__name__icontains=specialty)
+
+    return render(request, 'guides.html', {
+        'guides':     guides,
+        'search':     search,
+        'specialty':  specialty,
+        'specialties': ExpertArea.objects.all(),
+    })
+
+
+def guide_detail(request, pk):
+    guide   = get_object_or_404(GuideProfile, pk=pk)
+    reviews = guide.reviews.select_related('user')
+
+    if request.method == 'POST' and request.user.is_authenticated:
+        rating  = int(request.POST.get('rating', 0))
+        comment = request.POST.get('comment', '').strip()
+        if 1 <= rating <= 5:
+            GuideReview.objects.update_or_create(
+                guide=guide, user=request.user,
+                defaults={'rating': rating, 'comment': comment},
+            )
+            messages.success(request, 'Review submitted!')
+            return redirect('places:guide_detail', pk=pk)
+
+    user_review = None
+    if request.user.is_authenticated:
+        user_review = reviews.filter(user=request.user).first()
+
+    return render(request, 'guide_detail.html', {
+        'guide':       guide,
+        'reviews':     reviews,
+        'user_review': user_review,
+    })
+
+
+@login_required
+def become_guide(request):
+    existing = GuideProfile.objects.filter(user=request.user).first()
+    if existing:
+        messages.info(request, 'You already have a guide profile.')
+        return redirect('places:guide_detail', pk=existing.pk)
+
+    if request.method == 'POST':
+        bio              = request.POST.get('bio', '').strip()
+        languages        = request.POST.get('languages', '').strip()
+        experience_years = int(request.POST.get('experience_years', 0))
+        hourly_rate      = request.POST.get('hourly_rate_lkr') or None
+        contact_phone    = request.POST.get('contact_phone', '').strip()
+
+        GuideProfile.objects.create(
+            user=request.user, bio=bio, languages=languages,
+            experience_years=experience_years, hourly_rate_lkr=hourly_rate,
+            contact_phone=contact_phone,
+        )
+        messages.success(request, 'Your guide profile has been created!')
+        return redirect('places:guide_list')
+
+    return render(request, 'become_guide.html')
+
+
+# ─────────────────────────────────────────────────────────
+# Transport
+# ─────────────────────────────────────────────────────────
+
+def transport_list(request):
+    vehicles = Vehicle.objects.filter(is_available=True).select_related('operator')
+
+    vehicle_type = request.GET.get('type', '')
+    if vehicle_type:
+        vehicles = vehicles.filter(vehicle_type=vehicle_type)
+
+    return render(request, 'transport.html', {
+        'vehicles':     vehicles,
+        'vehicle_type': vehicle_type,
+        'type_choices': Vehicle.TYPE_CHOICES,
+    })
+
+
+@login_required
+def book_transport(request, pk):
+    vehicle = get_object_or_404(Vehicle, pk=pk, is_available=True)
+
+    if request.method == 'POST':
+        full_name    = request.POST.get('full_name', '').strip()
+        phone        = request.POST.get('phone', '').strip()
+        pickup_date  = request.POST.get('pickup_date', '')
+        dropoff_date = request.POST.get('dropoff_date', '')
+        pickup_loc   = request.POST.get('pickup_loc', '').strip()
+        dropoff_loc  = request.POST.get('dropoff_loc', '').strip()
+        message      = request.POST.get('message', '').strip()
+
+        if not all([full_name, phone, pickup_date, dropoff_date, pickup_loc]):
+            messages.error(request, 'Please fill in all required fields.')
+        else:
+            TransportBooking.objects.create(
+                vehicle=vehicle, user=request.user,
+                full_name=full_name, phone=phone,
+                pickup_date=pickup_date, dropoff_date=dropoff_date,
+                pickup_loc=pickup_loc, dropoff_loc=dropoff_loc,
+                message=message,
+            )
+            messages.success(request, 'Transport booking request sent!')
+            return redirect('places:transport_list')
+
+    return render(request, 'book_transport.html', {'vehicle': vehicle})
+
+
+# ─────────────────────────────────────────────────────────
+# Hotels & Restaurants
+# ─────────────────────────────────────────────────────────
+
+def property_list(request):
+    properties = Property.objects.filter(is_active=True)
+
+    property_type = request.GET.get('type', '')
+    if property_type:
+        properties = properties.filter(property_type=property_type)
+
+    price_range = request.GET.get('price', '')
+    if price_range:
+        properties = properties.filter(price_range=price_range)
+
+    search = request.GET.get('q', '')
+    if search:
+        properties = properties.filter(
+            Q(name__icontains=search) | Q(address__icontains=search)
+        )
+
+    paginator  = Paginator(properties, 12)
+    props_page = paginator.get_page(request.GET.get('page'))
+
+    return render(request, 'properties.html', {
+        'properties':   props_page,
+        'type_choices': Property.TYPE_CHOICES,
+        'price_choices':Property.PRICE_CHOICES,
+        'selected_type':property_type,
+        'selected_price':price_range,
+        'search':       search,
+    })
+
+
+def property_detail(request, slug):
+    prop    = get_object_or_404(Property, slug=slug, is_active=True)
+    reviews = prop.reviews.select_related('user')
+
+    if request.method == 'POST' and request.user.is_authenticated:
+        rating  = int(request.POST.get('rating', 0))
+        comment = request.POST.get('comment', '').strip()
+        if 1 <= rating <= 5:
+            PropertyReview.objects.update_or_create(
+                property=prop, user=request.user,
+                defaults={'rating': rating, 'comment': comment},
+            )
+            messages.success(request, 'Review submitted!')
+            return redirect('places:property_detail', slug=slug)
+
+    user_review = None
+    if request.user.is_authenticated:
+        user_review = reviews.filter(user=request.user).first()
+
+    return render(request, 'property_detail.html', {
+        'property':    prop,
+        'reviews':     reviews,
+        'user_review': user_review,
+        'images':      prop.images.all(),
+    })

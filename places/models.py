@@ -826,3 +826,224 @@ class TourItineraryDay(models.Model):
 #         target = self.place or self.comment
 #         return f"Report by {self.reported_by.username} on {target}"
 
+# ─────────────────────────────────────────────────────────
+# Tour Booking & Review
+# ─────────────────────────────────────────────────────────
+
+class TourBooking(models.Model):
+    STATUS_CHOICES = [
+        ('pending',   'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    tour        = models.ForeignKey(TourPackage, on_delete=models.CASCADE, related_name='bookings')
+    user        = models.ForeignKey(User, on_delete=models.CASCADE)
+    full_name   = models.CharField(max_length=200)
+    phone       = models.CharField(max_length=30)
+    num_people  = models.PositiveIntegerField(default=1)
+    booked_date = models.DateField()
+    message     = models.TextField(blank=True)
+    status      = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.full_name} — {self.tour.name}"
+
+    @property
+    def total_price(self):
+        return self.tour.price_lkr * self.num_people
+
+
+class TourReview(models.Model):
+    tour       = models.ForeignKey(TourPackage, on_delete=models.CASCADE, related_name='reviews')
+    user       = models.ForeignKey(User, on_delete=models.CASCADE)
+    rating     = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    comment    = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['tour', 'user']
+        ordering        = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} — {self.tour.name} ({self.rating}/5)"
+
+
+# ─────────────────────────────────────────────────────────
+# Guides
+# ─────────────────────────────────────────────────────────
+
+class GuideProfile(models.Model):
+    user             = models.OneToOneField(User, on_delete=models.CASCADE, related_name='guide_profile')
+    bio              = models.TextField(blank=True)
+    languages        = models.CharField(max_length=200, blank=True, help_text="e.g. Sinhala, English, Tamil")
+    experience_years = models.PositiveIntegerField(default=0)
+    hourly_rate_lkr  = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    is_certified     = models.BooleanField(default=False)
+    is_available     = models.BooleanField(default=True)
+    specialties      = models.ManyToManyField('ExpertArea', blank=True)
+    contact_phone    = models.CharField(max_length=30, blank=True)
+    created_at       = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Guide: {self.user.username}"
+
+    @property
+    def average_rating(self):
+        reviews = self.reviews.all()
+        if reviews.exists():
+            return round(reviews.aggregate(models.Avg('rating'))['rating__avg'], 1)
+        return None
+
+
+class GuideReview(models.Model):
+    guide      = models.ForeignKey(GuideProfile, on_delete=models.CASCADE, related_name='reviews')
+    user       = models.ForeignKey(User, on_delete=models.CASCADE)
+    rating     = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    comment    = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['guide', 'user']
+        ordering        = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} reviewed {self.guide.user.username}"
+
+
+# ─────────────────────────────────────────────────────────
+# Transport
+# ─────────────────────────────────────────────────────────
+
+class Vehicle(models.Model):
+    TYPE_CHOICES = [
+        ('car',     'Car'),
+        ('van',     'Van'),
+        ('bus',     'Bus'),
+        ('tuk',     'Tuk Tuk'),
+        ('jeep',    'Jeep'),
+        ('minibus', 'Minibus'),
+    ]
+    operator      = models.ForeignKey(User, on_delete=models.CASCADE, related_name='vehicles')
+    vehicle_type  = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    make_model    = models.CharField(max_length=100, help_text="e.g. Toyota HiAce")
+    capacity      = models.PositiveIntegerField()
+    price_per_day = models.DecimalField(max_digits=8, decimal_places=2)
+    is_ac         = models.BooleanField(default=True)
+    is_available  = models.BooleanField(default=True)
+    contact_phone = models.CharField(max_length=30, blank=True)
+    image         = models.ImageField(upload_to='transport/', null=True, blank=True)
+    created_at    = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_vehicle_type_display()} — {self.make_model}"
+
+
+class TransportBooking(models.Model):
+    STATUS_CHOICES = [
+        ('pending',   'Pending'),
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    vehicle      = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name='bookings')
+    user         = models.ForeignKey(User, on_delete=models.CASCADE)
+    full_name    = models.CharField(max_length=200)
+    phone        = models.CharField(max_length=30)
+    pickup_date  = models.DateField()
+    dropoff_date = models.DateField()
+    pickup_loc   = models.CharField(max_length=255)
+    dropoff_loc  = models.CharField(max_length=255, blank=True)
+    message      = models.TextField(blank=True)
+    status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.full_name} — {self.vehicle}"
+
+
+# ─────────────────────────────────────────────────────────
+# Hotels & Restaurants
+# ─────────────────────────────────────────────────────────
+
+class Property(models.Model):
+    TYPE_CHOICES = [
+        ('hotel',      'Hotel'),
+        ('guesthouse', 'Guesthouse'),
+        ('resort',     'Resort'),
+        ('restaurant', 'Restaurant'),
+        ('cafe',       'Cafe'),
+    ]
+    PRICE_CHOICES = [
+        ('$',   'Budget'),
+        ('$$',  'Mid-range'),
+        ('$$$', 'Premium'),
+    ]
+    property_type = models.CharField(max_length=20, choices=TYPE_CHOICES)
+    name          = models.CharField(max_length=200)
+    slug          = models.SlugField(max_length=220, unique=True, blank=True)
+    description   = models.TextField(blank=True)
+    address       = models.CharField(max_length=300)
+    latitude      = models.FloatField(null=True, blank=True)
+    longitude     = models.FloatField(null=True, blank=True)
+    price_range   = models.CharField(max_length=5, choices=PRICE_CHOICES, default='$$')
+    phone         = models.CharField(max_length=30, blank=True)
+    website       = models.URLField(blank=True)
+    cover_image   = models.ImageField(upload_to='properties/', null=True, blank=True)
+    is_active     = models.BooleanField(default=True)
+    added_by      = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    created_at    = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering            = ['-created_at']
+        verbose_name_plural = 'Properties'
+
+    def __str__(self):
+        return f"{self.get_property_type_display()}: {self.name}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name)
+            slug, n = base, 1
+            while Property.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{n}"
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+    @property
+    def average_rating(self):
+        reviews = self.reviews.all()
+        if reviews.exists():
+            return round(reviews.aggregate(models.Avg('rating'))['rating__avg'], 1)
+        return None
+
+
+class PropertyImage(models.Model):
+    property    = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='images')
+    image       = models.ImageField(upload_to='properties/gallery/')
+    uploaded_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Image for {self.property.name}"
+
+
+class PropertyReview(models.Model):
+    property   = models.ForeignKey(Property, on_delete=models.CASCADE, related_name='reviews')
+    user       = models.ForeignKey(User, on_delete=models.CASCADE)
+    rating     = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    comment    = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['property', 'user']
+        ordering        = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} reviewed {self.property.name}"

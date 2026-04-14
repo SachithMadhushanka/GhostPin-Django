@@ -109,4 +109,22 @@ urlpatterns = [
     path('tours/<slug:slug>/edit/', views.edit_tour, name='edit_tour'),
     path('tours/<slug:slug>/delete/', views.delete_tour, name='delete_tour'),
     path('tours/<slug:slug>/toggle/', views.toggle_tour_active, name='toggle_tour_active'),
+
+    # Tour booking & reviews
+    path('tours/<slug:slug>/book/', views.book_tour, name='book_tour'),
+    path('tours/<slug:slug>/review/', views.add_tour_review, name='add_tour_review'),
+    path('my-bookings/', views.my_bookings, name='my_bookings'),
+
+    # Guides
+    path('guides/', views.guide_list, name='guide_list'),
+    path('guides/become/', views.become_guide, name='become_guide'),
+    path('guides/<int:pk>/', views.guide_detail, name='guide_detail'),
+
+    # Transport
+    path('transport/', views.transport_list, name='transport_list'),
+    path('transport/<int:pk>/book/', views.book_transport, name='book_transport'),
+
+    # Hotels & Restaurants
+    path('properties/', views.property_list, name='property_list'),
+    path('properties/<slug:slug>/', views.property_detail, name='property_detail'),
 ]
